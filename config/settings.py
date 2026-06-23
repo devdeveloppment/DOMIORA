@@ -142,8 +142,8 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 CLOUDINARY_URL = env("CLOUDINARY_URL", default=None)
 if CLOUDINARY_URL:
-    INSTALLED_APPS.insert(0, 'cloudinary_storage')
-    INSTALLED_APPS.insert(0, 'cloudinary')
+    INSTALLED_APPS.append('cloudinary')
+    INSTALLED_APPS.append('cloudinary_storage')
     STORAGES["default"] = {"BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage"}
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
