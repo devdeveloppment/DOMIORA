@@ -1,0 +1,93 @@
+{% extends "dashboard/dashboard_base.html" %}
+{% block title %}{% if is_edit %}Modifier le bien{% else %}Ajouter un bien{% endif %} — {{ site_settings.site_name }}{% endblock %}
+{% block dashboard_content %}
+<h1 class="text-2xl font-extrabold mb-6">{% if is_edit %}Modifier « {{ property.title }} »{% else %}Ajouter un nouveau bien{% endif %}</h1>
+
+<form method="post" enctype="multipart/form-data" class="bg-white rounded-2xl shadow-card border border-gray-100 p-6 space-y-6">
+  {% csrf_token %}
+
+  <div>
+    <label class="text-sm font-semibold text-gray-700">{{ form.title.label }}</label>
+    {{ form.title }}
+  </div>
+
+  <div>
+    <label class="text-sm font-semibold text-gray-700">{{ form.description.label }}</label>
+    {{ form.description }}
+  </div>
+
+  <div class="grid sm:grid-cols-2 gap-4">
+    <div><label class="text-sm font-semibold text-gray-700">{{ form.property_type.label }}</label>{{ form.property_type }}</div>
+    <div><label class="text-sm font-semibold text-gray-700">{{ form.transaction_type.label }}</label>{{ form.transaction_type }}</div>
+  </div>
+
+  <div class="grid sm:grid-cols-2 gap-4">
+    <div><label class="text-sm font-semibold text-gray-700">{{ form.price.label }}</label>{{ form.price }}</div>
+    <div><label class="text-sm font-semibold text-gray-700">{{ form.currency.label }}</label>{{ form.currency }}</div>
+  </div>
+
+  <div class="grid sm:grid-cols-3 gap-4">
+    <div><label class="text-sm font-semibold text-gray-700">{{ form.country.label }}</label>{{ form.country }}</div>
+    <div><label class="text-sm font-semibold text-gray-700">{{ form.city.label }}</label>{{ form.city }}</div>
+    <div><label class="text-sm font-semibold text-gray-700">{{ form.address.label }}</label>{{ form.address }}</div>
+  </div>
+
+  <div class="grid sm:grid-cols-2 gap-4">
+    <div><label class="text-sm font-semibold text-gray-700">{{ form.latitude.label }}</label>{{ form.latitude }}</div>
+    <div><label class="text-sm font-semibold text-gray-700">{{ form.longitude.label }}</label>{{ form.longitude }}</div>
+  </div>
+
+  <div class="grid sm:grid-cols-3 gap-4">
+    <div><label class="text-sm font-semibold text-gray-700">{{ form.bedrooms.label }}</label>{{ form.bedrooms }}</div>
+    <div><label class="text-sm font-semibold text-gray-700">{{ form.bathrooms.label }}</label>{{ form.bathrooms }}</div>
+    <div><label class="text-sm font-semibold text-gray-700">{{ form.surface_area.label }}</label>{{ form.surface_area }}</div>
+  </div>
+
+  <div class="grid sm:grid-cols-2 gap-4">
+    <div><label class="text-sm font-semibold text-gray-700">{{ form.floors.label }}</label>{{ form.floors }}</div>
+    <div><label class="text-sm font-semibold text-gray-700">{{ form.year_built.label }}</label>{{ form.year_built }}</div>
+  </div>
+
+  <div>
+    <label class="text-sm font-semibold text-gray-700">{{ form.status.label }}</label>
+    {{ form.status }}
+  </div>
+
+  <div class="flex gap-8">
+    <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">{{ form.is_featured }} {{ form.is_featured.label }}</label>
+    <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">{{ form.is_published }} {{ form.is_published.label }}</label>
+  </div>
+
+  <div>
+    <label class="text-sm font-semibold text-gray-700 block mb-2">{{ form.amenities.label }}</label>
+    <div class="grid sm:grid-cols-3 gap-2">{{ form.amenities }}</div>
+  </div>
+
+  <div>
+    <label class="text-sm font-semibold text-gray-700 block mb-2">Photos (sélection multiple)</label>
+    <input type="file" name="images" multiple accept="image/*" class="block w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5">
+  </div>
+
+  {% if is_edit and property.images.all %}
+  <div>
+    <label class="text-sm font-semibold text-gray-700 block mb-2">Photos actuelles</label>
+    <div class="grid grid-cols-4 sm:grid-cols-6 gap-3">
+      {% for img in property.images.all %}
+      <div class="relative group">
+        <img src="{{ img.image.url }}" class="w-full h-20 object-cover rounded-lg">
+        <form method="post" action="{% url 'dashboard:agent_property_image_delete' property.pk img.pk %}" class="absolute top-1 right-1">
+          {% csrf_token %}
+          <button class="bg-black/60 text-white text-xs w-5 h-5 rounded-full opacity-0 group-hover:opacity-100 transition">✕</button>
+        </form>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="flex gap-3 pt-2">
+    <button type="submit" class="bg-primary-600 hover:bg-primary-500 transition text-white font-semibold rounded-full px-6 py-3">{% if is_edit %}Enregistrer les modifications{% else %}Publier le bien{% endif %}</button>
+    <a href="{% url 'dashboard:agent_properties' %}" class="border border-gray-200 text-gray-600 font-semibold rounded-full px-6 py-3">Annuler</a>
+  </div>
+</form>
+{% endblock %}

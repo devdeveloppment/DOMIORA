@@ -1,0 +1,31 @@
+<script>
+document.addEventListener('alpine:init', () => {
+  Alpine.store('compare', {
+    ids: JSON.parse(localStorage.getItem('domiora-compare') || '[]'),
+    toggle(id) {
+      id = parseInt(id);
+      const idx = this.ids.indexOf(id);
+      if (idx > -1) {
+        this.ids.splice(idx, 1);
+      } else {
+        if (this.ids.length >= 3) { this.ids.shift(); }
+        this.ids.push(id);
+      }
+      localStorage.setItem('domiora-compare', JSON.stringify(this.ids));
+    },
+    has(id) { return this.ids.includes(parseInt(id)); },
+    clear() { this.ids = []; localStorage.setItem('domiora-compare', '[]'); }
+  });
+});
+</script>
+
+<div x-data class="fixed bottom-6 left-6 z-[55]" x-show="$store.compare.ids.length > 0" x-cloak x-transition>
+  <div class="bg-ink text-white rounded-2xl shadow-2xl px-5 py-3 flex items-center gap-4">
+    <div class="flex items-center gap-2 text-sm">
+      <span class="font-display font-bold">⚖ Comparateur</span>
+      <span class="bg-primary-600 text-xs font-bold rounded-full w-5 h-5 grid place-items-center" x-text="$store.compare.ids.length"></span>
+    </div>
+    <a :href="'{% url 'properties:compare' %}?ids=' + $store.compare.ids.join(',')" class="bg-primary-600 hover:bg-primary-500 transition text-xs font-bold rounded-full px-4 py-2">Comparer</a>
+    <button @click="$store.compare.clear()" class="text-white/40 hover:text-white text-xs">Vider</button>
+  </div>
+</div>

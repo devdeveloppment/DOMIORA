@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% block title %}{{ agent.user.get_full_name }} — {{ site_settings.site_name }}{% endblock %}
+{% block content %}
+<section class="gradient-hero py-14">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <p class="text-white/40 text-xs mb-6"><a href="{% url 'core:home' %}" class="hover:text-white">Accueil</a> / <a href="{% url 'agents:list' %}" class="hover:text-white">Agents</a> / {{ agent.user.get_full_name }}</p>
+    <div class="flex flex-col sm:flex-row sm:items-center gap-6 justify-between">
+      <div class="flex items-center gap-5">
+        <img src="{{ agent.user.get_avatar_url }}" class="w-20 h-20 rounded-2xl object-cover">
+        <div>
+          <h1 class="text-3xl font-extrabold font-display text-white">{{ agent.user.get_full_name }}</h1>
+          <p class="text-white/50">{{ agent.agency_name|default:"Agent indépendant" }}</p>
+          <div class="flex items-center gap-2 mt-2 flex-wrap">
+            {% if agent.is_verified %}<span class="text-[11px] bg-emerald-500/20 text-emerald-300 font-bold px-3 py-1 rounded-full">✓ Agent vérifié</span>{% endif %}
+            {% if agent.is_top_agent %}<span class="text-[11px] bg-amber-400/20 text-amber-300 font-bold px-3 py-1 rounded-full">🏆 Top Agent</span>{% endif %}
+            {% if agent.license_number %}<span class="text-[11px] bg-white/10 text-white/70 font-bold px-3 py-1 rounded-full">LIC. {{ agent.license_number }}</span>{% endif %}
+            <span class="text-[11px] bg-primary-500/20 text-primary-200 font-bold px-3 py-1 rounded-full">{{ agent.commission_rate }}% commission</span>
+          </div>
+        </div>
+      </div>
+      <div class="bg-white/5 border border-white/10 rounded-2xl p-4 text-right">
+        <p class="text-xs text-white/40 uppercase font-bold">Spécialités</p>
+        <div class="flex gap-2 mt-2 flex-wrap justify-end">
+          {% for s in agent.specialties.all %}<span class="text-[11px] bg-white/10 text-white px-3 py-1 rounded-full">{{ s.name }}</span>{% endfor %}
+        </div>
+        <p class="text-xs text-white/40 mt-3">Membre depuis {{ agent.created_at|date:"F Y" }}</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 grid lg:grid-cols-3 gap-8">
+  <div class="lg:col-span-2 space-y-10">
+    <div class="grid grid-cols-3 gap-4">
+      <div class="bg-white dark:bg-[#160f29] dark:border dark:border-white/10 rounded-2xl shadow-card p-5 text-center hover-lift">
+        <p class="text-2xl font-extrabold font-display text-primary-700 dark:text-primary-300">{{ active_count }}</p>
+        <p class="text-xs text-gray-400 mt-1">Biens actifs</p>
+      </div>
+      <div class="bg-white dark:bg-[#160f29] dark:border dark:border-white/10 rounded-2xl shadow-card p-5 text-center hover-lift">
+        <p class="text-2xl font-extrabold font-display text-primary-700 dark:text-primary-300">{{ sold_count }}</p>
+        <p class="text-xs text-gray-400 mt-1">Transactions</p>
+      </div>
+      <div class="bg-white dark:bg-[#160f29] dark:border dark:border-white/10 rounded-2xl shadow-card p-5 text-center hover-lift">
+        <p class="text-2xl font-extrabold font-display text-primary-700 dark:text-primary-300">★ {{ agent.average_rating }}</p>
+        <p class="text-xs text-gray-400 mt-1">{{ agent.review_count }} avis</p>
+      </div>
+    </div>
+
+    {% if agent.bio %}
+    <div>
+      <h2 class="font-display text-lg font-bold mb-3 dark:text-white">À propos</h2>
+      <p class="text-gray-600 dark:text-gray-400 leading-relaxed">{{ agent.bio }}</p>
+    </div>
+    {% endif %}
+
+    <div>
+      <h2 class="font-display text-lg font-bold mb-4 dark:text-white">Portefeuille de biens</h2>
+      <div class="grid sm:grid-cols-2 gap-6">
+        {% for property in properties %}
+          {% include "partials/property_card.html" %}
+        {% empty %}
+          <p class="text-gray-400 col-span-full">Aucun bien publié pour le moment.</p>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div>
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="font-display text-lg font-bold dark:text-white">Avis clients ({{ agent.review_count }})</h2>
+      </div>
+
+      {% if user.is_authenticated and not user_has_reviewed and user.role == 'buyer' %}
+      <form method="post" class="bg-white dark:bg-[#160f29] dark:border dark:border-white/10 rounded-2xl shadow-card p-5 mb-6 space-y-3">
+        {% csrf_token %}
+        <p class="font-semibold text-sm dark:text-white">Laisser un avis sur {{ agent.user.first_name }}</p>
+        <div class="grid sm:grid-cols-2 gap-3">
+          <div><label class="text-xs font-semibold text-gray-600 dark:text-gray-300">{{ review_form.rating.label }}</label>{{ review_form.rating }}</div>
+        </div>
+        <div>{{ review_form.comment }}</div>
+        <button type="submit" class="bg-primary-600 hover:bg-primary-500 transition text-white font-semibold rounded-full px-5 py-2 text-sm">Publier mon avis</button>
+      </form>
+      {% elif user_has_reviewed %}
+      <p class="text-xs text-gray-400 mb-6">✓ Vous avez déjà laissé un avis pour cet agent.</p>
+      {% endif %}
+
+      <div class="space-y-4">
+        {% for r in reviews %}
+        <div class="bg-white dark:bg-[#160f29] dark:border dark:border-white/10 rounded-2xl shadow-card p-5">
+          <div class="flex items-center justify-between">
+            <p class="font-semibold text-sm dark:text-white">{{ r.user.get_full_name }}</p>
+            <p class="text-amber-400 text-sm">{% for i in "12345" %}{% if forloop.counter <= r.rating %}★{% else %}☆{% endif %}{% endfor %}</p>
+          </div>
+          {% if r.comment %}<p class="text-sm text-gray-500 dark:text-gray-400 mt-2">{{ r.comment }}</p>{% endif %}
+          <p class="text-xs text-gray-300 mt-2">{{ r.created_at|date:"d M Y" }}</p>
+        </div>
+        {% empty %}
+        <p class="text-gray-400 text-sm">Aucun avis pour le moment.</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <aside class="space-y-5">
+    <div class="bg-white dark:bg-[#160f29] dark:border dark:border-white/10 rounded-2xl shadow-card p-5">
+      <p class="text-xs uppercase text-gray-400 font-bold mb-3">Contacter l'agent</p>
+      {% if agent.user.phone %}
+      <a href="tel:{{ agent.user.phone }}" class="block w-full text-center bg-primary-600 hover:bg-primary-500 transition text-white font-semibold rounded-full px-4 py-2.5 text-sm mb-2">📞 {{ agent.user.phone }}</a>
+      {% endif %}
+      <a href="mailto:{{ agent.user.email }}" class="block w-full text-center border border-gray-200 dark:border-white/10 dark:text-gray-200 text-gray-700 font-semibold rounded-full px-4 py-2.5 text-sm mb-2">✉️ {{ agent.user.email }}</a>
+
+      {% if user.is_authenticated and user.role == 'buyer' %}
+      <form method="post" action="{% url 'messaging:start_conversation' agent.pk %}" class="mb-2">
+        {% csrf_token %}
+        <input type="hidden" name="message" value="Bonjour, je souhaiterais échanger avec vous.">
+        <button class="w-full text-center bg-primary-50 text-primary-700 font-semibold rounded-full px-4 py-2.5 text-sm">💬 Envoyer un message</button>
+      </form>
+      <button @click="$dispatch('open-agent-appointment-modal')" class="w-full text-center border border-primary-200 text-primary-700 font-semibold rounded-full px-4 py-2.5 text-sm">📅 Prendre rendez-vous</button>
+      {% endif %}
+
+      <p class="text-xs text-gray-400 mt-3">⏱ Délai de réponse: {{ agent.response_time_hours }}h</p>
+    </div>
+    {% if agent.facebook or agent.instagram or agent.linkedin or agent.twitter %}
+    <div class="bg-white dark:bg-[#160f29] dark:border dark:border-white/10 rounded-2xl shadow-card p-5">
+      <p class="text-xs uppercase text-gray-400 font-bold mb-3">Réseaux sociaux</p>
+      <div class="flex gap-3 text-sm text-primary-600">
+        {% if agent.facebook %}<a href="{{ agent.facebook }}">Facebook</a>{% endif %}
+        {% if agent.instagram %}<a href="{{ agent.instagram }}">Instagram</a>{% endif %}
+        {% if agent.linkedin %}<a href="{{ agent.linkedin }}">LinkedIn</a>{% endif %}
+        {% if agent.twitter %}<a href="{{ agent.twitter }}">Twitter</a>{% endif %}
+      </div>
+    </div>
+    {% endif %}
+  </aside>
+</section>
+
+{% if user.is_authenticated %}
+<div x-data="{ open: false }" @open-agent-appointment-modal.window="open = true">
+  <div x-cloak x-show="open" x-transition.opacity class="fixed inset-0 z-[70] bg-black/60 flex items-center justify-center p-4" @click.self="open=false">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+      <h3 class="font-display font-bold text-lg mb-1">Prendre rendez-vous</h3>
+      <p class="text-sm text-gray-500 mb-4">avec {{ agent.user.get_full_name }}</p>
+      <form method="post" action="{% url 'appointments:book' agent.pk %}" class="space-y-3">
+        {% csrf_token %}
+        <div>
+          <label class="text-xs font-semibold text-gray-600">Date et heure souhaitées</label>
+          <input type="datetime-local" name="scheduled_at" required class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm">
+        </div>
+        <div>
+          <label class="text-xs font-semibold text-gray-600">Note (optionnel)</label>
+          <textarea name="notes" rows="2" class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm"></textarea>
+        </div>
+        <div class="flex gap-2 pt-2">
+          <button type="submit" class="flex-1 bg-primary-600 hover:bg-primary-500 transition text-white font-semibold rounded-full px-4 py-2.5 text-sm">Confirmer</button>
+          <button type="button" @click="open=false" class="border border-gray-200 text-gray-600 font-semibold rounded-full px-4 py-2.5 text-sm">Annuler</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,57 @@
+{% extends "dashboard/dashboard_base.html" %}
+{% block title %}Mes biens — {{ site_settings.site_name }}{% endblock %}
+{% block dashboard_content %}
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-2xl font-extrabold">Mes biens</h1>
+  <a href="{% url 'dashboard:agent_property_create' %}" class="bg-primary-600 hover:bg-primary-500 transition text-white font-semibold rounded-full px-5 py-2.5 text-sm">+ Ajouter un bien</a>
+</div>
+
+<div class="bg-white rounded-2xl shadow-card border border-gray-100 overflow-hidden">
+  <table class="w-full text-sm">
+    <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+      <tr>
+        <th class="text-left px-5 py-3">Bien</th>
+        <th class="text-left px-5 py-3">Prix</th>
+        <th class="text-left px-5 py-3">Statut</th>
+        <th class="text-left px-5 py-3">Publié</th>
+        <th class="text-right px-5 py-3">Actions</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-50">
+      {% for p in page_obj %}
+      <tr class="hover:bg-gray-50">
+        <td class="px-5 py-4">
+          <div class="flex items-center gap-3">
+            <img src="{{ p.primary_image }}" class="w-12 h-12 rounded-lg object-cover">
+            <div>
+              <p class="font-semibold">{{ p.title }}</p>
+              <p class="text-xs text-gray-400">{{ p.city }}, {{ p.country }}</p>
+            </div>
+          </div>
+        </td>
+        <td class="px-5 py-4 font-semibold">{{ p.price_display }}</td>
+        <td class="px-5 py-4">
+          <span class="text-xs font-bold px-2.5 py-1 rounded-full {% if p.status == 'vendu' or p.status == 'loue' %}bg-rose-50 text-rose-700{% elif p.status == 'brouillon' %}bg-gray-100 text-gray-500{% else %}bg-emerald-50 text-emerald-700{% endif %}">{{ p.get_status_display }}</span>
+        </td>
+        <td class="px-5 py-4">
+          <form method="post" action="{% url 'dashboard:agent_property_toggle_publish' p.pk %}">
+            {% csrf_token %}
+            <button class="text-xs font-bold px-2.5 py-1 rounded-full {% if p.is_published %}bg-primary-50 text-primary-700{% else %}bg-gray-100 text-gray-500{% endif %}">{% if p.is_published %}Publié{% else %}Non publié{% endif %}</button>
+          </form>
+        </td>
+        <td class="px-5 py-4 text-right space-x-2 whitespace-nowrap">
+          <a href="{% url 'dashboard:agent_property_edit' p.pk %}" class="text-primary-600 hover:underline text-xs font-semibold">Modifier</a>
+          <form method="post" action="{% url 'dashboard:agent_property_delete' p.pk %}" class="inline" onsubmit="return confirm('Supprimer ce bien définitivement ?');">
+            {% csrf_token %}
+            <button class="text-rose-600 hover:underline text-xs font-semibold">Supprimer</button>
+          </form>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5" class="text-center py-12 text-gray-400">Vous n'avez pas encore de bien. <a href="{% url 'dashboard:agent_property_create' %}" class="text-primary-600 hover:underline">En ajouter un</a></td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% include "partials/pagination.html" %}
+{% endblock %}

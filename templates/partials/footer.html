@@ -1,0 +1,64 @@
+{% load static %}
+<footer class="bg-ink text-white/70 mt-20">
+  <div class="bg-gradient-to-r from-primary-700 to-primary-500 py-14 px-4 text-center">
+    <h2 class="text-3xl font-extrabold text-white">Prêt à trouver votre propriété ?</h2>
+    <p class="mt-2 text-white/90">Rejoignez des milliers de clients satisfaits et concrétisez votre projet immobilier aujourd'hui.</p>
+    <div class="mt-6 flex items-center justify-center gap-4 flex-wrap">
+      <a href="{% url 'properties:list' %}" class="bg-white text-primary-700 font-semibold rounded-full px-6 py-3 hover:bg-primary-50 transition">Parcourir les biens</a>
+      <a href="{% url 'core:contact' %}" class="border border-white/60 text-white font-semibold rounded-full px-6 py-3 hover:bg-white/10 transition">Nous contacter</a>
+    </div>
+  </div>
+
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 grid grid-cols-1 md:grid-cols-4 gap-10">
+    <div>
+      <div class="flex items-center gap-2 text-white font-extrabold text-lg mb-3">
+        {% if site_settings.logo %}
+          <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.site_name }}" class="h-10 w-auto object-contain">
+        {% else %}
+          <span class="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-400 to-primary-700 grid place-items-center text-sm">🏠</span>
+          {{ site_settings.site_name }}
+        {% endif %}
+      </div>
+      <p class="text-sm leading-relaxed">Votre partenaire de confiance pour trouver la propriété de vos rêves. Nous offrons des services immobiliers premium avec une expertise locale inégalée.</p>
+      <div class="flex gap-3 mt-4 text-white/60">
+        {% if site_settings.facebook %}<a href="{{ site_settings.facebook }}" class="hover:text-white">FB</a>{% endif %}
+        {% if site_settings.instagram %}<a href="{{ site_settings.instagram }}" class="hover:text-white">IG</a>{% endif %}
+        {% if site_settings.linkedin %}<a href="{{ site_settings.linkedin }}" class="hover:text-white">IN</a>{% endif %}
+        {% if site_settings.twitter %}<a href="{{ site_settings.twitter }}" class="hover:text-white">X</a>{% endif %}
+      </div>
+    </div>
+    <div>
+      <h4 class="text-white font-semibold mb-3">Navigation</h4>
+      <ul class="space-y-2 text-sm">
+        <li><a href="{% url 'core:home' %}" class="hover:text-white">Accueil</a></li>
+        <li><a href="{% url 'properties:list' %}" class="hover:text-white">Propriétés</a></li>
+        <li><a href="{% url 'core:about' %}" class="hover:text-white">À propos</a></li>
+        <li><a href="{% url 'agents:list' %}" class="hover:text-white">Nos agents</a></li>
+        <li><a href="{% url 'core:contact' %}" class="hover:text-white">Contact</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4 class="text-white font-semibold mb-3">Services</h4>
+      <ul class="space-y-2 text-sm">
+        <li><a href="{% url 'properties:list' %}?transaction=vente" class="hover:text-white">Vente</a></li>
+        <li><a href="{% url 'properties:list' %}?transaction=location" class="hover:text-white">Location</a></li>
+        <li><a href="{% url 'properties:list' %}" class="hover:text-white">Propriétés vedettes</a></li>
+        <li><a href="{% url 'core:contact' %}" class="hover:text-white">Estimation gratuite</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4 class="text-white font-semibold mb-3">Contactez-nous</h4>
+      <ul class="space-y-2 text-sm">
+        <li>📍 {{ site_settings.address }}</li>
+        <li>📞 {{ site_settings.contact_phone }}</li>
+        <li>✉️ {{ site_settings.contact_email }}</li>
+        <li>🕐 {{ site_settings.opening_hours_weekdays }}</li>
+        <li>🕐 {{ site_settings.opening_hours_weekend }}</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="border-t border-white/10 py-6 px-4 text-center text-xs text-white/40">
+    © {% now "Y" %} {{ site_settings.site_name }}. Tous droits réservés. — {{ site_settings.tagline }}
+  </div>
+</footer>

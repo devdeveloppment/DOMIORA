@@ -1,0 +1,49 @@
+{% extends "dashboard/dashboard_base.html" %}
+{% block title %}Profil agent — {{ site_settings.site_name }}{% endblock %}
+{% block dashboard_content %}
+<h1 class="text-2xl font-extrabold mb-6">Profil agent</h1>
+<form method="post" enctype="multipart/form-data" class="bg-white rounded-2xl shadow-card border border-gray-100 p-6 space-y-6">
+  {% csrf_token %}
+  <div class="flex items-center gap-4">
+    <img src="{{ user.get_avatar_url }}" class="w-16 h-16 rounded-full object-cover">
+    <div class="flex-1"><label class="text-sm font-semibold text-gray-700">{{ form.avatar.label }}</label>{{ form.avatar }}</div>
+  </div>
+
+  <div class="grid sm:grid-cols-2 gap-4">
+    <div><label class="text-sm font-semibold text-gray-700">{{ form.first_name.label }}</label>{{ form.first_name }}</div>
+    <div><label class="text-sm font-semibold text-gray-700">{{ form.last_name.label }}</label>{{ form.last_name }}</div>
+  </div>
+  <div class="grid sm:grid-cols-2 gap-4">
+    <div><label class="text-sm font-semibold text-gray-700">{{ form.email.label }}</label>{{ form.email }}</div>
+    <div><label class="text-sm font-semibold text-gray-700">{{ form.phone.label }}</label>{{ form.phone }}</div>
+  </div>
+
+  <hr class="border-gray-100">
+  <h2 class="font-bold text-sm uppercase text-gray-500">Informations agence</h2>
+  <div class="grid sm:grid-cols-2 gap-4">
+    <div>
+      <label class="text-sm font-semibold text-gray-700">Nom de l'agence</label>
+      <input type="text" name="agency_name" value="{{ agent.agency_name }}" class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm">
+    </div>
+    <div>
+      <label class="text-sm font-semibold text-gray-700">N° de licence</label>
+      <input type="text" name="license_number" value="{{ agent.license_number }}" class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm">
+    </div>
+  </div>
+  <div>
+    <label class="text-sm font-semibold text-gray-700">Bio professionnelle</label>
+    <textarea name="agent_bio" rows="4" class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm">{{ agent.bio }}</textarea>
+  </div>
+
+  <hr class="border-gray-100">
+  <h2 class="font-bold text-sm uppercase text-gray-500">Réseaux sociaux</h2>
+  <div class="grid sm:grid-cols-2 gap-4">
+    <div><label class="text-sm font-semibold text-gray-700">Facebook</label><input type="url" name="facebook" value="{{ agent.facebook }}" class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm"></div>
+    <div><label class="text-sm font-semibold text-gray-700">Instagram</label><input type="url" name="instagram" value="{{ agent.instagram }}" class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm"></div>
+    <div><label class="text-sm font-semibold text-gray-700">LinkedIn</label><input type="url" name="linkedin" value="{{ agent.linkedin }}" class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm"></div>
+    <div><label class="text-sm font-semibold text-gray-700">Twitter / X</label><input type="url" name="twitter" value="{{ agent.twitter }}" class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm"></div>
+  </div>
+
+  <button type="submit" class="bg-primary-600 hover:bg-primary-500 transition text-white font-semibold rounded-full px-6 py-3">Enregistrer</button>
+</form>
+{% endblock %}

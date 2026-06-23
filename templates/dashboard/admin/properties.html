@@ -1,0 +1,62 @@
+{% extends "dashboard/dashboard_base.html" %}
+{% block title %}Propriétés — {{ site_settings.site_name }}{% endblock %}
+{% block dashboard_content %}
+<div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+  <div class="flex items-center gap-4">
+    <h1 class="text-2xl font-extrabold">Gestion des propriétés</h1>
+    <a href="{% url 'dashboard:admin_property_create' %}" class="bg-primary-600 hover:bg-primary-500 text-white text-sm font-bold px-4 py-2 rounded-lg transition">+ Ajouter</a>
+  </div>
+  <form method="get">
+    <select name="status" onchange="this.form.submit()" class="rounded-full border border-gray-200 text-sm px-3 py-2">
+      <option value="">Tous les statuts</option>
+      <option value="disponible" {% if request.GET.status == "disponible" %}selected{% endif %}>Disponible</option>
+      <option value="vendu" {% if request.GET.status == "vendu" %}selected{% endif %}>Vendu</option>
+      <option value="loue" {% if request.GET.status == "loue" %}selected{% endif %}>Loué</option>
+      <option value="brouillon" {% if request.GET.status == "brouillon" %}selected{% endif %}>Brouillon</option>
+    </select>
+  </form>
+</div>
+
+<div class="bg-white rounded-2xl shadow-card border border-gray-100 overflow-hidden">
+  <table class="w-full text-sm">
+    <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+      <tr>
+        <th class="text-left px-5 py-3">Bien</th>
+        <th class="text-left px-5 py-3">Agent</th>
+        <th class="text-left px-5 py-3">Prix</th>
+        <th class="text-left px-5 py-3">Statut</th>
+        <th class="text-left px-5 py-3">Validée</th>
+        <th class="text-right px-5 py-3">Actions</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-50">
+      {% for p in page_obj %}
+      <tr class="hover:bg-gray-50">
+        <td class="px-5 py-4">
+          <div class="flex items-center gap-3">
+            <img src="{{ p.primary_image }}" class="w-12 h-12 rounded-lg object-cover">
+            <a href="{{ p.get_absolute_url }}" class="font-semibold hover:text-primary-700">{{ p.title }}</a>
+          </div>
+        </td>
+        <td class="px-5 py-4">{{ p.agent.user.get_full_name|default:"—" }}</td>
+        <td class="px-5 py-4 font-semibold">{{ p.price_display }}</td>
+        <td class="px-5 py-4">
+          <span class="text-xs font-bold px-2.5 py-1 rounded-full {% if p.status == 'vendu' or p.status == 'loue' %}bg-rose-50 text-rose-700{% elif p.status == 'brouillon' %}bg-gray-100 text-gray-500{% else %}bg-emerald-50 text-emerald-700{% endif %}">{{ p.get_status_display }}</span>
+        </td>
+        <td class="px-5 py-4">{% if p.is_validated %}✅{% else %}⏳{% endif %}</td>
+        <td class="px-5 py-4 text-right whitespace-nowrap space-x-2">
+          {% if not p.is_validated %}
+          <form method="post" action="{% url 'dashboard:admin_property_validate' p.pk %}" class="inline">{% csrf_token %}<button class="text-emerald-600 hover:underline text-xs font-semibold">Valider</button></form>
+          {% endif %}
+          <a href="{% url 'dashboard:admin_property_edit' p.pk %}" class="text-blue-600 hover:underline text-xs font-semibold mr-1">Modifier</a>
+          <form method="post" action="{% url 'dashboard:admin_property_delete' p.pk %}" class="inline" onsubmit="return confirm('Supprimer ce bien ?');">{% csrf_token %}<button class="text-rose-600 hover:underline text-xs font-semibold">Supprimer</button></form>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" class="text-center py-12 text-gray-400">Aucun bien trouvé.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% include "partials/pagination.html" %}
+{% endblock %}

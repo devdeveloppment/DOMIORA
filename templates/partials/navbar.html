@@ -1,0 +1,101 @@
+{% load static %}
+<header x-data="{ mobileOpen: false, userMenu: false, paletteOpen: false }" @keydown.window="if(($event.metaKey || $event.ctrlKey) && $event.key === 'k'){ $event.preventDefault(); paletteOpen = true; $nextTick(() => $refs.paletteInput.focus()) }" class="sticky top-0 z-50 bg-ink/95 backdrop-blur border-b border-white/10 header-premium transition-all duration-500">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="hidden md:flex items-center justify-between text-xs text-white/50 py-2 border-b border-white/5">
+      <div class="flex items-center gap-4">
+        <span>📞 {{ site_settings.contact_phone }}</span>
+        <span>✉️ {{ site_settings.contact_email }}</span>
+      </div>
+      <div class="flex items-center gap-3">
+        {% if site_settings.facebook %}<a href="{{ site_settings.facebook }}" class="hover:text-white">Facebook</a>{% endif %}
+        {% if site_settings.instagram %}<a href="{{ site_settings.instagram }}" class="hover:text-white">Instagram</a>{% endif %}
+        {% if site_settings.linkedin %}<a href="{{ site_settings.linkedin }}" class="hover:text-white">LinkedIn</a>{% endif %}
+      </div>
+    </div>
+
+    <div class="flex items-center justify-between h-16">
+      <a href="{% url 'core:home' %}" class="flex items-center gap-2 text-white font-extrabold text-lg tracking-tight">
+        {% if site_settings.logo %}
+          <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.site_name }}" class="h-10 w-auto object-contain">
+        {% else %}
+          <span class="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-400 to-primary-700 grid place-items-center text-sm">🏠</span>
+          {{ site_settings.site_name }}
+        {% endif %}
+      </a>
+
+      <nav class="hidden lg:flex items-center gap-8 text-sm font-medium text-white/80">
+        <a href="{% url 'core:home' %}" class="hover:text-white transition">Accueil</a>
+        <a href="{% url 'properties:list' %}" class="hover:text-white transition">Propriétés</a>
+        <a href="{% url 'core:about' %}" class="hover:text-white transition">À propos</a>
+        <a href="{% url 'agents:list' %}" class="hover:text-white transition">Nos agents</a>
+        <a href="{% url 'core:contact' %}" class="hover:text-white transition">Contact</a>
+      </nav>
+
+      <div class="hidden md:flex items-center gap-3">
+        <button @click="paletteOpen = true" class="flex items-center gap-2 text-sm text-white/50 hover:text-white border border-white/15 rounded-full px-4 py-2 transition w-56">
+          🔍 Rechercher un bien...
+          <kbd class="ml-auto text-[10px] bg-white/10 rounded px-1.5 py-0.5">⌘K</kbd>
+        </button>
+        <button @click="darkMode = !darkMode" class="w-9 h-9 rounded-full border border-white/15 text-white/70 hover:text-white grid place-items-center transition" title="Mode sombre / clair">
+          <span x-show="!darkMode">🌙</span><span x-show="darkMode" x-cloak>☀️</span>
+        </button>
+
+      </div>
+
+      <div class="flex items-center gap-2 lg:hidden">
+        <button @click="paletteOpen = true" class="text-white">
+          <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z"/></svg>
+        </button>
+        <button class="text-white" @click="mobileOpen = !mobileOpen">
+          <svg class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div x-cloak x-show="mobileOpen" x-transition class="lg:hidden bg-ink border-t border-white/10 px-4 py-4 space-y-3 text-white/90 text-sm font-medium">
+    <a href="{% url 'core:home' %}" class="block py-1">Accueil</a>
+    <a href="{% url 'properties:list' %}" class="block py-1">Propriétés</a>
+    <a href="{% url 'core:about' %}" class="block py-1">À propos</a>
+    <a href="{% url 'agents:list' %}" class="block py-1">Nos agents</a>
+    <a href="{% url 'core:contact' %}" class="block py-1">Contact</a>
+
+  </div>
+
+  <!-- Command palette: smart search -->
+  <div x-cloak x-show="paletteOpen" x-transition.opacity @keydown.escape.window="paletteOpen=false"
+       class="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-start justify-center pt-24 px-4"
+       x-data="{ q: '', results: [], loading: false }"
+       @click.self="paletteOpen=false">
+    <div class="w-full max-w-xl bg-white dark:bg-[#160f29] rounded-2xl shadow-2xl overflow-hidden" @click.outside="paletteOpen=false">
+      <div class="flex items-center gap-3 px-5 py-4 border-b border-gray-100 dark:border-white/10">
+        <span>🔍</span>
+        <input x-ref="paletteInput" x-model="q" @input.debounce.300ms="
+            if (q.length < 2) { results = []; return }
+            loading = true;
+            fetch('{% url "core:search_suggestions" %}?q=' + encodeURIComponent(q))
+              .then(r => r.json()).then(data => { results = data.results; loading = false })
+          "
+          type="text" placeholder="Ville, titre, type de bien... (ex: Villa Brooklyn)"
+          class="flex-1 outline-none text-sm dark:bg-transparent dark:text-white placeholder-gray-400">
+        <button @click="paletteOpen=false" class="text-gray-400 hover:text-gray-600 text-sm">ESC</button>
+      </div>
+      <div class="max-h-80 overflow-y-auto">
+        <template x-if="loading"><p class="text-center text-sm text-gray-400 py-6">Recherche...</p></template>
+        <template x-if="!loading && q.length >= 2 && results.length === 0"><p class="text-center text-sm text-gray-400 py-6">Aucun résultat pour "<span x-text="q"></span>"</p></template>
+        <template x-for="r in results" :key="r.url">
+          <a :href="r.url" class="flex items-center gap-3 px-5 py-3 hover:bg-primary-50 dark:hover:bg-white/5 border-b border-gray-50 dark:border-white/5 last:border-0">
+            <img :src="r.image" class="w-10 h-10 rounded-lg object-cover">
+            <div class="text-left">
+              <p class="text-sm font-semibold dark:text-white" x-text="r.title"></p>
+              <p class="text-xs text-gray-400" x-text="r.subtitle"></p>
+            </div>
+          </a>
+        </template>
+        <template x-if="q.length < 2">
+          <p class="text-center text-xs text-gray-400 py-6">Tapez au moins 2 caractères pour rechercher un bien, une ville ou un agent.</p>
+        </template>
+      </div>
+    </div>
+  </div>
+</header>

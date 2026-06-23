@@ -1,0 +1,18 @@
+{% if page_obj.paginator.num_pages > 1 %}
+<div class="flex items-center justify-center gap-2 mt-10">
+  {% if page_obj.has_previous %}
+    <a href="?{% if request_get %}{{ request_get.urlencode }}&{% endif %}page={{ page_obj.previous_page_number }}" class="w-9 h-9 grid place-items-center rounded-full border border-gray-200 text-gray-500 hover:bg-primary-50">‹</a>
+  {% endif %}
+  {% for num in page_obj.paginator.page_range %}
+    {% if num >= page_obj.number|add:'-2' and num <= page_obj.number|add:'2' %}
+      <a href="?{% if request_get %}{{ request_get.urlencode }}&{% endif %}page={{ num }}"
+         class="w-9 h-9 grid place-items-center rounded-full text-sm font-semibold {% if num == page_obj.number %}bg-primary-600 text-white{% else %}border border-gray-200 text-gray-600 hover:bg-primary-50{% endif %}">
+        {{ num }}
+      </a>
+    {% endif %}
+  {% endfor %}
+  {% if page_obj.has_next %}
+    <a href="?{% if request_get %}{{ request_get.urlencode }}&{% endif %}page={{ page_obj.next_page_number }}" class="w-9 h-9 grid place-items-center rounded-full border border-gray-200 text-gray-500 hover:bg-primary-50">›</a>
+  {% endif %}
+</div>
+{% endif %}
