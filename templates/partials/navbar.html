@@ -14,12 +14,13 @@
     </div>
 
     <div class="flex items-center justify-between h-16">
-      <a href="{% url 'core:home' %}" class="flex items-center gap-2 text-white font-extrabold text-lg tracking-tight">
+      <a href="{% url 'core:home' %}" class="flex items-center gap-2.5 text-white font-extrabold text-lg tracking-tight">
         {% if site_settings.logo %}
-          <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.site_name }}" class="h-10 w-auto object-contain">
+          <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.site_name }}" class="h-9 w-9 rounded-full object-cover ring-2 ring-primary-500/30 shadow-lg shadow-primary-500/20">
+          <span class="hidden sm:inline">{{ site_settings.site_name }}</span>
         {% else %}
-          <span class="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-400 to-primary-700 grid place-items-center text-sm">🏠</span>
-          {{ site_settings.site_name }}
+          <span class="w-9 h-9 rounded-full bg-gradient-to-br from-primary-400 to-primary-700 grid place-items-center text-sm shadow-lg shadow-primary-500/20">🏠</span>
+          <span>{{ site_settings.site_name }}</span>
         {% endif %}
       </a>
 
