@@ -16,6 +16,8 @@ class SiteSettings(models.Model):
     linkedin = models.URLField(blank=True)
     twitter = models.URLField(blank=True)
     youtube = models.URLField(blank=True)
+    tiktok = models.URLField(blank=True)
+    whatsapp = models.CharField(max_length=50, blank=True, help_text="Numéro WhatsApp avec l'indicatif (ex: +33600000000)")
     smtp_host = models.CharField(max_length=120, blank=True, help_text="Configuré réellement via le fichier .env")
     smtp_port = models.PositiveIntegerField(default=587)
     smtp_user = models.CharField(max_length=120, blank=True)
