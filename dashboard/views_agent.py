@@ -55,6 +55,18 @@ def agent_properties(request):
 @role_required(User.Role.AGENT)
 def agent_property_create(request):
     agent = _get_agent(request)
+
+    # Vérification de l'abonnement
+    if hasattr(agent, 'subscription') and agent.subscription.is_valid:
+        plan = agent.subscription.plan
+        current_count = Property.objects.filter(agent=agent).count()
+        if plan.max_listings != -1 and current_count >= plan.max_listings:
+            messages.error(request, f"Vous avez atteint la limite de {plan.max_listings} annonces de votre plan {plan.name}. Veuillez mettre à niveau votre abonnement.")
+            return redirect("dashboard:agent_properties")
+    else:
+        messages.error(request, "Vous devez avoir un abonnement actif pour ajouter un bien.")
+        return redirect("dashboard:agent_properties")
+
     if request.method == "POST":
         form = PropertyForm(request.POST)
         if form.is_valid():

@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "appointments",
     "dashboard",
     "api",
+    "subscriptions",
 ]
 
 MIDDLEWARE = [
