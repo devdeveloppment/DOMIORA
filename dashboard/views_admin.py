@@ -192,7 +192,7 @@ def admin_settings(request):
         for field in [
             "site_name", "tagline", "contact_email", "contact_phone", "address",
             "opening_hours_weekdays", "opening_hours_weekend",
-            "facebook", "instagram", "linkedin", "twitter", "youtube",
+            "facebook", "instagram", "linkedin", "twitter", "youtube", "tiktok", "whatsapp",
             "smtp_host", "smtp_port", "smtp_user",
         ]:
             value = request.POST.get(field)
