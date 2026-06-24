@@ -30,7 +30,8 @@ GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini
 
 CITY_PATTERN = re.compile(
     r"\b(brooklyn|new york|henderson|bronx|las vegas|hoboken|beverly hills|westport|"
-    r"queens|dallas|jersey city|naples|paris|lyon|lom[ée])\b", re.IGNORECASE
+    r"queens|dallas|jersey city|naples|paris|lyon|lom[ée]|tokyo|london|marseille|nice|toulouse|"
+    r"bordeaux|nantes|strasbourg|montpellier|rennes|lille|nice|cannes|monaco|geneve|bruxelles)\b", re.IGNORECASE
 )
 PRICE_PATTERN = re.compile(r"(\d[\d\s]{2,})\s?(?:\$|usd|dollars?|euros?)?", re.IGNORECASE)
 TYPE_KEYWORDS = {
@@ -38,6 +39,8 @@ TYPE_KEYWORDS = {
     "duplex": "duplex", "triplex": "triplex", "appartement": "appartement", "appart": "appartement",
     "maison": "maison_de_ville", "château": "chateau", "chateau": "chateau", "ferme": "ferme",
     "bungalow": "bungalow", "cottage": "cottage", "ranch": "ranch", "terrain": "terrain",
+    "t1": "appartement", "t2": "appartement", "t3": "appartement", "t4": "appartement",
+    "f1": "appartement", "f2": "appartement", "f3": "appartement", "f4": "appartement",
 }
 
 
@@ -68,12 +71,20 @@ def _build_grounding_context(message):
 
 def _rule_based_reply(message, matches):
     msg = message.lower().strip()
-    if any(g in msg for g in ["bonjour", "salut", "hello", "bonsoir"]):
+    if any(g in msg for g in ["bonjour", "salut", "hello", "bonsoir", "hi", "hey"]):
         return "Bonjour 👋 Je suis l'assistant DOMIORA. Dites-moi ce que vous cherchez (ville, type de bien, budget, vente ou location) et je vous propose des biens correspondants."
-    if "contact" in msg or "agent" in msg and "parler" in msg:
+    if "contact" in msg or ("agent" in msg and "parler" in msg):
         return "Vous pouvez contacter directement un agent depuis la fiche d'un bien, ou consulter notre page « Nos agents » pour choisir un expert par spécialité."
     if "comment" in msg and ("louer" in msg or "acheter" in msg):
         return "C'est simple : 1) recherchez un bien via les filtres, 2) ouvrez la fiche du bien, 3) envoyez une demande à l'agent (visite, location ou achat), 4) l'agent valide votre demande et vous accompagne jusqu'à la transaction."
+    if "horaires" in msg or "ouverture" in msg:
+        return "Nos bureaux sont ouverts du lundi au vendredi de 9h à 18h, et le samedi de 10h à 16h. N'hésitez pas à nous contacter pour prendre rendez-vous."
+    if "tarifs" in msg or "frais" in msg or "commission" in msg:
+        return "Nos honoraires sont généralement calculés en pourcentage du prix de vente ou du loyer annuel. Pour plus de détails, n'hésitez pas à contacter un agent qui vous expliquera les conditions spécifiques."
+    if "visite" in msg:
+        return "Vous pouvez demander une visite directement depuis la fiche d'un bien. L'agent vous contactera pour fixer un rendez-vous selon vos disponibilités."
+    if "disponible" in msg or "libre" in msg:
+        return "Pour connaître la disponibilité exacte d'un bien, je vous invite à consulter sa fiche détaillée ou à contacter l'agent en charge du bien."
     if matches:
         lines = [f"J'ai trouvé {len(matches)} bien(s) qui pourrai(en)t vous intéresser :"]
         for p in matches:
@@ -82,9 +93,9 @@ def _rule_based_reply(message, matches):
         return "\n".join(lines)
     return (
         "Je n'ai pas trouvé de bien correspondant précisément à votre demande. "
-        "Essayez de préciser une ville, un type de bien (villa, appartement, studio...), "
+        "Essayez de préciser une ville, un type de bien (villa, appartement, studio, T1, T2...), "
         "un budget ou « vente »/« location » — par exemple : "
-        "« villa à louer à Brooklyn sous 3000 »."
+        "« appartement T2 à louer à Lomé sous 500000 FCFA »."
     )
 
 
