@@ -1,0 +1,30 @@
+{% extends "dashboard/dashboard_base.html" %}
+{% block title %}Messagerie — {{ site_settings.site_name }}{% endblock %}
+{% block dashboard_content %}
+<h1 class="text-2xl font-extrabold font-display mb-6">Messagerie</h1>
+<div class="bg-white rounded-2xl shadow-card border border-gray-100 divide-y divide-gray-50 overflow-hidden">
+  {% for c in conversations %}
+  <a href="{% url 'messaging:conversation_detail' c.pk %}" class="flex items-center gap-4 p-4 hover:bg-gray-50 transition">
+    {% if dash_role == 'agent' %}
+      <img src="{{ c.buyer.get_avatar_url }}" class="w-11 h-11 rounded-full object-cover">
+      <div class="flex-1 min-w-0">
+        <p class="font-semibold text-sm">{{ c.buyer.get_full_name }}</p>
+        <p class="text-xs text-gray-400 truncate">{{ c.property.title|default:"Discussion générale" }}</p>
+      </div>
+    {% else %}
+      <img src="{{ c.agent.user.get_avatar_url }}" class="w-11 h-11 rounded-full object-cover">
+      <div class="flex-1 min-w-0">
+        <p class="font-semibold text-sm">{{ c.agent.user.get_full_name }}</p>
+        <p class="text-xs text-gray-400 truncate">{{ c.property.title|default:"Discussion générale" }}</p>
+      </div>
+    {% endif %}
+    <span class="text-xs text-gray-400 shrink-0">{{ c.updated_at|timesince }}</span>
+    {% if c.unread %}
+      <span class="bg-primary-600 text-white text-[10px] font-bold rounded-full w-5 h-5 grid place-items-center shrink-0">{{ c.unread }}</span>
+    {% endif %}
+  </a>
+  {% empty %}
+  <p class="text-gray-400 text-center py-16">Aucune conversation pour le moment.</p>
+  {% endfor %}
+</div>
+{% endblock %}

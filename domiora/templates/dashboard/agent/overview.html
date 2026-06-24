@@ -1,0 +1,73 @@
+{% extends "dashboard/dashboard_base.html" %}
+{% load humanize %}
+{% block title %}Dashboard Agent — {{ site_settings.site_name }}{% endblock %}
+{% block dashboard_content %}
+<h1 class="text-2xl font-extrabold mb-1 reveal-up">Bonjour {{ user.first_name|default:user.username }} 👋</h1>
+<p class="text-gray-500 mb-6 reveal-up">Voici l'activité de votre portefeuille immobilier.</p>
+
+<div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+  <div class="dashboard-card bg-white dark:bg-[#160f29] rounded-2xl shadow-card border border-gray-100 dark:border-white/5 p-5 hover-lift reveal-up">
+    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-purple-600 text-white grid place-items-center mb-3 shadow-lg shadow-primary-500/30">🏠</div>
+    <p class="text-3xl font-extrabold text-primary-700 dark:text-primary-400 font-display counter" data-target="{{ properties_count }}">{{ properties_count }}</p>
+    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Biens au total</p>
+  </div>
+  <div class="dashboard-card bg-white dark:bg-[#160f29] rounded-2xl shadow-card border border-gray-100 dark:border-white/5 p-5 hover-lift reveal-up" style="transition-delay: 100ms">
+    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 text-white grid place-items-center mb-3 shadow-lg shadow-emerald-500/30">✓</div>
+    <p class="text-3xl font-extrabold text-emerald-500 dark:text-emerald-400 font-display counter" data-target="{{ published_count }}">{{ published_count }}</p>
+    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Biens publiés</p>
+  </div>
+  <div class="dashboard-card bg-white dark:bg-[#160f29] rounded-2xl shadow-card border border-gray-100 dark:border-white/5 p-5 hover-lift reveal-up" style="transition-delay: 200ms">
+    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 text-white grid place-items-center mb-3 shadow-lg shadow-amber-500/30">📨</div>
+    <p class="text-3xl font-extrabold text-amber-500 dark:text-amber-400 font-display counter" data-target="{{ pending_requests_count }}">{{ pending_requests_count }}</p>
+    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Demandes en attente</p>
+  </div>
+  <div class="dashboard-card bg-white dark:bg-[#160f29] rounded-2xl shadow-card border border-gray-100 dark:border-white/5 p-5 hover-lift reveal-up" style="transition-delay: 300ms">
+    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-400 to-violet-700 text-white grid place-items-center mb-3 shadow-lg shadow-violet-500/30">💰</div>
+    <p class="text-3xl font-extrabold text-primary-700 dark:text-primary-400 font-display counter" data-target="{{ revenue|floatformat:0 }}">{{ revenue|floatformat:0|intcomma }}</p>
+    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Revenus (commissions)</p>
+  </div>
+</div>
+
+<div class="grid lg:grid-cols-2 gap-6">
+  <div class="bg-white dark:bg-[#160f29] rounded-2xl shadow-card border border-gray-100 dark:border-white/5 p-5 reveal-up">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="font-bold">Biens récents</h2>
+      <a href="{% url 'dashboard:agent_properties' %}" class="text-xs text-primary-600 dark:text-primary-400 hover:underline">Voir tout</a>
+    </div>
+    <div class="space-y-3">
+      {% for p in recent_properties %}
+      <a href="{% url 'dashboard:agent_property_edit' p.pk %}" class="flex items-center gap-3 text-sm border-b border-gray-50 dark:border-white/5 pb-3 last:border-0 group hover:bg-gray-50 dark:hover:bg-white/5 rounded-lg p-2 -mx-2 transition-colors">
+        <img src="{{ p.primary_image }}" class="w-12 h-12 rounded-lg object-cover group-hover:scale-110 transition-transform duration-300">
+        <div class="flex-1">
+          <p class="font-semibold">{{ p.title }}</p>
+          <p class="text-xs text-gray-400">{{ p.price_display }} · {{ p.get_status_display }}</p>
+        </div>
+      </a>
+      {% empty %}
+      <p class="text-sm text-gray-400">Aucun bien pour le moment.</p>
+      {% endfor %}
+    </div>
+    <a href="{% url 'dashboard:agent_property_create' %}" class="btn-premium mt-4 block text-center bg-primary-600 hover:bg-primary-500 transition-all duration-300 text-white font-semibold rounded-full px-4 py-2.5 text-sm shadow-lg shadow-primary-500/30 hover:shadow-primary-500/50 glow-effect">+ Ajouter un bien</a>
+  </div>
+
+  <div class="bg-white dark:bg-[#160f29] rounded-2xl shadow-card border border-gray-100 dark:border-white/5 p-5 reveal-up" style="transition-delay: 100ms">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="font-bold">Demandes récentes</h2>
+      <a href="{% url 'dashboard:agent_requests' %}" class="text-xs text-primary-600 dark:text-primary-400 hover:underline">Voir tout</a>
+    </div>
+    <div class="space-y-3">
+      {% for r in recent_requests %}
+      <div class="flex items-center justify-between text-sm border-b border-gray-50 dark:border-white/5 pb-3 last:border-0 group hover:bg-gray-50 dark:hover:bg-white/5 rounded-lg p-2 -mx-2 transition-colors">
+        <div>
+          <p class="font-semibold">{{ r.property.title }}</p>
+          <p class="text-xs text-gray-400">{{ r.user.get_full_name|default:r.user.username }} · {{ r.created_at|date:"d M" }}</p>
+        </div>
+        <span class="text-xs font-bold px-2.5 py-1 rounded-full {% if r.status == 'acceptee' %}bg-emerald-50 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300{% elif r.status == 'rejetee' %}bg-rose-50 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300{% else %}bg-amber-50 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300{% endif %}">{{ r.get_status_display }}</span>
+      </div>
+      {% empty %}
+      <p class="text-sm text-gray-400">Aucune demande pour le moment.</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

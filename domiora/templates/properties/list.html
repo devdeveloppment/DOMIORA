@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block title %}Toutes les propriétés — {{ site_settings.site_name }}{% endblock %}
+{% block content %}
+<section class="bg-ink py-12 relative overflow-hidden">
+  <div class="absolute inset-0 living-background opacity-30"></div>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 reveal-up">
+    <p class="text-white/40 text-xs"><a href="{% url 'core:home' %}" class="hover:text-white transition">Accueil</a> / Propriétés</p>
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-white mt-2">Toutes les Propriétés</h1>
+    <p class="text-white/50 mt-1">{{ total_count }} bien{{ total_count|pluralize }} trouvé{{ total_count|pluralize }}</p>
+  </div>
+</section>
+
+<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+  <div class="grid lg:grid-cols-4 gap-8">
+    <!-- Filters -->
+    <aside class="lg:col-span-1 reveal-up">
+      <form method="get" class="glass-premium bg-white/80 dark:bg-[#160f29]/80 backdrop-blur-xl rounded-2xl shadow-card border border-gray-100 dark:border-white/5 p-5 sticky top-24 space-y-5">
+        <div class="flex items-center justify-between">
+          <h3 class="font-bold flex items-center gap-2">⚙ Filtres</h3>
+          <a href="{% url 'properties:list' %}" class="text-xs text-primary-600 hover:underline transition">Réinitialiser</a>
+        </div>
+
+        <div>
+          <p class="text-xs font-bold uppercase text-gray-400 mb-2">Transaction</p>
+          <div class="grid grid-cols-3 gap-1 bg-gray-100 dark:bg-white/5 rounded-full p-1 text-xs font-semibold">
+            <a href="?{% if request_get %}{{ request_get.urlencode }}{% endif %}" class="text-center rounded-full py-1.5 transition-all duration-300 {% if not request_get.transaction %}bg-white dark:bg-primary-600 shadow text-primary-700 dark:text-white{% else %}text-gray-500 dark:text-gray-400 hover:bg-white/50{% endif %}">Tous</a>
+            <a href="?transaction=vente" class="text-center rounded-full py-1.5 transition-all duration-300 {% if request_get.transaction == 'vente' %}bg-white dark:bg-primary-600 shadow text-primary-700 dark:text-white{% else %}text-gray-500 dark:text-gray-400 hover:bg-white/50{% endif %}">À vendre</a>
+            <a href="?transaction=location" class="text-center rounded-full py-1.5 transition-all duration-300 {% if request_get.transaction == 'location' %}bg-white dark:bg-primary-600 shadow text-primary-700 dark:text-white{% else %}text-gray-500 dark:text-gray-400 hover:bg-white/50{% endif %}">À louer</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="text-xs font-bold uppercase text-gray-400 mb-2">Type de bien</p>
+          <select name="type" class="w-full rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-[#0d0d0d] px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 transition">
+            <option value="">Tous les types</option>
+            {% for value, label in property_types %}
+              <option value="{{ value }}" {% if request_get.type == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div>
+          <p class="text-xs font-bold uppercase text-gray-400 mb-2">Budget</p>
+          <div class="grid grid-cols-2 gap-2">
+            <input type="number" name="price_min" value="{{ request_get.price_min }}" placeholder="Min FCFA" class="rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-[#0d0d0d] px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 transition">
+            <input type="number" name="price_max" value="{{ request_get.price_max }}" placeholder="Max FCFA" class="rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-[#0d0d0d] px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 transition">
+          </div>
+        </div>
+
+        <div>
+          <p class="text-xs font-bold uppercase text-gray-400 mb-2">Chambres (minimum)</p>
+          <input type="number" min="0" name="bedrooms" value="{{ request_get.bedrooms }}" class="w-full rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-[#0d0d0d] px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 transition">
+        </div>
+
+        <div>
+          <p class="text-xs font-bold uppercase text-gray-400 mb-2">Salles de bain (minimum)</p>
+          <input type="number" min="0" name="bathrooms" value="{{ request_get.bathrooms }}" class="w-full rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-[#0d0d0d] px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 transition">
+        </div>
+
+        <div>
+          <p class="text-xs font-bold uppercase text-gray-400 mb-2">Ville</p>
+          <input type="text" name="city" value="{{ request_get.city }}" placeholder="Ex: Paris, New York..." class="w-full rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-[#0d0d0d] px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 transition">
+        </div>
+
+        <button type="submit" class="btn-premium w-full bg-primary-600 hover:bg-primary-500 transition-all duration-300 text-white font-semibold rounded-full px-4 py-2.5 text-sm shadow-lg shadow-primary-500/30 hover:shadow-primary-500/50 glow-effect">Appliquer les filtres</button>
+      </form>
+    </aside>
+
+    <!-- Results -->
+    <div class="lg:col-span-3">
+      <div class="flex items-center justify-between mb-6 flex-wrap gap-3 reveal-up">
+        <p class="text-sm text-gray-500 dark:text-gray-400">{{ page_obj.paginator.count }} propriétés trouvées (page {{ page_obj.number }}/{{ page_obj.paginator.num_pages|default:1 }})</p>
+        <div class="flex items-center gap-3">
+          <form method="get" class="flex items-center gap-2">
+            {% for key, value in request_get.items %}{% if key != 'sort' %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endif %}{% endfor %}
+            <select name="sort" onchange="this.form.submit()" class="rounded-full border border-gray-200 dark:border-white/10 bg-white dark:bg-[#0d0d0d] text-sm px-3 py-2 focus:ring-2 focus:ring-primary-500 transition">
+              <option value="recent" {% if current_sort == 'recent' %}selected{% endif %}>Plus récents</option>
+              <option value="price_asc" {% if current_sort == 'price_asc' %}selected{% endif %}>Prix croissant</option>
+              <option value="price_desc" {% if current_sort == 'price_desc' %}selected{% endif %}>Prix décroissant</option>
+              <option value="popular" {% if current_sort == 'popular' %}selected{% endif %}>Popularité</option>
+            </select>
+          </form>
+          <div class="flex border border-gray-200 dark:border-white/10 rounded-full overflow-hidden text-sm">
+            <a href="?{{ request_get.urlencode }}&view=grid" class="px-3 py-2 transition-all duration-300 {% if view_mode == 'grid' %}bg-primary-600 text-white{% else %}hover:bg-gray-100 dark:hover:bg-white/5{% endif %}">▦</a>
+            <a href="?{{ request_get.urlencode }}&view=list" class="px-3 py-2 transition-all duration-300 {% if view_mode == 'list' %}bg-primary-600 text-white{% else %}hover:bg-gray-100 dark:hover:bg-white/5{% endif %}">☰</a>
+            <a href="?{{ request_get.urlencode }}&view=map" class="px-3 py-2 transition-all duration-300 {% if view_mode == 'map' %}bg-primary-600 text-white{% else %}hover:bg-gray-100 dark:hover:bg-white/5{% endif %}">🗺</a>
+          </div>
+        </div>
+      </div>
+
+      {% if view_mode == 'map' %}
+        <div id="properties-map" class="h-[600px] rounded-2xl overflow-hidden z-0 shadow-card border border-gray-100 dark:border-white/5 reveal-scale"></div>
+        <script>
+          document.addEventListener('DOMContentLoaded', function () {
+            var points = [
+              {% for property in page_obj %}
+                {% if property.latitude and property.longitude %}
+                {lat: {{ property.latitude }}, lng: {{ property.longitude }}, title: "{{ property.title|escapejs }}", price: "{{ property.price_display|escapejs }}", url: "{{ property.get_absolute_url }}", img: "{{ property.primary_image }}"},
+                {% endif %}
+              {% endfor %}
+            ];
+            if (points.length === 0) { document.getElementById('properties-map').innerHTML = '<p class="text-center text-gray-400 py-20">Aucune coordonnée disponible pour ces biens.</p>'; return; }
+            var map = L.map('properties-map').setView([points[0].lat, points[0].lng], 5);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
+            var bounds = [];
+            points.forEach(function (p) {
+              var marker = L.marker([p.lat, p.lng]).addTo(map);
+              marker.bindPopup('<div style="min-width:160px"><img src="' + p.img + '" style="width:100%;height:80px;object-fit:cover;border-radius:8px;margin-bottom:6px"><b>' + p.title + '</b><br><span style="color:#7c3aed;font-weight:bold">' + p.price + '</span><br><a href="' + p.url + '" style="color:#7c3aed;">Voir le bien →</a></div>');
+              bounds.push([p.lat, p.lng]);
+            });
+            map.fitBounds(bounds, { padding: [40, 40] });
+          });
+        </script>
+      {% elif view_mode == 'list' %}
+        <div class="space-y-5">
+          {% for property in page_obj %}
+          <div class="flex flex-col sm:flex-row gap-4 bg-white dark:bg-[#160f29] rounded-2xl shadow-card border border-gray-100 dark:border-white/5 overflow-hidden card-3d group transition-all duration-300 hover:-translate-y-1">
+            <a href="{{ property.get_absolute_url }}" class="sm:w-56 h-44 sm:h-auto shrink-0 relative overflow-hidden">
+              <img src="{{ property.primary_image }}" class="w-full h-full object-cover group-hover:scale-110 transition duration-500" alt="{{ property.title }}">
+              <span class="absolute top-3 left-3 text-[11px] font-bold px-3 py-1 rounded-full backdrop-blur-md {% if property.status == 'vendu' or property.status == 'loue' %}bg-rose-500/90 text-white{% elif property.transaction_type == 'location' %}bg-emerald-500/90 text-white{% else %}bg-primary-600/90 text-white{% endif %}">{{ property.badge_label }}</span>
+            </a>
+            <div class="p-4 flex-1">
+              <p class="text-primary-700 dark:text-primary-400 font-extrabold text-lg">{{ property.price_display }}</p>
+              <a href="{{ property.get_absolute_url }}" class="block font-semibold hover:text-primary-700 dark:hover:text-primary-400 transition">{{ property.title }}</a>
+              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">📍 {{ property.city }}, {{ property.country }}</p>
+              <div class="flex items-center gap-4 mt-3 text-xs text-gray-500 dark:text-gray-400">
+                {% if property.bedrooms %}<span>🛏 {{ property.bedrooms }} ch.</span>{% endif %}
+                {% if property.bathrooms %}<span>🛁 {{ property.bathrooms }} sdb.</span>{% endif %}
+                <span>📐 {{ property.surface_area|floatformat:0 }} m²</span>
+              </div>
+            </div>
+          </div>
+          {% empty %}
+          <p class="text-gray-500 text-center py-20">Aucun bien ne correspond à votre recherche.</p>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="grid sm:grid-cols-2 xl:grid-cols-3 gap-6">
+          {% for property in page_obj %}
+            {% include "partials/property_card.html" %}
+          {% empty %}
+            <p class="text-gray-500 col-span-full text-center py-20">Aucun bien ne correspond à votre recherche.</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      {% include "partials/pagination.html" %}
+    </div>
+  </div>
+</section>
+{% endblock %}

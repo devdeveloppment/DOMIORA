@@ -1,0 +1,45 @@
+{% load static %}
+<aside class="w-full lg:w-64 shrink-0">
+  <div class="bg-white rounded-2xl shadow-card border border-gray-100 p-4 lg:sticky lg:top-24">
+    <div class="flex items-center gap-3 px-2 pb-4 mb-2 border-b border-gray-100">
+      <img src="{{ user.get_avatar_url }}" class="w-10 h-10 rounded-full object-cover">
+      <div class="min-w-0">
+        <p class="font-semibold text-sm truncate">{{ user.get_full_name|default:user.username }}</p>
+        <p class="text-xs text-gray-400">{{ user.get_role_display }}</p>
+      </div>
+    </div>
+    <nav class="space-y-1 text-sm">
+      <a href="{% url 'notifications:list' %}" class="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-50">
+        🔔 Notifications
+        {% if unread_notifications_count > 0 %}<span class="ml-auto bg-primary-600 text-white text-[10px] font-bold rounded-full w-5 h-5 grid place-items-center">{{ unread_notifications_count }}</span>{% endif %}
+      </a>
+      {% if dash_role == 'buyer' %}
+        <a href="{% url 'dashboard:buyer_overview' %}" class="flex items-center gap-2 px-3 py-2 rounded-lg {% if active == 'overview' %}bg-primary-50 text-primary-700 font-semibold{% else %}text-gray-600 hover:bg-gray-50{% endif %}">📊 Aperçu</a>
+        <a href="{% url 'dashboard:buyer_favorites' %}" class="flex items-center gap-2 px-3 py-2 rounded-lg {% if active == 'favorites' %}bg-primary-50 text-primary-700 font-semibold{% else %}text-gray-600 hover:bg-gray-50{% endif %}">♥ Mes favoris</a>
+        <a href="{% url 'dashboard:buyer_requests' %}" class="flex items-center gap-2 px-3 py-2 rounded-lg {% if active == 'requests' %}bg-primary-50 text-primary-700 font-semibold{% else %}text-gray-600 hover:bg-gray-50{% endif %}">📨 Mes demandes</a>
+        <a href="{% url 'appointments:my_appointments' %}" class="flex items-center gap-2 px-3 py-2 rounded-lg {% if active == 'appointments' %}bg-primary-50 text-primary-700 font-semibold{% else %}text-gray-600 hover:bg-gray-50{% endif %}">📅 Rendez-vous</a>
+        <a href="{% url 'messaging:inbox' %}" class="flex items-center gap-2 px-3 py-2 rounded-lg {% if active == 'messages' %}bg-primary-50 text-primary-700 font-semibold{% else %}text-gray-600 hover:bg-gray-50{% endif %}">💬 Messagerie</a>
+        <a href="{% url 'accounts:profile' %}" class="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-50">⚙ Profil</a>
+      {% elif dash_role == 'agent' %}
+        <a href="{% url 'dashboard:agent_overview' %}" class="flex items-center gap-2 px-3 py-2 rounded-lg {% if active == 'overview' %}bg-primary-50 text-primary-700 font-semibold{% else %}text-gray-600 hover:bg-gray-50{% endif %}">📊 Aperçu</a>
+        <a href="{% url 'dashboard:agent_properties' %}" class="flex items-center gap-2 px-3 py-2 rounded-lg {% if active == 'properties' %}bg-primary-50 text-primary-700 font-semibold{% else %}text-gray-600 hover:bg-gray-50{% endif %}">🏠 Mes biens</a>
+        <a href="{% url 'dashboard:agent_requests' %}" class="flex items-center gap-2 px-3 py-2 rounded-lg {% if active == 'requests' %}bg-primary-50 text-primary-700 font-semibold{% else %}text-gray-600 hover:bg-gray-50{% endif %}">📨 Demandes reçues</a>
+        <a href="{% url 'appointments:agent_appointments' %}" class="flex items-center gap-2 px-3 py-2 rounded-lg {% if active == 'appointments' %}bg-primary-50 text-primary-700 font-semibold{% else %}text-gray-600 hover:bg-gray-50{% endif %}">📅 Rendez-vous</a>
+        <a href="{% url 'messaging:inbox' %}" class="flex items-center gap-2 px-3 py-2 rounded-lg {% if active == 'messages' %}bg-primary-50 text-primary-700 font-semibold{% else %}text-gray-600 hover:bg-gray-50{% endif %}">💬 Messagerie</a>
+        <a href="{% url 'dashboard:agent_transactions' %}" class="flex items-center gap-2 px-3 py-2 rounded-lg {% if active == 'transactions' %}bg-primary-50 text-primary-700 font-semibold{% else %}text-gray-600 hover:bg-gray-50{% endif %}">💰 Transactions</a>
+        <a href="{% url 'dashboard:agent_profile' %}" class="flex items-center gap-2 px-3 py-2 rounded-lg {% if active == 'profile' %}bg-primary-50 text-primary-700 font-semibold{% else %}text-gray-600 hover:bg-gray-50{% endif %}">⚙ Profil agent</a>
+      {% elif dash_role == 'admin' %}
+        <a href="{% url 'dashboard:admin_overview' %}" class="flex items-center gap-2 px-3 py-2 rounded-lg {% if active == 'overview' %}bg-primary-50 text-primary-700 font-semibold{% else %}text-gray-600 hover:bg-gray-50{% endif %}">📊 Aperçu</a>
+        <a href="{% url 'dashboard:admin_users' %}" class="flex items-center gap-2 px-3 py-2 rounded-lg {% if active == 'users' %}bg-primary-50 text-primary-700 font-semibold{% else %}text-gray-600 hover:bg-gray-50{% endif %}">👥 Utilisateurs</a>
+        <a href="{% url 'dashboard:admin_properties' %}" class="flex items-center gap-2 px-3 py-2 rounded-lg {% if active == 'properties' %}bg-primary-50 text-primary-700 font-semibold{% else %}text-gray-600 hover:bg-gray-50{% endif %}">🏠 Propriétés</a>
+        <a href="{% url 'dashboard:admin_transactions' %}" class="flex items-center gap-2 px-3 py-2 rounded-lg {% if active == 'transactions' %}bg-primary-50 text-primary-700 font-semibold{% else %}text-gray-600 hover:bg-gray-50{% endif %}">💰 Transactions</a>
+        <a href="{% url 'dashboard:admin_settings' %}" class="flex items-center gap-2 px-3 py-2 rounded-lg {% if active == 'settings' %}bg-primary-50 text-primary-700 font-semibold{% else %}text-gray-600 hover:bg-gray-50{% endif %}">⚙ Paramètres</a>
+        <a href="/admin/" class="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-50">🛠 Admin Django</a>
+      {% endif %}
+      <div class="pt-2 mt-2 border-t border-gray-100">
+        <a href="{% url 'core:home' %}" class="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-500 hover:bg-gray-50">↩ Retour au site</a>
+        <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button class="w-full text-left flex items-center gap-2 px-3 py-2 rounded-lg text-red-600 hover:bg-red-50">⏻ Déconnexion</button></form>
+      </div>
+    </nav>
+  </div>
+</aside>

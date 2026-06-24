@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Nos agents — {{ site_settings.site_name }}{% endblock %}
+{% block content %}
+<section class="bg-ink py-12">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-white">Nos Agents Experts</h1>
+    <p class="text-white/50 mt-1">Des professionnels de l'immobilier à votre service</p>
+  </div>
+</section>
+
+<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+  <form method="get" class="max-w-md mb-8">
+    <input type="text" name="q" value="{{ request.GET.q }}" placeholder="Rechercher un agent..." class="w-full rounded-full border border-gray-200 px-5 py-3 text-sm">
+  </form>
+
+  <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    {% for agent in page_obj %}
+    <a href="{{ agent.get_absolute_url }}" class="bg-white rounded-2xl shadow-card border border-gray-100 overflow-hidden hover:-translate-y-1 transition">
+      <img src="{{ agent.user.get_avatar_url }}" class="w-full h-48 object-cover" alt="{{ agent }}">
+      <div class="p-5">
+        <p class="font-bold">{{ agent.user.get_full_name }}</p>
+        <p class="text-sm text-gray-500">{{ agent.agency_name|default:"Agent indépendant" }}</p>
+        {% if agent.is_verified %}<span class="inline-block mt-2 text-[11px] bg-emerald-50 text-emerald-700 font-bold px-2.5 py-1 rounded-full">✓ Agent vérifié</span>{% endif %}
+        <div class="flex items-center gap-3 mt-3 text-xs text-gray-500">
+          <span>★ {{ agent.rating }}</span>
+          <span>🏠 {{ agent.total_properties_count }} biens</span>
+        </div>
+      </div>
+    </a>
+    {% empty %}
+    <p class="text-gray-500 col-span-full text-center py-20">Aucun agent trouvé.</p>
+    {% endfor %}
+  </div>
+
+  {% include "partials/pagination.html" %}
+</section>
+{% endblock %}

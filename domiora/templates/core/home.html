@@ -1,0 +1,275 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block content %}
+
+<section class="relative overflow-hidden bg-[#0a0a0a] min-h-[90vh] flex flex-col justify-center hero-3d-container">
+  <!-- Three.js Canvas Container -->
+  <div id="three-canvas" class="hero-3d-container"></div>
+  
+  <!-- Dynamic Background -->
+  <div class="absolute inset-0 z-0 living-background">
+    <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=2000&q=80" alt="Luxury Home" class="w-full h-full object-cover opacity-40 transition-opacity duration-1000">
+    <div class="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/80 to-transparent"></div>
+    <div class="absolute inset-0 bg-gradient-to-r from-[#0a0a0a] via-transparent to-transparent"></div>
+  </div>
+  
+  <!-- Particle Container -->
+  <div class="absolute inset-0 z-0 particle-container pointer-events-none"></div>
+
+  <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 w-full animate-fade-up">
+    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 backdrop-blur-md mb-6">
+      <span class="w-2 h-2 rounded-full bg-primary-500 animate-pulse"></span>
+      <span class="text-xs font-medium text-white/90 uppercase tracking-widest">Nouvelle Collection 2026</span>
+    </div>
+    
+    <h1 class="text-5xl sm:text-7xl font-extrabold text-white leading-[1.1] max-w-3xl font-display tracking-tight">
+      L'immobilier d'exception, <br/>
+      <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary-400 via-purple-400 to-pink-400">sans compromis.</span>
+    </h1>
+    
+    <p class="text-lg text-white/60 max-w-xl mt-6 font-light leading-relaxed">
+      Accédez aux propriétés les plus exclusives du marché. Villas contemporaines, penthouses panoramiques et domaines privés sélectionnés pour vous.
+    </p>
+
+    <!-- Glassmorphism Search Bar -->
+    <form action="{% url 'properties:list' %}" class="mt-12 glass-premium-dark rounded-3xl p-3 max-w-4xl shadow-2xl flex flex-col sm:flex-row gap-3 reveal-up">
+      <div class="flex-1 px-4 py-2 border-r border-white/10">
+        <label class="block text-[10px] text-white/50 uppercase font-bold tracking-wider mb-1">Transaction</label>
+        <select name="transaction" class="w-full bg-transparent text-white font-semibold text-sm outline-none cursor-pointer appearance-none">
+          <option value="vente" class="text-ink">Acheter</option>
+          <option value="location" class="text-ink">Louer</option>
+        </select>
+      </div>
+      
+      <div class="flex-1 px-4 py-2 border-r border-white/10">
+        <label class="block text-[10px] text-white/50 uppercase font-bold tracking-wider mb-1">Type de bien</label>
+        <select name="type" class="w-full bg-transparent text-white font-semibold text-sm outline-none cursor-pointer appearance-none">
+          <option value="" class="text-ink">Tous les types</option>
+          {% for value, label in property_types %}
+            <option value="{{ value }}" class="text-ink">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="flex-1 px-4 py-2">
+        <label class="block text-[10px] text-white/50 uppercase font-bold tracking-wider mb-1">Localisation</label>
+        <select name="country" class="w-full bg-transparent text-white font-semibold text-sm outline-none cursor-pointer appearance-none">
+          <option value="" class="text-ink">Toutes les destinations</option>
+          {% for c in countries %}
+            <option value="{{ c }}" class="text-ink">{{ c }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <button type="submit" class="btn-premium bg-primary-600 hover:bg-primary-500 transition-all duration-300 text-white font-bold rounded-2xl px-8 py-4 sm:py-0 shadow-lg shadow-primary-500/30 hover:shadow-primary-500/50 flex items-center justify-center gap-2 glow-effect">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+        Rechercher
+      </button>
+    </form>
+    
+    <!-- Stats Row -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-8 mt-16 pt-8 border-t border-white/10 reveal-up">
+      <div x-data="{ n: 0 }" x-init="let t=setInterval(()=>{ n += Math.ceil({{ stats.sold }}/30); if(n>={{ stats.sold }}){n={{ stats.sold }}; clearInterval(t);} }, 30)">
+        <p class="text-3xl font-extrabold text-white font-display counter" data-target="{{ stats.sold }}" x-text="n.toLocaleString() + '+'"></p>
+        <p class="text-xs text-white/50 mt-1 uppercase tracking-wider">Biens vendus</p>
+      </div>
+      <div x-data="{ n: 0 }" x-init="let t=setInterval(()=>{ n += Math.ceil({{ stats.clients }}/30); if(n>={{ stats.clients }}){n={{ stats.clients }}; clearInterval(t);} }, 30)">
+        <p class="text-3xl font-extrabold text-white font-display counter" data-target="{{ stats.clients }}" x-text="n.toLocaleString() + '+'"></p>
+        <p class="text-xs text-white/50 mt-1 uppercase tracking-wider">Clients satisfaits</p>
+      </div>
+      <div x-data="{ n: 0 }" x-init="let t=setInterval(()=>{ n += 1; if(n>={{ stats.agents }}){n={{ stats.agents }}; clearInterval(t);} }, 60)">
+        <p class="text-3xl font-extrabold text-white font-display counter" data-target="{{ stats.agents }}" x-text="n"></p>
+        <p class="text-xs text-white/50 mt-1 uppercase tracking-wider">Agents experts</p>
+      </div>
+      <div x-data="{ n: 0 }" x-init="let t=setInterval(()=>{ n += 1; if(n>={{ stats.years }}){n={{ stats.years }}; clearInterval(t);} }, 100)">
+        <p class="text-3xl font-extrabold text-white font-display counter" data-target="{{ stats.years }}" x-text="n"></p>
+        <p class="text-xs text-white/50 mt-1 uppercase tracking-wider">Années d'expérience</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 reveal-up">
+  <h2 class="text-2xl font-extrabold text-center mb-8">Parcourir par catégorie</h2>
+  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+    {% for value, label, emoji in category_tiles %}
+    <a href="{% url 'properties:list' %}?type={{ value }}" class="group bg-white dark:bg-[#160f29] rounded-2xl border border-gray-100 dark:border-white/5 shadow-card hover-lift p-5 text-center card-3d">
+      <div class="card-3d-inner">
+        <span class="text-3xl block mb-2 group-hover:scale-110 transition">{{ emoji }}</span>
+        <span class="text-sm font-semibold text-gray-700 dark:text-gray-200">{{ label }}</span>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+
+{% if featured %}
+<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 reveal-up">
+  <div class="flex items-end justify-between mb-8">
+    <div>
+      <p class="text-primary-600 font-semibold text-xs uppercase tracking-widest mb-2">★ Sélection exclusive</p>
+      <h2 class="text-3xl font-extrabold">Propriétés en Vedette</h2>
+      <p class="text-gray-500 mt-2">Des biens d'exception sélectionnés par nos experts</p>
+    </div>
+    <a href="{% url 'properties:list' %}?featured=true" class="text-primary-600 font-semibold text-sm hover:underline whitespace-nowrap">Voir toutes les vedettes →</a>
+  </div>
+  <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+    {% for property in featured %}
+      {% include "partials/property_card.html" %}
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<section class="w-full overflow-hidden py-16 bg-gray-50 dark:bg-[#0d0d0d]">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8 reveal-up">
+    <div class="flex items-end justify-between">
+      <div>
+        <p class="text-primary-600 font-semibold text-xs uppercase tracking-widest mb-2">🏠 À la vente</p>
+        <h2 class="text-3xl font-extrabold">Biens Disponibles à la Vente</h2>
+        <p class="text-gray-500 mt-2">Notre sélection de propriétés actuellement sur le marché</p>
+      </div>
+      <a href="{% url 'properties:list' %}?transaction=vente" class="btn-premium text-primary-600 font-semibold text-sm hover:underline whitespace-nowrap flex items-center gap-1">Voir tous les biens <span>→</span></a>
+    </div>
+  </div>
+
+  <style>
+    @keyframes scroll-properties {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(calc(-50% - 24px)); }
+    }
+    .animate-scroll-properties {
+      animation: scroll-properties 50s linear infinite;
+      width: max-content;
+    }
+    .animate-scroll-properties:hover {
+      animation-play-state: paused;
+    }
+  </style>
+
+  <div class="relative w-full overflow-hidden pb-4">
+    <div class="absolute left-0 top-0 bottom-0 w-24 sm:w-48 bg-gradient-to-r from-gray-50 dark:from-[#0d0d0d] to-transparent z-10 pointer-events-none"></div>
+    <div class="absolute right-0 top-0 bottom-0 w-24 sm:w-48 bg-gradient-to-l from-gray-50 dark:from-[#0d0d0d] to-transparent z-10 pointer-events-none"></div>
+
+    <div class="flex gap-6 animate-scroll-properties px-6">
+      {% for property in for_sale %}
+        <div class="w-[300px] sm:w-[380px] shrink-0">
+          {% include "partials/property_card.html" %}
+        </div>
+      {% endfor %}
+      {% for property in for_sale %}
+        <div class="w-[300px] sm:w-[380px] shrink-0" aria-hidden="true">
+          {% include "partials/property_card.html" %}
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+{% if recently_sold %}
+<section class="bg-white dark:bg-[#0d0d0d] py-20 mt-12 border-y border-gray-100 dark:border-white/5 reveal-up">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex items-end justify-between mb-8">
+      <div>
+        <p class="text-primary-600 font-semibold text-xs uppercase tracking-widest mb-2">◆ Transactions réussies</p>
+        <h2 class="text-3xl font-extrabold">Biens Récemment Vendus</h2>
+        <p class="text-gray-500 mt-2">La preuve de notre expertise et de la confiance de nos clients</p>
+      </div>
+      <a href="{% url 'properties:list' %}?status=vendu" class="text-primary-600 font-semibold text-sm hover:underline whitespace-nowrap">Voir toutes les ventes →</a>
+    </div>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
+      {% for property in recently_sold %}
+      <div class="rounded-2xl overflow-hidden relative group card-3d cursor-pointer">
+        <img src="{{ property.primary_image }}" class="w-full h-48 object-cover group-hover:scale-110 transition duration-700" alt="{{ property.title }}">
+        <span class="absolute top-3 left-3 bg-rose-500 text-white text-[10px] font-bold px-3 py-1.5 rounded-full backdrop-blur-md">✓ VENDU</span>
+        <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-4 text-white">
+          <p class="font-bold text-lg">{{ property.price_display }}</p>
+          <p class="text-xs text-white/80 mt-1">{{ property.city }}</p>
+          <p class="text-xs text-white/60 mt-1">{{ property.surface_area|floatformat:0 }} m²</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{% if agents %}
+<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center reveal-up">
+  <p class="text-primary-600 font-semibold text-xs uppercase tracking-widest mb-2">▣ Notre équipe</p>
+  <h2 class="text-3xl font-extrabold">Nos Agents Experts</h2>
+  <p class="text-gray-500 mt-2">Des professionnels de l'immobilier à votre service</p>
+  <div class="grid sm:grid-cols-3 gap-6 mt-8 text-left">
+    {% for agent in agents %}
+    <a href="{{ agent.get_absolute_url }}" class="rounded-2xl overflow-hidden border border-gray-100 dark:border-white/5 shadow-card hover:-translate-y-2 transition-all duration-300 card-3d group bg-white dark:bg-[#160f29]">
+      <div class="relative overflow-hidden">
+        <img src="{{ agent.user.get_avatar_url }}" class="w-full h-52 object-cover group-hover:scale-110 transition duration-500" alt="{{ agent }}">
+        <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition duration-300"></div>
+      </div>
+      <div class="p-5">
+        <p class="font-bold text-lg">{{ agent.user.get_full_name }}</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400">{{ agent.agency_name|default:"Agent indépendant" }}</p>
+        <span class="inline-block mt-3 text-xs bg-primary-50 dark:bg-primary-500/20 text-primary-700 dark:text-primary-300 font-semibold px-3 py-1.5 rounded-full hover:scale-105 transition-transform">🏠 {{ agent.total_properties_count }} biens</span>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  <a href="{% url 'agents:list' %}" class="btn-premium inline-block mt-8 text-primary-600 font-semibold text-sm hover:underline">Voir tous nos agents →</a>
+</section>
+{% endif %}
+
+{% if testimonials %}
+<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 reveal-up">
+  <h2 class="text-2xl font-extrabold text-center mb-2">Comment ça marche</h2>
+  <p class="text-gray-500 text-center mb-10">De la recherche à la signature, en 4 étapes simples</p>
+  <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div class="text-center hover-lift bg-white dark:bg-[#160f29] rounded-2xl shadow-card border border-gray-100 dark:border-white/5 p-6 card-3d group">
+      <div class="w-14 h-14 rounded-full bg-gradient-to-br from-primary-500 to-purple-600 text-white grid place-items-center mx-auto font-bold font-display text-xl shadow-lg shadow-primary-500/30 group-hover:scale-110 transition-transform">1</div>
+      <p class="font-semibold mt-4">Recherchez</p>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Filtrez par ville, type, prix et trouvez le bien qui vous correspond.</p>
+    </div>
+    <div class="text-center hover-lift bg-white dark:bg-[#160f29] rounded-2xl shadow-card border border-gray-100 dark:border-white/5 p-6 card-3d group">
+      <div class="w-14 h-14 rounded-full bg-gradient-to-br from-primary-500 to-purple-600 text-white grid place-items-center mx-auto font-bold font-display text-xl shadow-lg shadow-primary-500/30 group-hover:scale-110 transition-transform">2</div>
+      <p class="font-semibold mt-4">Contactez l'agent</p>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Envoyez une demande, un message ou prenez rendez-vous en un clic.</p>
+    </div>
+    <div class="text-center hover-lift bg-white dark:bg-[#160f29] rounded-2xl shadow-card border border-gray-100 dark:border-white/5 p-6 card-3d group">
+      <div class="w-14 h-14 rounded-full bg-gradient-to-br from-primary-500 to-purple-600 text-white grid place-items-center mx-auto font-bold font-display text-xl shadow-lg shadow-primary-500/30 group-hover:scale-110 transition-transform">3</div>
+      <p class="font-semibold mt-4">Visitez & validez</p>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">L'agent valide votre demande et organise la suite du processus.</p>
+    </div>
+    <div class="text-center hover-lift bg-white dark:bg-[#160f29] rounded-2xl shadow-card border border-gray-100 dark:border-white/5 p-6 card-3d group">
+      <div class="w-14 h-14 rounded-full bg-gradient-to-br from-primary-500 to-purple-600 text-white grid place-items-center mx-auto font-bold font-display text-xl shadow-lg shadow-primary-500/30 group-hover:scale-110 transition-transform">4</div>
+      <p class="font-semibold mt-4">Concrétisez</p>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Finalisez votre achat ou location en toute confiance.</p>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{% if testimonials %}
+<section class="bg-white dark:bg-[#0d0d0d] py-20 border-y border-gray-100 dark:border-white/5 reveal-up">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+    <p class="text-primary-600 font-semibold text-xs uppercase tracking-widest mb-2">❝ Témoignages</p>
+    <h2 class="text-3xl font-extrabold">Ce Que Disent Nos Clients</h2>
+    <p class="text-gray-500 mt-2">Des milliers de clients nous font confiance chaque année</p>
+    <div class="grid sm:grid-cols-3 gap-6 mt-8 text-left">
+      {% for t in testimonials %}
+      <div class="rounded-2xl border border-gray-100 dark:border-white/5 shadow-card p-6 hover-lift bg-white dark:bg-[#160f29] card-3d group">
+        <p class="text-amber-400 text-lg">{% for i in "12345" %}{% if forloop.counter <= t.rating %}★{% else %}☆{% endif %}{% endfor %}</p>
+        <p class="text-gray-600 dark:text-gray-300 mt-3 text-sm leading-relaxed">"{{ t.content }}"</p>
+        <div class="flex items-center gap-3 mt-5">
+          <img src="{% if t.avatar %}{{ t.avatar.url }}{% else %}https://ui-avatars.com/api/?background=7c3aed&color=fff&name={{ t.name }}{% endif %}" class="w-12 h-12 rounded-full object-cover ring-2 ring-primary-500/20 group-hover:ring-primary-500/50 transition">
+          <div>
+            <p class="font-semibold text-sm">{{ t.name }}</p>
+            <p class="text-xs text-gray-400">{{ t.role }}</p>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{% endblock %}

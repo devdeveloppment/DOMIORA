@@ -1,0 +1,45 @@
+{% extends "dashboard/dashboard_base.html" %}
+{% load humanize %}
+{% block title %}Transactions — {{ site_settings.site_name }}{% endblock %}
+{% block dashboard_content %}
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-2xl font-extrabold">Mes transactions</h1>
+  <div class="bg-white rounded-xl shadow-card border border-gray-100 px-5 py-3 text-right">
+    <p class="text-xs text-gray-400 uppercase font-bold">Revenus totaux</p>
+    <p class="text-xl font-extrabold text-primary-700">{{ revenue|floatformat:0|intcomma }} FCFA</p>
+  </div>
+</div>
+<div class="bg-white rounded-2xl shadow-card border border-gray-100 overflow-hidden">
+  <table class="w-full text-sm">
+    <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+      <tr>
+        <th class="text-left px-5 py-3">Bien</th>
+        <th class="text-left px-5 py-3">Client</th>
+        <th class="text-left px-5 py-3">Type</th>
+        <th class="text-left px-5 py-3">Montant</th>
+        <th class="text-left px-5 py-3">Commission</th>
+        <th class="text-left px-5 py-3">Statut</th>
+        <th class="text-left px-5 py-3">Date</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-50">
+      {% for t in page_obj %}
+      <tr class="hover:bg-gray-50">
+        <td class="px-5 py-4 font-semibold">{{ t.property.title }}</td>
+        <td class="px-5 py-4">{{ t.client.get_full_name|default:"—" }}</td>
+        <td class="px-5 py-4">{{ t.get_transaction_type_display }}</td>
+        <td class="px-5 py-4">{{ t.amount|floatformat:0|intcomma }} FCFA</td>
+        <td class="px-5 py-4 text-primary-700 font-semibold">{{ t.commission_amount|floatformat:0|intcomma }} FCFA</td>
+        <td class="px-5 py-4">
+          <span class="text-xs font-bold px-2.5 py-1 rounded-full {% if t.status == 'terminee' %}bg-emerald-50 text-emerald-700{% elif t.status == 'annulee' %}bg-rose-50 text-rose-700{% else %}bg-amber-50 text-amber-700{% endif %}">{{ t.get_status_display }}</span>
+        </td>
+        <td class="px-5 py-4 text-gray-400">{{ t.transaction_date|date:"d M Y" }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7" class="text-center py-12 text-gray-400">Aucune transaction pour le moment.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% include "partials/pagination.html" %}
+{% endblock %}

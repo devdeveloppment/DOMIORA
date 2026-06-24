@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+{% block title %}À propos — {{ site_settings.site_name }}{% endblock %}
+{% block content %}
+
+<!-- Hero Section -->
+<section class="relative py-24 lg:py-32 overflow-hidden bg-black">
+  <div class="absolute inset-0 z-0 living-background opacity-30"></div>
+  <div class="absolute inset-0 z-0">
+    <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=2000" alt="Villa" class="w-full h-full object-cover opacity-40">
+    <div class="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent"></div>
+  </div>
+  <div class="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center reveal-up">
+    <span class="text-primary-400 font-bold tracking-widest text-xs uppercase mb-4 block">Notre Histoire</span>
+    <h1 class="text-5xl md:text-6xl font-extrabold text-white font-display mb-6">Réinventer l'immobilier d'exception</h1>
+    <p class="text-lg text-white/70 leading-relaxed">{{ site_settings.tagline|default:"Nous connectons les acheteurs exigeants avec les biens les plus exclusifs." }}</p>
+  </div>
+</section>
+
+<!-- Mission & Vision -->
+<section class="py-20 bg-white dark:bg-ink">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="grid lg:grid-cols-2 gap-16 items-center">
+      <div class="reveal-up">
+        <h2 class="text-3xl lg:text-4xl font-extrabold text-gray-900 dark:text-white font-display mb-6">Notre Mission</h2>
+        <div class="space-y-6 text-gray-600 dark:text-gray-400 leading-relaxed">
+          <p>{{ site_settings.site_name }} est née d'une vision simple : transformer l'expérience immobilière traditionnelle en un parcours digital fluide, transparent et sécurisé. Nous croyons que trouver le lieu parfait ne devrait pas être complexe.</p>
+          <p>En combinant une technologie de pointe, une intelligence artificielle sur-mesure et une sélection rigoureuse d'agents experts, nous offrons une plateforme où la qualité prime sur la quantité.</p>
+        </div>
+      </div>
+      <div class="relative rounded-3xl overflow-hidden shadow-2xl card-3d group reveal-up" style="transition-delay: 200ms">
+        <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&q=80&w=1000" alt="Intérieur premium" class="w-full h-full object-cover group-hover:scale-110 transition duration-700">
+        <div class="absolute inset-0 bg-gradient-to-tr from-primary-600/20 to-transparent"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Chiffres Clés -->
+<section class="py-20 bg-gray-50 dark:bg-black/30 border-y border-gray-100 dark:border-white/5">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
+      <div class="dashboard-card text-center p-8 rounded-2xl bg-white dark:bg-[#160f29] shadow-card border border-gray-100 dark:border-white/5 transition hover:-translate-y-2 reveal-up">
+        <div class="text-4xl font-extrabold text-primary-600 dark:text-primary-400 font-display mb-2 counter" data-target="1250">1,250+</div>
+        <div class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">Propriétés vendues</div>
+      </div>
+      <div class="dashboard-card text-center p-8 rounded-2xl bg-white dark:bg-[#160f29] shadow-card border border-gray-100 dark:border-white/5 transition hover:-translate-y-2 reveal-up" style="transition-delay: 100ms">
+        <div class="text-4xl font-extrabold text-primary-600 dark:text-primary-400 font-display mb-2 counter" data-target="850">850+</div>
+        <div class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">Clients satisfaits</div>
+      </div>
+      <div class="dashboard-card text-center p-8 rounded-2xl bg-white dark:bg-[#160f29] shadow-card border border-gray-100 dark:border-white/5 transition hover:-translate-y-2 reveal-up" style="transition-delay: 200ms">
+        <div class="text-4xl font-extrabold text-primary-600 dark:text-primary-400 font-display mb-2 counter" data-target="45">45</div>
+        <div class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">Agents experts</div>
+      </div>
+      <div class="dashboard-card text-center p-8 rounded-2xl bg-white dark:bg-[#160f29] shadow-card border border-gray-100 dark:border-white/5 transition hover:-translate-y-2 reveal-up" style="transition-delay: 300ms">
+        <div class="text-4xl font-extrabold text-primary-600 dark:text-primary-400 font-display mb-2">24/7</div>
+        <div class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">Support IA</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Nos Valeurs & Pourquoi Choisir DOMIORA -->
+<section class="py-24 bg-white dark:bg-ink relative overflow-hidden">
+  <div class="absolute top-0 right-0 -mr-32 -mt-32 w-96 h-96 rounded-full bg-primary-100 dark:bg-primary-900/20 blur-3xl opacity-50 z-0"></div>
+  
+  <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center max-w-3xl mx-auto mb-16 reveal-up">
+      <h2 class="text-3xl lg:text-4xl font-extrabold text-gray-900 dark:text-white font-display mb-4">Pourquoi choisir {{ site_settings.site_name }} ?</h2>
+      <p class="text-lg text-gray-600 dark:text-gray-400">Des fondations solides basées sur des valeurs d'excellence et de transparence.</p>
+    </div>
+    
+    <div class="grid md:grid-cols-3 gap-8">
+      <div class="p-8 rounded-[2rem] bg-gray-50 dark:bg-[#160f29] border border-gray-100 dark:border-white/5 group hover:bg-white hover:shadow-2xl transition-all duration-300 card-3d reveal-up">
+        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center text-white mb-6 group-hover:scale-110 transition-transform shadow-lg shadow-primary-500/30">
+          <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+        </div>
+        <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-3">Transparence totale</h3>
+        <p class="text-gray-600 dark:text-gray-400 leading-relaxed text-sm">Chaque propriété est rigoureusement vérifiée. Les informations, les prix et les frais sont clairs dès le premier regard.</p>
+      </div>
+      
+      <div class="p-8 rounded-[2rem] bg-gray-50 dark:bg-[#160f29] border border-gray-100 dark:border-white/5 group hover:bg-white hover:shadow-2xl transition-all duration-300 card-3d reveal-up" style="transition-delay: 100ms">
+        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center text-white mb-6 group-hover:scale-110 transition-transform shadow-lg shadow-primary-500/30">
+          <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+        </div>
+        <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-3">Technologie & IA</h3>
+        <p class="text-gray-600 dark:text-gray-400 leading-relaxed text-sm">Notre assistant IA vous guide 24/7 et nos algorithmes vous recommandent les biens qui correspondent parfaitement à vos attentes.</p>
+      </div>
+      
+      <div class="p-8 rounded-[2rem] bg-gray-50 dark:bg-[#160f29] border border-gray-100 dark:border-white/5 group hover:bg-white hover:shadow-2xl transition-all duration-300 card-3d reveal-up" style="transition-delay: 200ms">
+        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center text-white mb-6 group-hover:scale-110 transition-transform shadow-lg shadow-primary-500/30">
+          <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+        </div>
+        <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-3">Service Premium</h3>
+        <p class="text-gray-600 dark:text-gray-400 leading-relaxed text-sm">Un accompagnement sur-mesure de la première visite jusqu'à la remise des clés par nos agents dédiés.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- L'équipe -->
+<section class="py-24 bg-gray-50 dark:bg-black/30">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center max-w-3xl mx-auto mb-16 reveal-up">
+      <h2 class="text-3xl lg:text-4xl font-extrabold text-gray-900 dark:text-white font-display mb-4">L'équipe dirigeante</h2>
+      <p class="text-lg text-gray-600 dark:text-gray-400">Des experts passionnés par l'immobilier et la technologie.</p>
+    </div>
+    
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-10">
+      <!-- Member 1 -->
+      <div class="group text-center card-3d reveal-up">
+        <div class="relative w-48 h-48 mx-auto rounded-full overflow-hidden mb-6 shadow-xl border-4 border-white dark:border-ink ring-2 ring-primary-500/20 group-hover:ring-primary-500/50 transition-all duration-300">
+          <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=400" alt="CEO" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+        </div>
+        <h3 class="text-xl font-bold text-gray-900 dark:text-white">Alexandre Dupont</h3>
+        <p class="text-primary-600 dark:text-primary-400 text-sm font-semibold mb-3 mt-1">Fondateur & CEO</p>
+      </div>
+      <!-- Member 2 -->
+      <div class="group text-center card-3d reveal-up" style="transition-delay: 100ms">
+        <div class="relative w-48 h-48 mx-auto rounded-full overflow-hidden mb-6 shadow-xl border-4 border-white dark:border-ink ring-2 ring-primary-500/20 group-hover:ring-primary-500/50 transition-all duration-300">
+          <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=400" alt="CTO" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+        </div>
+        <h3 class="text-xl font-bold text-gray-900 dark:text-white">Sophie Martin</h3>
+        <p class="text-primary-600 dark:text-primary-400 text-sm font-semibold mb-3 mt-1">Directrice Technologique</p>
+      </div>
+      <!-- Member 3 -->
+      <div class="group text-center card-3d reveal-up" style="transition-delay: 200ms">
+        <div class="relative w-48 h-48 mx-auto rounded-full overflow-hidden mb-6 shadow-xl border-4 border-white dark:border-ink ring-2 ring-primary-500/20 group-hover:ring-primary-500/50 transition-all duration-300">
+          <img src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=400" alt="Head of Sales" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+        </div>
+        <h3 class="text-xl font-bold text-gray-900 dark:text-white">Marc Dubois</h3>
+        <p class="text-primary-600 dark:text-primary-400 text-sm font-semibold mb-3 mt-1">Responsable des Ventes</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Témoignages -->
+<section class="py-24 bg-white dark:bg-ink">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center reveal-up">
+    <h2 class="text-3xl lg:text-4xl font-extrabold text-gray-900 dark:text-white font-display mb-12">Ce qu'ils disent de nous</h2>
+    
+    <div class="grid md:grid-cols-2 gap-8 text-left">
+      <div class="bg-gray-50 dark:bg-[#160f29] p-8 rounded-3xl border border-gray-100 dark:border-white/5 relative card-3d group hover:-translate-y-1 transition-all duration-300">
+        <svg class="absolute top-6 right-8 w-12 h-12 text-primary-200 dark:text-primary-900/50" fill="currentColor" viewBox="0 0 24 24"><path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" /></svg>
+        <p class="text-gray-600 dark:text-gray-400 italic mb-6 relative z-10 leading-relaxed">"Une plateforme exceptionnelle. J'ai pu trouver mon appartement en quelques jours, la visite virtuelle et l'assistant IA m'ont fait gagner un temps précieux. L'agent était d'un professionnalisme rare."</p>
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 bg-gradient-to-br from-primary-500 to-purple-600 rounded-full flex items-center justify-center font-bold text-white">J</div>
+          <div>
+            <p class="font-bold text-gray-900 dark:text-white">Julien R.</p>
+            <p class="text-sm text-gray-500">Acheteur récent</p>
+          </div>
+        </div>
+      </div>
+      <div class="bg-gray-50 dark:bg-[#160f29] p-8 rounded-3xl border border-gray-100 dark:border-white/5 relative card-3d group hover:-translate-y-1 transition-all duration-300">
+        <svg class="absolute top-6 right-8 w-12 h-12 text-primary-200 dark:text-primary-900/50" fill="currentColor" viewBox="0 0 24 24"><path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" /></svg>
+        <p class="text-gray-600 dark:text-gray-400 italic mb-6 relative z-10 leading-relaxed">"Le dashboard pour les agents est incroyablement bien conçu. Gérer mes biens et mes rendez-vous n'a jamais été aussi simple. C'est l'outil parfait pour se concentrer sur l'essentiel : le client."</p>
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 bg-gradient-to-br from-primary-500 to-purple-600 rounded-full flex items-center justify-center font-bold text-white">E</div>
+          <div>
+            <p class="font-bold text-gray-900 dark:text-white">Elodie M.</p>
+            <p class="text-sm text-gray-500">Agent Immobilier</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Call to Action -->
+<section class="py-24 relative overflow-hidden reveal-up">
+  <div class="absolute inset-0 bg-gradient-to-br from-primary-600 to-purple-700"></div>
+  <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=2000')] opacity-20 mix-blend-overlay object-cover"></div>
+  
+  <div class="relative z-10 max-w-4xl mx-auto px-4 text-center">
+    <h2 class="text-4xl md:text-5xl font-extrabold text-white font-display mb-6">Prêt à trouver le bien de vos rêves ?</h2>
+    <p class="text-xl text-primary-100 mb-10 max-w-2xl mx-auto">Rejoignez des milliers d'utilisateurs qui font confiance à {{ site_settings.site_name }} pour leur projet immobilier.</p>
+    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+      <a href="{% url 'properties:list' %}" class="btn-premium bg-white text-primary-900 font-bold px-8 py-4 rounded-full hover:scale-105 transition shadow-xl glow-effect">Parcourir les biens</a>
+      <a href="{% url 'core:contact' %}" class="btn-premium bg-transparent border-2 border-white/30 text-white font-bold px-8 py-4 rounded-full hover:bg-white/10 transition">Nous contacter</a>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

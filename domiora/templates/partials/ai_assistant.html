@@ -1,0 +1,77 @@
+<div
+  x-data="{
+    open: false,
+    sending: false,
+    input: '',
+    messages: [
+      { role: 'assistant', content: 'Bonjour 👋 Je suis l\'assistant DOMIORA. Dites-moi ce que vous cherchez : ville, type de bien, budget, vente ou location !' }
+    ],
+    matches: [],
+    send() {
+      if (!this.input.trim() || this.sending) return;
+      const userMsg = this.input.trim();
+      this.messages.push({ role: 'user', content: userMsg });
+      this.input = '';
+      this.sending = true;
+      this.matches = [];
+      fetch('{% url 'core:assistant_chat' %}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+        body: JSON.stringify({
+          message: userMsg,
+          history: this.messages.filter(m => m.role !== 'system').slice(-8).map(m => ({ role: m.role, content: m.content }))
+        })
+      }).then(r => r.json()).then(data => {
+        this.messages.push({ role: 'assistant', content: data.reply });
+        this.matches = data.matches || [];
+        this.sending = false;
+        this.$nextTick(() => { this.$refs.scrollArea.scrollTop = this.$refs.scrollArea.scrollHeight; });
+      }).catch(() => { this.sending = false; this.messages.push({ role: 'assistant', content: 'Désolé, une erreur est survenue. Réessayez.' }); });
+    }
+  }"
+  class="fixed bottom-6 right-6 z-[55]"
+>
+  <button @click="open = !open" class="w-14 h-14 rounded-full bg-gradient-to-br from-primary-500 to-primary-700 text-white shadow-glow grid place-items-center text-2xl hover:scale-105 transition animate-float">
+    <span x-show="!open">💬</span><span x-show="open" x-cloak>✕</span>
+  </button>
+
+  <div x-cloak x-show="open" x-transition
+       class="absolute bottom-20 right-0 w-[22rem] max-w-[90vw] bg-white dark:bg-[#160f29] rounded-2xl shadow-2xl border border-gray-100 dark:border-white/10 overflow-hidden flex flex-col" style="height: 28rem;">
+    <div class="bg-gradient-to-r from-primary-700 to-primary-500 text-white px-4 py-3 flex items-center gap-2">
+      <span class="text-lg">🤖</span>
+      <div>
+        <p class="font-bold text-sm font-display">Assistant DOMIORA</p>
+        <p class="text-[11px] text-white/70">Trouvez votre bien en discutant</p>
+      </div>
+    </div>
+
+    <div x-ref="scrollArea" class="flex-1 overflow-y-auto px-4 py-3 space-y-3 text-sm">
+      <template x-for="(m, i) in messages" :key="i">
+        <div :class="m.role === 'user' ? 'flex justify-end' : 'flex justify-start'">
+          <div :class="m.role === 'user' ? 'bg-primary-600 text-white' : 'bg-gray-100 dark:bg-white/10 dark:text-gray-100 text-gray-700'"
+               class="rounded-2xl px-3 py-2 max-w-[85%] whitespace-pre-line" x-text="m.content"></div>
+        </div>
+      </template>
+      <div x-show="sending" class="flex justify-start"><div class="bg-gray-100 dark:bg-white/10 rounded-2xl px-3 py-2 text-gray-400 text-xs">L'assistant écrit...</div></div>
+
+      <template x-if="matches.length">
+        <div class="space-y-2 pt-1">
+          <template x-for="p in matches" :key="p.url">
+            <a :href="p.url" class="flex items-center gap-2 border border-gray-100 dark:border-white/10 rounded-xl p-2 hover:bg-primary-50 dark:hover:bg-white/5">
+              <img :src="p.image" class="w-10 h-10 rounded-lg object-cover">
+              <div class="text-xs">
+                <p class="font-semibold dark:text-white" x-text="p.title"></p>
+                <p class="text-primary-600 font-bold" x-text="p.price"></p>
+              </div>
+            </a>
+          </template>
+        </div>
+      </template>
+    </div>
+
+    <form @submit.prevent="send" class="border-t border-gray-100 dark:border-white/10 p-3 flex gap-2">
+      <input x-model="input" type="text" placeholder="Ex: studio à louer à Brooklyn..." class="flex-1 text-sm rounded-full border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white px-4 py-2 outline-none focus:ring-2 focus:ring-primary-500">
+      <button type="submit" class="bg-primary-600 hover:bg-primary-500 transition text-white w-9 h-9 rounded-full grid place-items-center shrink-0">➤</button>
+    </form>
+  </div>
+</div>

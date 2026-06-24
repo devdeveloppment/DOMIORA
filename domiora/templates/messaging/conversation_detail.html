@@ -1,0 +1,36 @@
+{% extends "dashboard/dashboard_base.html" %}
+{% block title %}Conversation — {{ site_settings.site_name }}{% endblock %}
+{% block dashboard_content %}
+<a href="{% url 'messaging:inbox' %}" class="text-sm text-gray-400 hover:text-primary-600 mb-4 inline-block">← Retour à la messagerie</a>
+
+<div class="bg-white rounded-2xl shadow-card border border-gray-100 overflow-hidden flex flex-col" style="height: 32rem;">
+  <div class="border-b border-gray-100 p-4 flex items-center gap-3">
+    {% if dash_role == 'agent' %}
+      <img src="{{ conversation.buyer.get_avatar_url }}" class="w-10 h-10 rounded-full object-cover">
+      <div><p class="font-semibold text-sm">{{ conversation.buyer.get_full_name }}</p><p class="text-xs text-gray-400">{{ conversation.property.title|default:"Discussion générale" }}</p></div>
+    {% else %}
+      <img src="{{ conversation.agent.user.get_avatar_url }}" class="w-10 h-10 rounded-full object-cover">
+      <div><p class="font-semibold text-sm">{{ conversation.agent.user.get_full_name }}</p><p class="text-xs text-gray-400">{{ conversation.property.title|default:"Discussion générale" }}</p></div>
+    {% endif %}
+  </div>
+
+  <div class="flex-1 overflow-y-auto p-4 space-y-3">
+    {% for m in conversation.messages.all %}
+    <div class="flex {% if m.sender == request.user %}justify-end{% else %}justify-start{% endif %}">
+      <div class="{% if m.sender == request.user %}bg-primary-600 text-white{% else %}bg-gray-100 text-gray-700{% endif %} rounded-2xl px-4 py-2 max-w-[75%] text-sm">
+        <p>{{ m.body }}</p>
+        <p class="text-[10px] opacity-60 mt-1">{{ m.created_at|date:"d M H:i" }}</p>
+      </div>
+    </div>
+    {% empty %}
+    <p class="text-gray-400 text-center text-sm py-10">Démarrez la conversation ci-dessous.</p>
+    {% endfor %}
+  </div>
+
+  <form method="post" class="border-t border-gray-100 p-3 flex gap-2">
+    {% csrf_token %}
+    {{ form.body }}
+    <button type="submit" class="bg-primary-600 hover:bg-primary-500 transition text-white font-semibold rounded-full px-5 shrink-0">Envoyer</button>
+  </form>
+</div>
+{% endblock %}

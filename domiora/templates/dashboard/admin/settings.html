@@ -1,0 +1,60 @@
+{% extends "dashboard/dashboard_base.html" %}
+{% block title %}Paramètres — {{ site_settings.site_name }}{% endblock %}
+{% block dashboard_content %}
+<h1 class="text-2xl font-extrabold mb-6">Paramètres système</h1>
+
+<form method="post" enctype="multipart/form-data" class="bg-white rounded-2xl shadow-card border border-gray-100 p-6 space-y-6">
+  {% csrf_token %}
+
+  <div>
+    <h2 class="font-bold text-sm uppercase text-gray-500 mb-3">Identité du site</h2>
+    <div class="grid sm:grid-cols-2 gap-4">
+      <div><label class="text-sm font-semibold text-gray-700">Nom du site</label><input type="text" name="site_name" value="{{ settings.site_name }}" class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm"></div>
+      <div><label class="text-sm font-semibold text-gray-700">Slogan</label><input type="text" name="tagline" value="{{ settings.tagline }}" class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm"></div>
+    </div>
+    <div class="mt-4 flex items-center gap-4">
+      {% if settings.logo %}<img src="{{ settings.logo.url }}" class="w-12 h-12 rounded-lg object-cover">{% endif %}
+      <div><label class="text-sm font-semibold text-gray-700">Logo</label><input type="file" name="logo" class="mt-1 text-sm"></div>
+    </div>
+  </div>
+
+  <hr class="border-gray-100">
+  <div>
+    <h2 class="font-bold text-sm uppercase text-gray-500 mb-3">Coordonnées</h2>
+    <div class="grid sm:grid-cols-2 gap-4">
+      <div><label class="text-sm font-semibold text-gray-700">E-mail de contact</label><input type="email" name="contact_email" value="{{ settings.contact_email }}" class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm"></div>
+      <div><label class="text-sm font-semibold text-gray-700">Téléphone</label><input type="text" name="contact_phone" value="{{ settings.contact_phone }}" class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm"></div>
+    </div>
+    <div class="mt-4"><label class="text-sm font-semibold text-gray-700">Adresse</label><input type="text" name="address" value="{{ settings.address }}" class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm"></div>
+    <div class="grid sm:grid-cols-2 gap-4 mt-4">
+      <div><label class="text-sm font-semibold text-gray-700">Horaires (semaine)</label><input type="text" name="opening_hours_weekdays" value="{{ settings.opening_hours_weekdays }}" class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm"></div>
+      <div><label class="text-sm font-semibold text-gray-700">Horaires (weekend)</label><input type="text" name="opening_hours_weekend" value="{{ settings.opening_hours_weekend }}" class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm"></div>
+    </div>
+  </div>
+
+  <hr class="border-gray-100">
+  <div>
+    <h2 class="font-bold text-sm uppercase text-gray-500 mb-3">Réseaux sociaux</h2>
+    <div class="grid sm:grid-cols-2 gap-4">
+      <div><label class="text-sm font-semibold text-gray-700">Facebook</label><input type="url" name="facebook" value="{{ settings.facebook }}" class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm"></div>
+      <div><label class="text-sm font-semibold text-gray-700">Instagram</label><input type="url" name="instagram" value="{{ settings.instagram }}" class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm"></div>
+      <div><label class="text-sm font-semibold text-gray-700">LinkedIn</label><input type="url" name="linkedin" value="{{ settings.linkedin }}" class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm"></div>
+      <div><label class="text-sm font-semibold text-gray-700">Twitter / X</label><input type="url" name="twitter" value="{{ settings.twitter }}" class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm"></div>
+      <div><label class="text-sm font-semibold text-gray-700">YouTube</label><input type="url" name="youtube" value="{{ settings.youtube }}" class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm"></div>
+    </div>
+  </div>
+
+  <hr class="border-gray-100">
+  <div>
+    <h2 class="font-bold text-sm uppercase text-gray-500 mb-3">SMTP <span class="normal-case text-gray-400 font-normal">(les identifiants réels restent dans le fichier .env)</span></h2>
+    <div class="grid sm:grid-cols-3 gap-4">
+      <div><label class="text-sm font-semibold text-gray-700">Hôte SMTP</label><input type="text" name="smtp_host" value="{{ settings.smtp_host }}" class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm"></div>
+      <div><label class="text-sm font-semibold text-gray-700">Port</label><input type="number" name="smtp_port" value="{{ settings.smtp_port }}" class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm"></div>
+      <div><label class="text-sm font-semibold text-gray-700">Utilisateur SMTP</label><input type="text" name="smtp_user" value="{{ settings.smtp_user }}" class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm"></div>
+    </div>
+    <label class="flex items-center gap-2 text-sm font-semibold text-gray-700 mt-3"><input type="checkbox" name="smtp_use_tls" {% if settings.smtp_use_tls %}checked{% endif %}> Utiliser TLS</label>
+  </div>
+
+  <button type="submit" class="bg-primary-600 hover:bg-primary-500 transition text-white font-semibold rounded-full px-6 py-3">Enregistrer les paramètres</button>
+</form>
+{% endblock %}
