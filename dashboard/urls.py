@@ -22,6 +22,8 @@ urlpatterns = [
     path("agent/demandes/", views_agent.agent_requests, name="agent_requests"),
     path("agent/demandes/<int:pk>/<str:status>/", views_agent.agent_request_update_status, name="agent_request_update_status"),
     path("agent/transactions/", views_agent.agent_transactions, name="agent_transactions"),
+    path("agent/abonnement/", views_agent.agent_subscription, name="agent_subscription"),
+    path("agent/abonnement/checkout/<int:plan_id>/", views_agent.agent_subscription_checkout, name="agent_subscription_checkout"),
     path("agent/profil/", views_agent.agent_profile, name="agent_profile"),
 
     # Admin
@@ -35,5 +37,6 @@ urlpatterns = [
     path("admin-panel/proprietes/<int:pk>/valider/", views_admin.admin_property_validate, name="admin_property_validate"),
     path("admin-panel/proprietes/<int:pk>/supprimer/", views_admin.admin_property_delete, name="admin_property_delete"),
     path("admin-panel/transactions/", views_admin.admin_transactions, name="admin_transactions"),
+    path("admin-panel/finances/", views_admin.admin_finances, name="admin_finances"),
     path("admin-panel/parametres/", views_admin.admin_settings, name="admin_settings"),
 ]

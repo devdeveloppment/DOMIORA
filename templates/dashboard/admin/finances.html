@@ -1,0 +1,96 @@
+{% extends "dashboard/dashboard_base.html" %}
+{% block title %}Finances & Abonnements — {{ site_settings.site_name }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="mb-8 flex items-center justify-between">
+  <div>
+    <h1 class="text-2xl font-display font-extrabold text-ink tracking-tight mb-1">Finances & Abonnements</h1>
+    <p class="text-ink/60">Suivez les revenus générés par les forfaits SaaS des agents.</p>
+  </div>
+</div>
+
+<!-- Stats Overview -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col justify-between">
+    <div class="flex items-center justify-between mb-4">
+      <div class="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+      </div>
+      <span class="text-xs font-bold uppercase tracking-wider text-gray-400">Total</span>
+    </div>
+    <h3 class="text-2xl font-bold text-gray-900">{{ total_revenue }} $</h3>
+    <p class="text-xs font-medium text-gray-500 mt-1">Revenus cumulés (Abonnements)</p>
+  </div>
+
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col justify-between">
+    <div class="flex items-center justify-between mb-4">
+      <div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+      </div>
+      <span class="text-xs font-bold uppercase tracking-wider text-gray-400">Actifs</span>
+    </div>
+    <h3 class="text-2xl font-bold text-gray-900">{{ active_subs_count }}</h3>
+    <p class="text-xs font-medium text-gray-500 mt-1">Abonnements en cours</p>
+  </div>
+
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col justify-between">
+    <div class="flex items-center justify-between mb-4">
+      <div class="w-10 h-10 rounded-full bg-rose-50 flex items-center justify-center text-rose-600">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+      </div>
+      <span class="text-xs font-bold uppercase tracking-wider text-gray-400">Expirés</span>
+    </div>
+    <h3 class="text-2xl font-bold text-gray-900">{{ expired_subs_count }}</h3>
+    <p class="text-xs font-medium text-gray-500 mt-1">Abonnements échus ou suspendus</p>
+  </div>
+</div>
+
+<!-- Payments Table -->
+<div class="bg-white rounded-2xl shadow-card border border-gray-100 overflow-hidden">
+  <div class="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
+    <h2 class="text-lg font-bold text-gray-900">Historique des transactions (SaaS)</h2>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm text-left">
+      <thead class="text-xs text-gray-500 uppercase bg-gray-50 font-semibold">
+        <tr>
+          <th class="px-6 py-4">Transaction</th>
+          <th class="px-6 py-4">Agent</th>
+          <th class="px-6 py-4">Forfait</th>
+          <th class="px-6 py-4">Date</th>
+          <th class="px-6 py-4">Montant</th>
+          <th class="px-6 py-4">Méthode</th>
+          <th class="px-6 py-4">Statut</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        {% for payment in payments %}
+          <tr class="hover:bg-gray-50 transition">
+            <td class="px-6 py-4 font-mono text-xs text-gray-500">{{ payment.transaction_id|default:"-" }}</td>
+            <td class="px-6 py-4 font-medium text-gray-900">{{ payment.subscription.agent.user.get_full_name }}</td>
+            <td class="px-6 py-4 text-gray-600">{{ payment.subscription.plan.name }}</td>
+            <td class="px-6 py-4 text-gray-500">{{ payment.payment_date|date:"d M Y, H:i" }}</td>
+            <td class="px-6 py-4 font-bold text-gray-900">{{ payment.amount }} {{ payment.currency }}</td>
+            <td class="px-6 py-4 text-gray-500 capitalize">{{ payment.get_payment_method_display }}</td>
+            <td class="px-6 py-4">
+              {% if payment.status == 'success' %}
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800">Succès</span>
+              {% elif payment.status == 'failed' %}
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-rose-100 text-rose-800">Échec</span>
+              {% else %}
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800">En attente</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="7" class="px-6 py-8 text-center text-gray-500">
+              Aucun historique de paiement pour le moment.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

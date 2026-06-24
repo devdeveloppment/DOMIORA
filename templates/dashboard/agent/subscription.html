@@ -1,0 +1,100 @@
+{% extends "dashboard/dashboard_base.html" %}
+{% block title %}Mon Abonnement — {{ site_settings.site_name }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="mb-8">
+  <h1 class="text-2xl font-display font-extrabold text-ink tracking-tight mb-2">Mon Abonnement</h1>
+  <p class="text-ink/60">Gérez votre plan tarifaire et débloquez plus de fonctionnalités.</p>
+</div>
+
+<!-- Current Subscription Status -->
+<div class="bg-white rounded-2xl shadow-card border border-gray-100 p-6 mb-10">
+  <div class="flex items-center justify-between mb-4">
+    <h2 class="text-lg font-bold text-gray-900">Forfait Actuel</h2>
+    {% if current_sub and current_sub.is_active %}
+      <span class="px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-bold uppercase tracking-wider rounded-full">Actif</span>
+    {% else %}
+      <span class="px-3 py-1 bg-rose-100 text-rose-800 text-xs font-bold uppercase tracking-wider rounded-full">Inactif / Expiré</span>
+    {% endif %}
+  </div>
+
+  {% if current_sub %}
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div>
+        <p class="text-xs text-gray-500 uppercase font-semibold">Plan</p>
+        <p class="font-bold text-gray-900 text-lg">{{ current_sub.plan.name }}</p>
+      </div>
+      <div>
+        <p class="text-xs text-gray-500 uppercase font-semibold">Annonces utilisées</p>
+        <p class="font-bold text-gray-900 text-lg">
+          {{ properties_count }} / {% if current_sub.plan.max_listings == -1 %}&infin;{% else %}{{ current_sub.plan.max_listings }}{% endif %}
+        </p>
+      </div>
+      <div>
+        <p class="text-xs text-gray-500 uppercase font-semibold">Expire le</p>
+        <p class="font-bold text-gray-900 text-lg">
+          {% if current_sub.end_date %}
+            {{ current_sub.end_date|date:"d M Y" }}
+          {% else %}
+            Illimité
+          {% endif %}
+        </p>
+      </div>
+      <div>
+        <p class="text-xs text-gray-500 uppercase font-semibold">Renouvellement Auto</p>
+        <p class="font-bold text-gray-900 text-lg">
+          {% if current_sub.auto_renew %}Oui{% else %}Non{% endif %}
+        </p>
+      </div>
+    </div>
+  {% else %}
+    <p class="text-gray-600">Vous n'avez aucun abonnement actif. Vos annonces ne seront pas visibles jusqu'à ce que vous choisissiez un forfait.</p>
+  {% endif %}
+</div>
+
+<!-- Subscription Plans -->
+<div>
+  <h2 class="text-xl font-bold text-gray-900 mb-6 text-center">Choisissez le plan adapté à vos besoins</h2>
+  <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
+    {% for plan in plans %}
+      <div class="relative bg-white rounded-3xl shadow-card border {% if plan.is_recommended %}border-primary-500 shadow-primary-500/10{% else %}border-gray-100{% endif %} p-6 flex flex-col transition hover:shadow-xl">
+        {% if plan.is_recommended %}
+          <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-primary-500 to-primary-600 text-white px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm">
+            Recommandé
+          </div>
+        {% endif %}
+        
+        <h3 class="text-lg font-bold text-gray-900 mb-2">{{ plan.name }}</h3>
+        <div class="mb-4">
+          <span class="text-3xl font-extrabold text-gray-900">{{ plan.price }}</span>
+          <span class="text-gray-500 text-sm font-medium">{{ plan.currency }} / mois</span>
+        </div>
+
+        <ul class="space-y-3 mb-8 flex-1 text-sm text-gray-600">
+          <li class="flex items-start gap-2">
+            <svg class="w-5 h-5 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+            <span>
+              {% if plan.max_listings == -1 %}
+                <strong>Annonces illimitées</strong>
+              {% else %}
+                Jusqu'à <strong>{{ plan.max_listings }} annonces</strong>
+              {% endif %}
+            </span>
+          </li>
+          <!-- We can add logic to render json features if provided -->
+        </ul>
+
+        {% if current_sub and current_sub.plan.id == plan.id %}
+          <button disabled class="w-full py-3 rounded-xl font-bold bg-gray-100 text-gray-500 cursor-not-allowed">
+            Plan actuel
+          </button>
+        {% else %}
+          <a href="{% url 'dashboard:agent_subscription_checkout' plan.id %}" class="w-full py-3 rounded-xl font-bold transition text-center block {% if plan.is_recommended %}bg-primary-600 text-white hover:bg-primary-700{% else %}bg-primary-50 text-primary-700 hover:bg-primary-100{% endif %}">
+            Choisir ce plan
+          </a>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

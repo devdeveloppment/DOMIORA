@@ -1,5 +1,12 @@
 {% extends "base.html" %}
 {% load humanize %}
+{% load static %}
+
+{% block extra_head %}
+<!-- Heavy animation libraries — loaded ONLY on homepage -->
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+{% endblock %}
+
 {% block content %}
 
 <section class="relative overflow-hidden bg-[#0a0a0a] min-h-[90vh] flex flex-col justify-center hero-3d-container">
@@ -180,7 +187,7 @@
     <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
       {% for property in recently_sold %}
       <div class="rounded-2xl overflow-hidden relative group card-3d cursor-pointer">
-        <img src="{{ property.primary_image }}" class="w-full h-48 object-cover group-hover:scale-110 transition duration-700" alt="{{ property.title }}">
+        <img src="{{ property.primary_image }}" loading="lazy" class="w-full h-48 object-cover group-hover:scale-110 transition duration-700" alt="{{ property.title }}">
         <span class="absolute top-3 left-3 bg-rose-500 text-white text-[10px] font-bold px-3 py-1.5 rounded-full backdrop-blur-md">✓ VENDU</span>
         <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-4 text-white">
           <p class="font-bold text-lg">{{ property.price_display }}</p>
@@ -203,7 +210,7 @@
     {% for agent in agents %}
     <a href="{{ agent.get_absolute_url }}" class="rounded-2xl overflow-hidden border border-gray-100 dark:border-white/5 shadow-card hover:-translate-y-2 transition-all duration-300 card-3d group bg-white dark:bg-[#160f29]">
       <div class="relative overflow-hidden">
-        <img src="{{ agent.user.get_avatar_url }}" class="w-full h-52 object-cover group-hover:scale-110 transition duration-500" alt="{{ agent }}">
+        <img src="{{ agent.user.get_avatar_url }}" loading="lazy" class="w-full h-52 object-cover group-hover:scale-110 transition duration-500" alt="{{ agent }}">
         <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition duration-300"></div>
       </div>
       <div class="p-5">
@@ -272,4 +279,8 @@
 </section>
 {% endif %}
 
+{% endblock %}
+
+{% block extra_scripts %}
+<script defer src="{% static 'js/three-scene.js' %}"></script>
 {% endblock %}

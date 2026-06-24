@@ -1,5 +1,9 @@
 {% extends "base.html" %}
 {% block title %}Toutes les propriétés — {{ site_settings.site_name }}{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+{% endblock %}
 {% block content %}
 <section class="bg-ink py-12 relative overflow-hidden">
   <div class="absolute inset-0 living-background opacity-30"></div>
@@ -116,7 +120,7 @@
           {% for property in page_obj %}
           <div class="flex flex-col sm:flex-row gap-4 bg-white dark:bg-[#160f29] rounded-2xl shadow-card border border-gray-100 dark:border-white/5 overflow-hidden card-3d group transition-all duration-300 hover:-translate-y-1">
             <a href="{{ property.get_absolute_url }}" class="sm:w-56 h-44 sm:h-auto shrink-0 relative overflow-hidden">
-              <img src="{{ property.primary_image }}" class="w-full h-full object-cover group-hover:scale-110 transition duration-500" alt="{{ property.title }}">
+              <img src="{{ property.primary_image }}" loading="lazy" class="w-full h-full object-cover group-hover:scale-110 transition duration-500" alt="{{ property.title }}">
               <span class="absolute top-3 left-3 text-[11px] font-bold px-3 py-1 rounded-full backdrop-blur-md {% if property.status == 'vendu' or property.status == 'loue' %}bg-rose-500/90 text-white{% elif property.transaction_type == 'location' %}bg-emerald-500/90 text-white{% else %}bg-primary-600/90 text-white{% endif %}">{{ property.badge_label }}</span>
             </a>
             <div class="p-4 flex-1">

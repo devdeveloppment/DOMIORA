@@ -5,7 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{% block title %}{{ site_settings.site_name }} — {{ site_settings.tagline }}{% endblock %}</title>
 <meta name="description" content="{% block description %}DOMIORA, la plateforme n°1 en immobilier. Trouvez, louez ou vendez votre propriété en toute simplicité.{% endblock %}">
+<!-- DNS Prefetch & Preconnect for speed -->
+<link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="dns-prefetch" href="https://cdn.tailwindcss.com">
+<link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+<link rel="dns-prefetch" href="https://images.unsplash.com">
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" href="https://cdn.tailwindcss.com" as="script">
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
@@ -33,18 +40,6 @@
   }
 </script>
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<!-- AOS Animation Library -->
-<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
-<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-<!-- Three.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<!-- GSAP & ScrollTrigger -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
-<!-- Lenis Smooth Scroll -->
-<script src="https://cdn.jsdelivr.net/gh/studio-freight/lenis@1.0.29/bundled/lenis.min.js"></script>
 <!-- Premium CSS -->
 {% load static %}
 <link rel="stylesheet" href="{% static 'css/premium.css' %}">
@@ -95,17 +90,11 @@
 {% include "partials/ai_assistant.html" %}
 
 {% block extra_scripts %}{% endblock %}
-<!-- Premium JavaScript -->
-<script src="{% static 'js/main.js' %}"></script>
-<script src="{% static 'js/three-scene.js' %}"></script>
-<script>
-  // Initialize AOS
-  AOS.init({
-    once: true,
-    offset: 50,
-    duration: 600,
-    easing: 'ease-out-cubic',
-  });
-</script>
+<!-- Core Animation Libraries -->
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/gh/studio-freight/lenis@1.0.29/bundled/lenis.min.js"></script>
+<!-- Premium JavaScript (deferred) -->
+<script defer src="{% static 'js/main.js' %}"></script>
 </body>
 </html>

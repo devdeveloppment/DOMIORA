@@ -4,18 +4,18 @@ from django.core.paginator import Paginator
 from django.core.mail import send_mail
 from django.conf import settings
 from django.db.models import Sum, Count
+from django.utils import timezone
 
 from .decorators import role_required
 from accounts.models import User
-from agents.models import Agent
+from agents.models import Agent, Specialty
 from properties.models import Property, PropertyImage
 from properties.forms import PropertyForm
 from rental_requests.models import PropertyRequest
 from transactions.models import Transaction
 from notifications.models import Notification
 from accounts.forms import ProfileForm
-from agents.models import Specialty
-
+from subscriptions.models import SubscriptionPlan, AgentSubscription
 
 def _get_agent(request):
     agent, _ = Agent.objects.get_or_create(user=request.user)
@@ -55,17 +55,23 @@ def agent_properties(request):
 @role_required(User.Role.AGENT)
 def agent_property_create(request):
     agent = _get_agent(request)
-
+    
     # Vérification de l'abonnement
-    if hasattr(agent, 'subscription') and agent.subscription.is_valid:
-        plan = agent.subscription.plan
-        current_count = Property.objects.filter(agent=agent).count()
-        if plan.max_listings != -1 and current_count >= plan.max_listings:
-            messages.error(request, f"Vous avez atteint la limite de {plan.max_listings} annonces de votre plan {plan.name}. Veuillez mettre à niveau votre abonnement.")
+    try:
+        sub = getattr(agent, 'subscription', None)
+    except Exception:
+        sub = None
+
+    if not sub or not sub.is_active:
+        messages.error(request, "Votre abonnement est inactif ou expiré. Veuillez souscrire à un plan pour ajouter un bien.")
+        return redirect("dashboard:agent_overview") # TODO: redirect to subscription page
+
+    # Vérification de la limite d'annonces
+    if sub.plan.max_listings != -1:
+        current_listings = Property.objects.filter(agent=agent).count()
+        if current_listings >= sub.plan.max_listings:
+            messages.error(request, f"Vous avez atteint la limite de votre plan ({sub.plan.max_listings} annonces). Veuillez passer à un plan supérieur.")
             return redirect("dashboard:agent_properties")
-    else:
-        messages.error(request, "Vous devez avoir un abonnement actif pour ajouter un bien.")
-        return redirect("dashboard:agent_properties")
 
     if request.method == "POST":
         form = PropertyForm(request.POST)
@@ -197,3 +203,69 @@ def agent_profile(request):
     else:
         user_form = ProfileForm(instance=request.user)
     return render(request, "dashboard/agent/profile.html", {"form": user_form, "agent": agent, "all_specialties": Specialty.objects.all(), "dash_role": "agent", "active": "profile"})
+@role_required(User.Role.AGENT)
+def agent_subscription(request):
+    agent = _get_agent(request)
+    
+    try:
+        current_sub = getattr(agent, 'subscription', None)
+    except Exception:
+        current_sub = None
+
+    plans = SubscriptionPlan.objects.filter(is_active=True).order_by('order', 'price')
+    properties_count = Property.objects.filter(agent=agent).count()
+
+    context = {
+        "dash_role": "agent",
+        "active": "subscription",
+        "agent": agent,
+        "current_sub": current_sub,
+        "plans": plans,
+        "properties_count": properties_count,
+    }
+    return render(request, "dashboard/agent/subscription.html", context)
+
+
+@role_required(User.Role.AGENT)
+def agent_subscription_checkout(request, plan_id):
+    agent = _get_agent(request)
+    plan = get_object_or_404(SubscriptionPlan, id=plan_id, is_active=True)
+
+    if request.method == "POST":
+        # Simulation d'un paiement réussi
+        payment_method = request.POST.get('payment_method', 'stripe')
+        
+        # Mettre à jour ou créer l'abonnement
+        sub, created = AgentSubscription.objects.get_or_create(agent=agent, defaults={'plan': plan})
+        
+        sub.plan = plan
+        sub.status = AgentSubscription.Status.ACTIVE
+        sub.start_date = timezone.now()
+        sub.end_date = timezone.now() + timezone.timedelta(days=plan.duration_days)
+        sub.auto_renew = request.POST.get('auto_renew') == 'on'
+        sub.save()
+
+        # Créer l'historique de paiement
+        from subscriptions.models import PaymentHistory
+        import uuid
+        
+        PaymentHistory.objects.create(
+            subscription=sub,
+            amount=plan.price,
+            currency=plan.currency,
+            payment_method=payment_method,
+            transaction_id=f"TXN-{uuid.uuid4().hex[:8].upper()}",
+            status=PaymentHistory.Status.SUCCESS,
+            notes=f"Paiement pour le plan {plan.name}"
+        )
+
+        messages.success(request, f"Paiement réussi ! Vous êtes maintenant sur le plan {plan.name}.")
+        return redirect("dashboard:agent_subscription")
+
+    context = {
+        "dash_role": "agent",
+        "active": "subscription",
+        "agent": agent,
+        "plan": plan,
+    }
+    return render(request, "dashboard/agent/checkout.html", context)

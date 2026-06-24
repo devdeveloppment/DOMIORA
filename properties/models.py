@@ -79,6 +79,12 @@ class Property(models.Model):
     class Meta:
         verbose_name_plural = "Properties"
         ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["is_published", "is_validated", "status"]),
+            models.Index(fields=["transaction_type", "property_type"]),
+            models.Index(fields=["city"]),
+            models.Index(fields=["-created_at"]),
+        ]
 
     def __str__(self):
         return self.title

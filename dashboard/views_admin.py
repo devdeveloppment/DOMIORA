@@ -205,3 +205,29 @@ def admin_settings(request):
         messages.success(request, "Paramètres mis à jour.")
         return redirect("dashboard:admin_settings")
     return render(request, "dashboard/admin/settings.html", {"settings": settings_obj, "dash_role": "admin", "active": "settings"})
+
+
+@role_required(User.Role.ADMIN)
+def admin_finances(request):
+    from subscriptions.models import PaymentHistory, AgentSubscription
+    from django.db.models import Sum
+
+    # Récupérer l'historique des paiements d'abonnement
+    payments = PaymentHistory.objects.all().select_related('subscription__agent__user', 'subscription__plan').order_by('-payment_date')
+    
+    # Calculer les revenus totaux (Abonnements)
+    total_subscription_revenue = PaymentHistory.objects.filter(status='success').aggregate(total=Sum('amount'))['total'] or 0
+
+    # Abonnements actifs vs expirés
+    active_subscriptions = AgentSubscription.objects.filter(status='active').count()
+    expired_subscriptions = AgentSubscription.objects.filter(status='expired').count()
+
+    context = {
+        "dash_role": "admin",
+        "active": "finances",
+        "payments": payments[:50],  # 50 derniers paiements
+        "total_revenue": total_subscription_revenue,
+        "active_subs_count": active_subscriptions,
+        "expired_subs_count": expired_subscriptions,
+    }
+    return render(request, "dashboard/admin/finances.html", context)

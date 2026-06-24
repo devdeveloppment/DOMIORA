@@ -1,5 +1,9 @@
 {% extends "base.html" %}
 {% block title %}{{ property.title }} — {{ site_settings.site_name }}{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+{% endblock %}
 {% block content %}
 <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
   <p class="text-gray-400 text-xs mb-4 reveal-up"><a href="{% url 'core:home' %}" class="hover:text-primary-600">Accueil</a> / <a href="{% url 'properties:list' %}" class="hover:text-primary-600">Propriétés</a> / {{ property.title }}</p>

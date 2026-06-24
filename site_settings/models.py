@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.cache import cache
 
 
 class SiteSettings(models.Model):
@@ -33,11 +34,16 @@ class SiteSettings(models.Model):
     def save(self, *args, **kwargs):
         self.pk = 1
         super().save(*args, **kwargs)
+        cache.delete("site_settings_singleton")
 
     def delete(self, *args, **kwargs):
         pass
 
     @classmethod
     def load(cls):
-        obj, _ = cls.objects.get_or_create(pk=1)
+        obj = cache.get("site_settings_singleton")
+        if obj is None:
+            obj, _ = cls.objects.get_or_create(pk=1)
+            cache.set("site_settings_singleton", obj, 300)  # Cache 5 minutes
         return obj
+

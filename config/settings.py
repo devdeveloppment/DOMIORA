@@ -51,6 +51,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "django.middleware.gzip.GZipMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -129,14 +130,15 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Ajout pour la compatibilité avec django-cloudinary-storage (qui cherche cette variable)
-STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 STORAGES = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
-    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedStaticFilesStorage"},
+    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
 }
 
 WHITENOISE_MANIFEST_STRICT = False
+WHITENOISE_MAX_AGE = 31536000  # 1 year cache for hashed static files
 
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
@@ -148,6 +150,17 @@ if CLOUDINARY_URL:
     STORAGES["default"] = {"BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage"}
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# ----------------------------------------------------------------------------
+# Caching — LocMemCache for single-process, switch to Redis in production
+# ----------------------------------------------------------------------------
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "domiora-cache",
+        "TIMEOUT": 300,
+    }
+}
 
 # ----------------------------------------------------------------------------
 # Email (SMTP via .env). Falls back to console backend in DEBUG so the

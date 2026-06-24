@@ -12,7 +12,7 @@ from rental_requests.forms import PropertyRequestForm
 
 
 def property_list(request):
-    qs = Property.objects.filter(is_published=True, is_validated=True)
+    qs = Property.objects.select_related('agent', 'agent__user').prefetch_related('images', 'amenities').filter(is_published=True, is_validated=True)
 
     transaction = request.GET.get("transaction")
     if transaction in ("vente", "location"):
@@ -101,7 +101,7 @@ def property_detail(request, slug):
     if request.user.is_authenticated:
         is_favorite = Favorite.objects.filter(user=request.user, property=property).exists()
 
-    similar = Property.objects.filter(
+    similar = Property.objects.select_related('agent', 'agent__user').prefetch_related('images').filter(
         is_published=True, city=property.city
     ).exclude(pk=property.pk)[:3]
 

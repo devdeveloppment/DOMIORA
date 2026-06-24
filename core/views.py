@@ -12,10 +12,10 @@ from .forms import ContactForm
 
 
 def home(request):
-    featured = Property.objects.filter(is_published=True, is_validated=True, is_featured=True)[:3]
-    for_sale = Property.objects.filter(is_published=True, is_validated=True, transaction_type="vente").exclude(status="brouillon")[:6]
-    recently_sold = Property.objects.filter(status__in=["vendu", "loue"], is_published=True, is_validated=True)[:8]
-    agents = Agent.objects.filter(is_verified=True).order_by("-rating")[:3]
+    featured = Property.objects.select_related('agent', 'agent__user').prefetch_related('images').filter(is_published=True, is_validated=True, is_featured=True)[:3]
+    for_sale = Property.objects.select_related('agent', 'agent__user').prefetch_related('images').filter(is_published=True, is_validated=True, transaction_type="vente").exclude(status="brouillon")[:6]
+    recently_sold = Property.objects.select_related('agent', 'agent__user').prefetch_related('images').filter(status__in=["vendu", "loue"], is_published=True, is_validated=True)[:8]
+    agents = Agent.objects.select_related('user').filter(is_verified=True).order_by("-rating")[:3]
     testimonials = Testimonial.objects.filter(is_published=True)[:3]
 
     stats = {
