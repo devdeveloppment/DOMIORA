@@ -29,7 +29,12 @@
   <div class="grid sm:grid-cols-3 gap-4">
     <div><label class="text-sm font-semibold text-gray-700">{{ form.country.label }}</label>{{ form.country }}</div>
     <div><label class="text-sm font-semibold text-gray-700">{{ form.city.label }}</label>{{ form.city }}</div>
-    <div><label class="text-sm font-semibold text-gray-700">{{ form.address.label }}</label>{{ form.address }}</div>
+    <div><label class="text-sm font-semibold text-gray-700">{{ form.neighborhood.label|default:"Quartier" }}</label>{{ form.neighborhood }}</div>
+  </div>
+
+  <div>
+    <label class="text-sm font-semibold text-gray-700">{{ form.address.label }}</label>
+    {{ form.address }}
   </div>
 
   <div class="grid sm:grid-cols-2 gap-4">

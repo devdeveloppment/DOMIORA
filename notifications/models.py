@@ -8,11 +8,13 @@ class Notification(models.Model):
         DEMANDE = "demande", "Nouvelle demande"
         TRANSACTION = "transaction", "Transaction"
         SYSTEME = "systeme", "Système"
+        VERIFICATION_APPROVED = "verification_approved", "Validation identité"
+        VERIFICATION_REJECTED = "verification_rejected", "Refus identité"
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="notifications")
     title = models.CharField(max_length=200)
     message = models.TextField(blank=True)
-    notification_type = models.CharField(max_length=12, choices=NotifType.choices, default=NotifType.INFO)
+    notification_type = models.CharField(max_length=30, choices=NotifType.choices, default=NotifType.INFO)
     link = models.CharField(max_length=255, blank=True)
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)

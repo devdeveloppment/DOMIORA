@@ -1,9 +1,13 @@
 {% extends "dashboard/dashboard_base.html" %}
 {% block title %}Mes biens — {{ site_settings.site_name }}{% endblock %}
 {% block dashboard_content %}
-<div class="flex items-center justify-between mb-6">
-  <h1 class="text-2xl font-extrabold">Mes biens</h1>
-  <a href="{% url 'dashboard:agent_property_create' %}" class="bg-primary-600 hover:bg-primary-500 transition text-white font-semibold rounded-full px-5 py-2.5 text-sm">+ Ajouter un bien</a>
+<div class="rounded-3xl border border-gray-200 dashboard-hero p-6 shadow-lg mb-6 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+  <div>
+    <p class="text-xs font-semibold uppercase tracking-[0.2em] text-primary-600 mb-1">Gestion des biens</p>
+    <h1 class="text-3xl font-extrabold text-gray-900">Mes biens</h1>
+    <p class="mt-2 text-sm text-gray-600">Visualisez et gérez vos annonces actives, brouillons et vendues.</p>
+  </div>
+  <a href="{% url 'dashboard:agent_property_create' %}" class="btn-premium inline-flex items-center justify-center rounded-full bg-primary-600 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-primary-700 glow-effect">+ Ajouter un bien</a>
 </div>
 
 <div class="bg-white rounded-2xl shadow-card border border-gray-100 overflow-hidden">

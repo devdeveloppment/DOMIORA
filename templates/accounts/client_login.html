@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Mon espace — {{ site_settings.site_name }}{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center bg-gray-50/50 py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-md w-full bg-white rounded-3xl shadow-xl overflow-hidden">
+
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-[#71212d] to-[#3e0b14] p-8 text-center">
+      <div class="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4">
+        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+        </svg>
+      </div>
+      <h1 class="text-2xl font-extrabold text-white mb-2">Mon espace</h1>
+      <p class="text-white/80 text-sm">Accédez à vos mises en relation et conversations</p>
+    </div>
+
+    <!-- Form -->
+    <div class="p-8">
+      {% if messages %}
+        {% for message in messages %}
+          <div class="mb-4 p-4 rounded-xl {% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}bg-rose-50 border border-rose-100 text-rose-600{% elif message.level == DEFAULT_MESSAGE_LEVELS.SUCCESS %}bg-emerald-50 border border-emerald-100 text-emerald-600{% elif message.level == DEFAULT_MESSAGE_LEVELS.WARNING %}bg-amber-50 border border-amber-100 text-amber-600{% else %}bg-blue-50 border border-blue-100 text-blue-600{% endif %} text-sm font-medium">
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+
+      <form method="post" action="{% url 'accounts:client_login' %}" class="space-y-5">
+        {% csrf_token %}
+
+        <div>
+          <label for="id_email" class="block text-xs font-bold text-gray-700 mb-2">Email</label>
+          <input type="email" name="email" id="id_email" required
+                 class="w-full rounded-xl border border-gray-200 px-4 py-3.5 text-sm outline-none focus:ring-2 focus:ring-[#71212d]/20 focus:border-[#71212d] transition bg-gray-50 hover:bg-white"
+                 placeholder="votre@email.com">
+        </div>
+
+        <div>
+          <label for="id_password" class="block text-xs font-bold text-gray-700 mb-2">Mot de passe</label>
+          <input type="password" name="password" id="id_password" required
+                 class="w-full rounded-xl border border-gray-200 px-4 py-3.5 text-sm outline-none focus:ring-2 focus:ring-[#71212d]/20 focus:border-[#71212d] transition bg-gray-50 hover:bg-white"
+                 placeholder="••••••••">
+        </div>
+
+        <div class="flex items-center justify-between">
+          <div class="flex items-center">
+            <input type="checkbox" id="remember" name="remember" class="h-4 w-4 text-[#71212d] focus:ring-[#71212d] border-gray-300 rounded">
+            <label for="remember" class="ml-2 block text-xs text-gray-600">Se souvenir de moi</label>
+          </div>
+          <a href="{% url 'accounts:password_reset' %}" class="text-xs font-bold text-[#71212d] hover:underline">Mot de passe oublié ?</a>
+        </div>
+
+        <button type="submit"
+                class="w-full flex justify-center items-center py-4 px-4 rounded-xl shadow-lg text-sm font-bold text-white bg-[#71212d] hover:bg-[#5a1a24] transition transform hover:scale-[1.02]">
+          Accéder à mon espace →
+        </button>
+      </form>
+
+      <div class="mt-6 pt-6 border-t border-gray-100">
+        <p class="text-center text-xs text-gray-500 mb-3">
+          Vous n'avez pas encore d'espace client ?
+        </p>
+        <p class="text-center text-xs text-gray-400">
+          Votre espace client est créé automatiquement après votre première mise en relation avec un propriétaire.
+        </p>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

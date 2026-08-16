@@ -1,0 +1,101 @@
+{% extends "dashboard/dashboard_base.html" %}
+{% load humanize %}
+{% block title %}{{ title_override|default:"Mes biens" }} — {{ site_settings.site_name }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="w-full">
+
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold font-display text-gray-900">{{ title_override|default:"Mes biens" }}</h1>
+      <p class="text-sm text-gray-400 mt-0.5">{{ page_obj.paginator.count }} bien{{ page_obj.paginator.count|pluralize }} au total</p>
+    </div>
+    <div class="flex items-center gap-3">
+      <a href="{% url 'dashboard:owner_property_create' %}" class="inline-flex items-center gap-2 bg-blue-600 text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:bg-blue-700 transition shadow-sm">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+        Ajouter
+      </a>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-gray-100">
+            <th class="text-left px-5 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Bien</th>
+            <th class="text-left px-5 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Prix</th>
+            <th class="text-left px-5 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Statut</th>
+            <th class="text-left px-5 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Visibilité</th>
+            <th class="text-right px-5 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-50">
+          {% for p in page_obj %}
+          <tr class="hover:bg-gray-50 transition">
+            <td class="px-5 py-4">
+              <div class="flex items-center gap-3">
+                <img src="{{ p.primary_image }}" alt="{{ p.title }}"
+                     class="w-12 h-12 rounded-xl object-cover bg-gray-100 shrink-0"
+                     onerror="this.src='https://placehold.co/48x48/f3f4f6/9ca3af?text=?'">
+                <div class="min-w-0">
+                  <a href="{{ p.get_absolute_url }}" target="_blank"
+                     class="font-semibold text-gray-900 hover:text-blue-600 transition block truncate max-w-[220px]">{{ p.title }}</a>
+                  <span class="text-xs text-gray-400">{{ p.city }}{% if p.neighborhood %}, {{ p.neighborhood }}{% endif %}</span>
+                </div>
+              </div>
+            </td>
+            <td class="px-5 py-4 font-bold text-gray-900">{{ p.price_display }}</td>
+            <td class="px-5 py-4">
+              {% if p.status == 'vendu' or p.status == 'loue' %}
+                <span class="inline-flex items-center text-xs font-bold px-2.5 py-1 rounded-full bg-rose-50 text-rose-700">{{ p.get_status_display }}</span>
+              {% elif p.status == 'brouillon' %}
+                <span class="inline-flex items-center text-xs font-bold px-2.5 py-1 rounded-full bg-gray-100 text-gray-500">{{ p.get_status_display }}</span>
+              {% else %}
+                <span class="inline-flex items-center text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700">{{ p.get_status_display }}</span>
+              {% endif %}
+            </td>
+            <td class="px-5 py-4">
+              <form method="post" action="{% url 'dashboard:owner_property_toggle_publish' p.pk %}">
+                {% csrf_token %}
+                <button class="inline-flex items-center text-xs font-bold px-2.5 py-1 rounded-full {% if p.is_published %}bg-emerald-50 text-emerald-700 hover:bg-emerald-100{% else %}bg-gray-100 text-gray-500 hover:bg-gray-200{% endif %} transition">
+                  {% if p.is_published %}
+                    En ligne
+                  {% else %}
+                    Hors ligne
+                  {% endif %}
+                </button>
+              </form>
+            </td>
+            <td class="px-5 py-4 text-right">
+              <div class="flex items-center justify-end gap-2">
+                <a href="{% url 'dashboard:owner_property_edit' p.pk %}"
+                   class="text-xs font-semibold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2.5 py-1.5 rounded-lg transition">Modifier</a>
+                <form method="post" action="{% url 'dashboard:owner_property_delete' p.pk %}" class="inline"
+                      onsubmit="return confirm('Supprimer définitivement ce bien ?');">
+                  {% csrf_token %}
+                  <button class="text-xs font-semibold text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 px-2.5 py-1.5 rounded-lg transition">Supprimer</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="5" class="py-20 text-center text-gray-400">
+              <svg class="w-12 h-12 mx-auto mb-3 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+              <p class="font-medium">Vous n'avez pas encore de bien. <a href="{% url 'dashboard:owner_property_create' %}" class="text-blue-600 hover:underline">En ajouter un</a></p>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  {% include "partials/pagination.html" %}
+
+</div>
+{% endblock %}

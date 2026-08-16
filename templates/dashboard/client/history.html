@@ -1,0 +1,137 @@
+{% extends "dashboard/dashboard_base.html" %}
+
+{% block title %}Historique — {{ site_settings.site_name }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="w-full">
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-2xl font-bold font-display text-gray-900">Historique de navigation</h1>
+      <p class="text-gray-500 text-sm mt-1">{{ total_count }} bien{{ total_count|pluralize }} consulté{{ total_count|pluralize }}</p>
+    </div>
+  </div>
+
+  {% if page_obj %}
+    <!-- Grid de propriétés -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+      {% for view in page_obj %}
+        {% with property=view.property %}
+        <div class="group bg-white rounded-[1.5rem] border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-all duration-300">
+          <!-- Image -->
+          <a href="{{ property.get_absolute_url }}" class="relative overflow-hidden h-48 block">
+            <img 
+              src="{{ property.primary_image }}" 
+              alt="{{ property.title }}"
+              class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            >
+            <div class="absolute top-3 left-3 flex flex-col gap-1.5">
+              <span class="text-[10px] font-bold px-3 py-1 rounded-full text-white uppercase tracking-wider {% if property.status == 'vendu' or property.status == 'loue' %}bg-gray-900{% elif property.transaction_type == 'location' %}bg-[#8c6b23]{% else %}bg-[#71212d]{% endif %}">
+                {{ property.badge_label }}
+              </span>
+              {% if property.is_validated %}
+              <span class="text-[9px] font-bold px-3 py-1 rounded-full bg-green-600 text-white">✓ Vérifiée</span>
+              {% endif %}
+            </div>
+            
+            <!-- Viewed date overlay -->
+            <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-3 text-white text-xs font-medium">
+              <p>Consultée le {{ view.viewed_at|date:"d/m/Y à H:i" }}</p>
+            </div>
+          </a>
+
+          <!-- Content -->
+          <div class="p-4 space-y-3">
+            <div>
+              <h3 class="font-bold text-gray-900 text-sm line-clamp-2 mb-1">{{ property.title }}</h3>
+              <p class="text-xs text-gray-500 inline-flex items-center gap-1">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
+                {{ property.city }}
+              </p>
+            </div>
+
+            <!-- Price & Stats -->
+            <div class="border-t border-gray-100 pt-3">
+              <div class="flex items-baseline justify-between mb-2">
+                <span class="text-lg font-bold text-[#71212d]">{{ property.price_display }}</span>
+                <span class="text-xs text-gray-500">{{ property.get_property_type_display }}</span>
+              </div>
+              
+              <!-- Quick stats -->
+              <div class="grid grid-cols-3 gap-2 text-center text-xs">
+                {% if property.bedrooms %}
+                <div class="bg-gray-50 rounded-lg py-1.5">
+                  <p class="font-bold text-gray-900">{{ property.bedrooms }}</p>
+                  <p class="text-gray-500 text-[10px]">Chambre{{ property.bedrooms|pluralize }}</p>
+                </div>
+                {% endif %}
+                {% if property.bathrooms %}
+                <div class="bg-gray-50 rounded-lg py-1.5">
+                  <p class="font-bold text-gray-900">{{ property.bathrooms }}</p>
+                  <p class="text-gray-500 text-[10px]">Salle{{ property.bathrooms|pluralize }}</p>
+                </div>
+                {% endif %}
+                {% if property.surface_area %}
+                <div class="bg-gray-50 rounded-lg py-1.5">
+                  <p class="font-bold text-gray-900">{{ property.surface_area|floatformat:0 }}</p>
+                  <p class="text-gray-500 text-[10px]">m²</p>
+                </div>
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex gap-2">
+              <a href="{{ property.get_absolute_url }}" class="flex-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs py-2 transition text-center">
+                Voir
+              </a>
+              <button type="button" class="flex-1 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-700 font-bold text-xs py-2 transition">
+                Comparer
+              </button>
+            </div>
+          </div>
+        </div>
+        {% endwith %}
+      {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <div class="flex items-center justify-center gap-2 py-8 border-t border-gray-100">
+      {% if page_obj.has_previous %}
+        <a href="?page=1" class="px-3 py-2 rounded-lg border border-gray-200 hover:bg-gray-50 transition text-sm font-medium">
+          « Première
+        </a>
+        <a href="?page={{ page_obj.previous_page_number }}" class="px-3 py-2 rounded-lg border border-gray-200 hover:bg-gray-50 transition text-sm font-medium">
+          ‹ Précédente
+        </a>
+      {% endif %}
+
+      <span class="text-sm text-gray-600 mx-4">
+        Page <span class="font-bold">{{ page_obj.number }}</span> sur <span class="font-bold">{{ page_obj.paginator.num_pages }}</span>
+      </span>
+
+      {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}" class="px-3 py-2 rounded-lg border border-gray-200 hover:bg-gray-50 transition text-sm font-medium">
+          Suivante ›
+        </a>
+        <a href="?page={{ page_obj.paginator.num_pages }}" class="px-3 py-2 rounded-lg border border-gray-200 hover:bg-gray-50 transition text-sm font-medium">
+          Dernière »
+        </a>
+      {% endif %}
+    </div>
+    {% endif %}
+
+  {% else %}
+    <!-- Empty state -->
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center min-h-[400px] flex flex-col justify-center items-center">
+      <svg class="w-16 h-16 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+      <h2 class="text-xl font-bold text-gray-900 mb-2">Aucun historique encore</h2>
+      <p class="text-gray-500 max-w-md mx-auto mb-6">Vous n'avez pas encore consulté de biens. Parcourez notre catalogue pour démarrer votre recherche immobilière.</p>
+      <a href="{% url 'properties:list' %}" class="inline-flex items-center gap-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 transition">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+        Parcourir les annonces
+      </a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

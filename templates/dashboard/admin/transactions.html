@@ -2,10 +2,13 @@
 {% load humanize %}
 {% block title %}Transactions — {{ site_settings.site_name }}{% endblock %}
 {% block dashboard_content %}
-<div class="flex items-center justify-between mb-6 flex-wrap gap-3">
-  <h1 class="text-2xl font-extrabold">Historique des transactions</h1>
-  <form method="get">
-    <select name="status" onchange="this.form.submit()" class="rounded-full border border-gray-200 text-sm px-3 py-2">
+<div class="rounded-3xl border border-gray-200 dashboard-hero p-6 shadow-lg mb-6 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+  <div>
+    <p class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Transactions</p>
+    <h1 class="text-3xl font-extrabold text-gray-900">Historique des transactions</h1>
+  </div>
+  <form method="get" class="min-w-[220px]">
+    <select name="status" onchange="this.form.submit()" class="w-full rounded-full border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-sm transition focus:outline-none focus:ring-2 focus:ring-primary-200">
       <option value="">Tous les statuts</option>
       <option value="en_cours" {% if request.GET.status == "en_cours" %}selected{% endif %}>En cours</option>
       <option value="terminee" {% if request.GET.status == "terminee" %}selected{% endif %}>Terminée</option>
@@ -18,7 +21,7 @@
     <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
       <tr>
         <th class="text-left px-5 py-3">Bien</th>
-        <th class="text-left px-5 py-3">Agent</th>
+        <th class="text-left px-5 py-3">Propriétaire</th>
         <th class="text-left px-5 py-3">Client</th>
         <th class="text-left px-5 py-3">Type</th>
         <th class="text-left px-5 py-3">Montant</th>
@@ -30,8 +33,14 @@
       {% for t in page_obj %}
       <tr class="hover:bg-gray-50">
         <td class="px-5 py-4 font-semibold">{{ t.property.title }}</td>
-        <td class="px-5 py-4">{{ t.agent.user.get_full_name|default:"—" }}</td>
-        <td class="px-5 py-4">{{ t.client.get_full_name|default:"—" }}</td>
+        <td class="px-5 py-4">
+          {% if t.property.owner %}
+            {{ t.property.owner.get_full_name|default:t.property.owner.username }}
+          {% else %}
+            —
+          {% endif %}
+        </td>
+        <td class="px-5 py-4">{{ t.client.get_full_name|default:t.client.username|default:"—" }}</td>
         <td class="px-5 py-4">{{ t.get_transaction_type_display }}</td>
         <td class="px-5 py-4">{{ t.amount|floatformat:0|intcomma }} FCFA</td>
         <td class="px-5 py-4">

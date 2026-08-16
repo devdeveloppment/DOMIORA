@@ -1,0 +1,112 @@
+{% extends "dashboard/dashboard_base.html" %}
+{% block title %}Mes mises en relation — {{ site_settings.site_name }}{% endblock %}
+{% block dashboard_content %}
+
+<div class="flex items-center justify-between mb-6">
+  <div>
+    <h1 class="text-2xl font-extrabold font-display">Mes mises en relation</h1>
+    <p class="text-sm text-gray-400 mt-1">Propriétaires avec lesquels vous avez effectué une mise en relation</p>
+  </div>
+  <a href="{% url 'properties:list' %}" class="text-sm font-semibold text-[#71212d] hover:underline">Trouver un bien →</a>
+</div>
+
+{% if page_obj.object_list %}
+<div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+  {% for item in page_obj.object_list %}
+  {% with unlock=item.unlock p=unlock.property conversation=item.conversation has_unread=item.has_unread %}
+  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition group">
+
+    <!-- Image -->
+    <div class="relative h-44 bg-gray-100 overflow-hidden">
+      {% if p.primary_image %}
+      <img src="{{ p.primary_image }}" alt="{{ p.title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+      {% else %}
+      <div class="w-full h-full flex items-center justify-center text-gray-300">
+        <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+      </div>
+      {% endif %}
+      <!-- Active connection badge -->
+      <span class="absolute top-3 left-3 bg-emerald-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
+        🔓 Accès actif
+      </span>
+      {% if has_unread %}
+      <span class="absolute top-3 right-3 bg-[#71212d] text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
+        📬 Nouveau message
+      </span>
+      {% endif %}
+    </div>
+
+    <!-- Info -->
+    <div class="p-4">
+      <h2 class="font-bold text-gray-900 text-sm mb-1 line-clamp-1">{{ p.title }}</h2>
+      <p class="text-xs text-gray-500 flex items-center gap-1 mb-3">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        {{ p.city }}, {{ p.country }}
+      </p>
+
+      <!-- Owner contact -->
+      {% if p.owner %}
+      <div class="bg-gray-50 rounded-xl p-3 mb-3 space-y-1.5">
+        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Propriétaire</p>
+        <p class="text-sm font-semibold text-gray-800">{{ p.owner.get_full_name|default:p.owner.username }}</p>
+        {% if p.owner.phone %}
+        <p class="text-xs text-gray-600">📞 {{ p.owner.phone }}</p>
+        {% endif %}
+        {% if p.owner.whatsapp_number %}
+        <p class="text-xs text-gray-600">WhatsApp : {{ p.owner.whatsapp_number }}</p>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      <p class="text-[10px] text-gray-400 mb-3">Mise en relation le {{ unlock.unlocked_at|date:"d/m/Y à H:i" }}</p>
+
+      <!-- Action buttons -->
+      <div class="flex gap-2">
+        <a href="{{ p.get_absolute_url }}" class="flex-1 text-center bg-[#71212d] hover:bg-[#5a1a24] text-white text-xs font-bold rounded-lg py-2 transition">
+          Voir le bien
+        </a>
+        {% if conversation %}
+        <a href="{% url 'dashboard:client_conversation_detail' conversation.pk %}"
+           class="flex-1 text-center border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-bold rounded-lg py-2 transition">
+          💬 Messagerie
+        </a>
+        {% elif p.owner %}
+        <a href="{% url 'messaging:start_conversation' p.owner.pk %}?property={{ p.pk }}"
+           class="flex-1 text-center border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-bold rounded-lg py-2 transition">
+          💬 Contacter
+        </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endwith %}
+  {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+<div class="flex justify-center gap-2 mt-8">
+  {% if page_obj.has_previous %}
+  <a href="?page={{ page_obj.previous_page_number }}" class="px-4 py-2 text-sm font-semibold text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50">← Précédent</a>
+  {% endif %}
+  {% if page_obj.has_next %}
+  <a href="?page={{ page_obj.next_page_number }}" class="px-4 py-2 text-sm font-semibold text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50">Suivant →</a>
+  {% endif %}
+</div>
+{% endif %}
+
+{% else %}
+<div class="text-center py-20">
+  <div class="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-5">
+    <svg class="w-10 h-10 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"/></svg>
+  </div>
+  <h2 class="text-xl font-extrabold text-gray-700 mb-2">Aucune mise en relation</h2>
+  <p class="text-gray-400 text-sm mb-6 max-w-sm mx-auto">Parcourez nos annonces et effectuez les frais de mise en relation (500 FCFA) pour contacter un propriétaire.</p>
+  <a href="{% url 'properties:list' %}" class="inline-flex items-center gap-2 bg-[#71212d] text-white font-bold px-6 py-3 rounded-xl text-sm hover:bg-[#5a1a24] transition shadow-md">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+    Parcourir les annonces
+  </a>
+</div>
+{% endif %}
+
+{% endblock %}

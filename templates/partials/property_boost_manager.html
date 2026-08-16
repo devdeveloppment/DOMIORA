@@ -1,0 +1,322 @@
+<div x-data="propertyBoostManager()" x-init="loadBoostPackages()" class="space-y-6" x-cloak>
+  <!-- Current Boost Status -->
+  <div x-show="currentBoost" class="bg-gradient-to-r from-purple-500 to-blue-500 rounded-2xl p-6 text-white">
+    <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+          </svg>
+        </div>
+        <div>
+          <h3 class="font-bold text-lg">Boost actif</h3>
+          <p class="text-white/80 text-sm" x-text="currentBoost.package.name"></p>
+        </div>
+      </div>
+      <span class="bg-white/20 px-3 py-1 rounded-full text-sm font-semibold" x-text="getDaysRemaining(currentBoost) + ' jours restants'"></span>
+    </div>
+    
+    <!-- Boost Progress -->
+    <div class="mb-4">
+      <div class="flex justify-between text-sm mb-1">
+        <span>Progression du boost</span>
+        <span x-text="getBoostProgress(currentBoost) + '%'"></span>
+      </div>
+      <div class="h-2 bg-white/20 rounded-full overflow-hidden">
+        <div class="h-full bg-white transition-all" :style="{ width: getBoostProgress(currentBoost) + '%' }"></div>
+      </div>
+    </div>
+    
+    <!-- Performance Stats -->
+    <div class="grid grid-cols-3 gap-4">
+      <div class="bg-white/10 rounded-lg p-3 text-center">
+        <div class="text-2xl font-bold" x-text="currentBoost.views_during_boost"></div>
+        <div class="text-xs text-white/80">Vues</div>
+      </div>
+      <div class="bg-white/10 rounded-lg p-3 text-center">
+        <div class="text-2xl font-bold" x-text="currentBoost.inquiries_during_boost"></div>
+        <div class="text-xs text-white/80">Demandes</div>
+      </div>
+      <div class="bg-white/10 rounded-lg p-3 text-center">
+        <div class="text-2xl font-bold" x-text="getViewsIncrease(currentBoost) + '%'"></div>
+        <div class="text-xs text-white/80">Augmentation</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Boost Packages -->
+  <div>
+    <h3 class="text-lg font-bold text-gray-900 mb-4">Choisir un package de boost</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <template x-for="pkg in boostPackages" :key="pkg.id">
+        <div class="bg-white rounded-xl border-2 p-4 transition-all hover:shadow-lg cursor-pointer"
+             :class="selectedPackage?.id === pkg.id ? 'border-purple-500 shadow-lg' : 'border-gray-200'"
+             @click="selectPackage(pkg)">
+          <!-- Popular Badge -->
+          <div x-show="pkg.boost_multiplier >= 3" class="absolute -top-3 left-1/2 -translate-x-1/2">
+            <span class="bg-gradient-to-r from-purple-500 to-blue-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+              Populaire
+            </span>
+          </div>
+          
+          <div class="text-center mb-4">
+            <div class="text-3xl font-bold text-gray-900" x-text="pkg.boost_multiplier + 'x'"></div>
+            <div class="text-sm text-gray-500">Visibilité</div>
+          </div>
+          
+          <h4 class="font-semibold text-gray-900 text-center mb-2" x-text="pkg.name"></h4>
+          <p class="text-sm text-gray-500 text-center mb-4" x-text="pkg.duration_days + ' jours'"></p>
+          
+          <!-- Features -->
+          <div class="space-y-2 mb-4">
+            <div class="flex items-center gap-2 text-sm">
+              <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+              <span class="text-gray-600">Visibilité x<span x-text="pkg.boost_multiplier"></span></span>
+            </div>
+            <div x-show="pkg.featured_placement" class="flex items-center gap-2 text-sm">
+              <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+              <span class="text-gray-600">Section vedette</span>
+            </div>
+            <div x-show="pkg.top_of_search" class="flex items-center gap-2 text-sm">
+              <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+              <span class="text-gray-600">Top des recherches</span>
+            </div>
+            <div x-show="pkg.badge_highlight" class="flex items-center gap-2 text-sm">
+              <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+              <span class="text-gray-600">Badge spécial</span>
+            </div>
+          </div>
+          
+          <!-- Price -->
+          <div class="text-center">
+            <span class="text-2xl font-bold text-gray-900" x-text="formatPrice(pkg.price)"></span>
+            <span class="text-gray-500 text-sm" x-text="pkg.currency"></span>
+          </div>
+        </div>
+      </template>
+    </div>
+  </div>
+
+  <!-- Purchase Button -->
+  <div x-show="selectedPackage" class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg">
+    <div class="max-w-4xl mx-auto flex items-center justify-between">
+      <div>
+        <span class="text-sm text-gray-500">Package sélectionné:</span>
+        <span class="font-semibold text-gray-900 ml-2" x-text="selectedPackage.name"></span>
+        <span class="font-bold text-purple-600 ml-2" x-text="formatPrice(selectedPackage.price) + ' ' + selectedPackage.currency"></span>
+      </div>
+      <button @click="purchaseBoost()" 
+              class="bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold px-6 py-3 rounded-full hover:opacity-90 transition">
+        Activer le boost
+      </button>
+    </div>
+  </div>
+
+  <!-- Boost History -->
+  <div>
+    <h3 class="text-lg font-bold text-gray-900 mb-4">Historique des boosts</h3>
+    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <template x-for="boost in boostHistory" :key="boost.id">
+        <div class="flex items-center justify-between p-4 border-b border-gray-100 last:border-0">
+          <div>
+            <span class="font-semibold text-gray-900" x-text="boost.package.name"></span>
+            <span class="text-sm text-gray-500 ml-2" x-text="formatDate(boost.start_date) + ' - ' + formatDate(boost.end_date)"></span>
+          </div>
+          <div class="flex items-center gap-4">
+            <div class="text-right">
+              <span class="text-sm text-gray-500">Vues</span>
+              <div class="font-semibold text-gray-900" x-text="boost.views_during_boost"></div>
+            </div>
+            <span class="px-3 py-1 rounded-full text-xs font-semibold"
+                  :class="getBoostStatusClass(boost.status)"
+                  x-text="getBoostStatusLabel(boost.status)">
+            </span>
+          </div>
+        </div>
+      </template>
+    </div>
+  </div>
+</div>
+
+<script>
+function propertyBoostManager() {
+  return {
+    boostPackages: [],
+    selectedPackage: null,
+    currentBoost: null,
+    boostHistory: [],
+    
+    async loadBoostPackages() {
+      try {
+        // In production, fetch from API
+        // const response = await fetch('/api/boost-packages/');
+        // this.boostPackages = await response.json();
+        
+        // Mock data for demo
+        this.boostPackages = [
+          {
+            id: 1,
+            name: 'Boost Starter',
+            duration_days: 3,
+            duration: '3_days',
+            price: 5000,
+            currency: 'XOF',
+            boost_multiplier: 2,
+            featured_placement: false,
+            top_of_search: false,
+            badge_highlight: false,
+            priority_support: false
+          },
+          {
+            id: 2,
+            name: 'Boost Pro',
+            duration_days: 7,
+            duration: '7_days',
+            price: 10000,
+            currency: 'XOF',
+            boost_multiplier: 3,
+            featured_placement: true,
+            top_of_search: true,
+            badge_highlight: true,
+            priority_support: false
+          },
+          {
+            id: 3,
+            name: 'Boost Premium',
+            duration_days: 14,
+            duration: '14_days',
+            price: 20000,
+            currency: 'XOF',
+            boost_multiplier: 4,
+            featured_placement: true,
+            top_of_search: true,
+            badge_highlight: true,
+            priority_support: true
+          },
+          {
+            id: 4,
+            name: 'Boost Elite',
+            duration_days: 30,
+            duration: '30_days',
+            price: 35000,
+            currency: 'XOF',
+            boost_multiplier: 5,
+            featured_placement: true,
+            top_of_search: true,
+            badge_highlight: true,
+            priority_support: true
+          }
+        ];
+        
+        // Mock current boost
+        this.currentBoost = null;
+        
+        // Mock boost history
+        this.boostHistory = [
+          {
+            id: 1,
+            package: { name: 'Boost Pro' },
+            start_date: '2024-01-15',
+            end_date: '2024-01-22',
+            status: 'completed',
+            views_during_boost: 1250,
+            inquiries_during_boost: 45
+          },
+          {
+            id: 2,
+            package: { name: 'Boost Starter' },
+            start_date: '2024-02-01',
+            end_date: '2024-02-04',
+            status: 'completed',
+            views_during_boost: 450,
+            inquiries_during_boost: 12
+          }
+        ];
+        
+      } catch (error) {
+        console.error('Error loading boost packages:', error);
+      }
+    },
+    
+    selectPackage(pkg) {
+      this.selectedPackage = pkg;
+    },
+    
+    async purchaseBoost() {
+      if (!this.selectedPackage) return;
+      
+      try {
+        // In production, send to API
+        // const response = await fetch('/api/properties/' + propertyId + '/boost/', {
+        //   method: 'POST',
+        //   headers: { 'Content-Type': 'application/json' },
+        //   body: JSON.stringify({ package_id: this.selectedPackage.id })
+        // });
+        
+        alert('Boost activé avec succès !');
+        this.selectedPackage = null;
+        
+      } catch (error) {
+        console.error('Error purchasing boost:', error);
+        alert('Erreur lors de l\'activation du boost');
+      }
+    },
+    
+    getDaysRemaining(boost) {
+      const endDate = new Date(boost.end_date);
+      const now = new Date();
+      const diff = Math.ceil((endDate - now) / (1000 * 60 * 60 * 24));
+      return Math.max(0, diff);
+    },
+    
+    getBoostProgress(boost) {
+      const totalDays = (new Date(boost.end_date) - new Date(boost.start_date)) / (1000 * 60 * 60 * 24);
+      const elapsedDays = (new Date() - new Date(boost.start_date)) / (1000 * 60 * 60 * 24);
+      return Math.min(100, Math.round((elapsedDays / totalDays) * 100));
+    },
+    
+    getViewsIncrease(boost) {
+      if (boost.views_before_boost === 0) return 0;
+      const increase = ((boost.views_during_boost - boost.views_before_boost) / boost.views_before_boost) * 100;
+      return Math.round(increase);
+    },
+    
+    formatPrice(price) {
+      return new Intl.NumberFormat('fr-FR', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+      }).format(price);
+    },
+    
+    formatDate(dateStr) {
+      return new Date(dateStr).toLocaleDateString('fr-FR');
+    },
+    
+    getBoostStatusClass(status) {
+      switch(status) {
+        case 'active': return 'bg-green-100 text-green-700';
+        case 'completed': return 'bg-gray-100 text-gray-700';
+        case 'expired': return 'bg-red-100 text-red-700';
+        default: return 'bg-yellow-100 text-yellow-700';
+      }
+    },
+    
+    getBoostStatusLabel(status) {
+      switch(status) {
+        case 'active': return 'Actif';
+        case 'completed': return 'Terminé';
+        case 'expired': return 'Expiré';
+        default: return 'En attente';
+      }
+    }
+  };
+}
+</script>

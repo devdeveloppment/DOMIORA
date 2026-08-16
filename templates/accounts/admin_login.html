@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Connexion Administrateur — {{ site_settings.site_name }}{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-md w-full bg-gray-800 rounded-3xl shadow-2xl overflow-hidden">
+
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-[#71212d] to-[#3e0b14] p-8 text-center">
+      <div class="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4">
+        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+        </svg>
+      </div>
+      <h1 class="text-2xl font-extrabold text-white mb-2">Administration</h1>
+      <p class="text-white/80 text-sm">Accès réservé aux administrateurs</p>
+    </div>
+
+    <!-- Form -->
+    <div class="p-8">
+      {% if messages %}
+        {% for message in messages %}
+          <div class="mb-4 p-4 rounded-xl {% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}bg-rose-500/10 border border-rose-500/20 text-rose-400{% elif message.level == DEFAULT_MESSAGE_LEVELS.SUCCESS %}bg-emerald-500/10 border border-emerald-500/20 text-emerald-400{% elif message.level == DEFAULT_MESSAGE_LEVELS.WARNING %}bg-amber-500/10 border border-amber-500/20 text-amber-400{% else %}bg-blue-500/10 border border-blue-500/20 text-blue-400{% endif %} text-sm font-medium">
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+
+      <form method="post" action="{% url 'accounts:admin_login' %}" class="space-y-5">
+        {% csrf_token %}
+
+        <div>
+          <label for="id_username" class="block text-xs font-bold text-gray-300 mb-2">Nom d'utilisateur administrateur</label>
+          <input type="text" name="username" id="id_username" required
+                 class="w-full rounded-xl border border-gray-600 bg-gray-700 px-4 py-3.5 text-sm text-white outline-none focus:ring-2 focus:ring-[#71212d]/50 focus:border-[#71212d] transition placeholder-gray-400"
+                 placeholder="admin">
+        </div>
+
+        <div>
+          <label for="id_password" class="block text-xs font-bold text-gray-300 mb-2">Mot de passe</label>
+          <input type="password" name="password" id="id_password" required
+                 class="w-full rounded-xl border border-gray-600 bg-gray-700 px-4 py-3.5 text-sm text-white outline-none focus:ring-2 focus:ring-[#71212d]/50 focus:border-[#71212d] transition placeholder-gray-400"
+                 placeholder="••••••••">
+        </div>
+
+        <button type="submit"
+                class="w-full flex justify-center items-center py-4 px-4 rounded-xl shadow-lg text-sm font-bold text-white bg-[#71212d] hover:bg-[#5a1a24] transition transform hover:scale-[1.02]">
+          Accéder au dashboard →
+        </button>
+      </form>
+
+      <div class="mt-6 pt-6 border-t border-gray-700">
+        <p class="text-center text-xs text-gray-400">
+          <svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+          </svg>
+          Zone sécurisée. Toute tentative d'accès non autorisé sera enregistrée.
+        </p>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

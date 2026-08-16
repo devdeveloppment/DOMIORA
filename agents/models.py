@@ -43,15 +43,18 @@ class Agent(models.Model):
 
     @property
     def active_properties_count(self):
-        return self.properties.filter(is_published=True).exclude(status="vendu").exclude(status="loue").count()
+        from properties.models import Property
+        return Property.objects.filter(owner=self.user, is_published=True).exclude(status="vendu").exclude(status="loue").count()
 
     @property
     def sold_or_rented_count(self):
-        return self.properties.filter(status__in=["vendu", "loue"]).count()
+        from properties.models import Property
+        return Property.objects.filter(owner=self.user, status__in=["vendu", "loue"]).count()
 
     @property
     def total_properties_count(self):
-        return self.properties.count()
+        from properties.models import Property
+        return Property.objects.filter(owner=self.user).count()
 
     @property
     def average_rating(self):

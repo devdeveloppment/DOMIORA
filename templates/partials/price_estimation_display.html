@@ -1,0 +1,282 @@
+<div x-data="priceEstimationDisplay()" x-init="loadEstimation()" class="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl p-6 border border-blue-100" x-cloak>
+  <div class="flex items-center justify-between mb-4">
+    <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+      <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+      </svg>
+      Estimation de valeur
+    </h3>
+    <span class="text-xs text-gray-500" x-text="estimation.analysis_date ? 'Mis à jour le ' + new Date(estimation.analysis_date).toLocaleDateString('fr-FR') : ''"></span>
+  </div>
+
+  <!-- Loading State -->
+  <div x-show="loading" class="text-center py-8">
+    <div class="inline-block w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+    <p class="text-gray-500 mt-2">Analyse en cours...</p>
+  </div>
+
+  <!-- Error State -->
+  <div x-show="error" class="text-center py-8">
+    <svg class="w-12 h-12 mx-auto text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+    </svg>
+    <p class="text-gray-500" x-text="error"></p>
+  </div>
+
+  <!-- Estimation Display -->
+  <div x-show="!loading && !error && estimation">
+    <!-- Price Range -->
+    <div class="bg-white rounded-xl p-4 mb-4 shadow-sm">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-sm text-gray-600">Fourchette de prix estimée</span>
+        <span class="text-xs px-2 py-1 rounded-full" 
+              :class="getConfidenceClass(estimation.confidence_score)"
+              x-text="getConfidenceLabel(estimation.confidence_score)">
+        </span>
+      </div>
+      <div class="flex items-baseline gap-2">
+        <span class="text-2xl font-bold text-gray-900" x-text="formatPrice(estimation.estimated_min_price)"></span>
+        <span class="text-gray-400">-</span>
+        <span class="text-2xl font-bold text-gray-900" x-text="formatPrice(estimation.estimated_max_price)"></span>
+      </div>
+      <div class="mt-2 text-sm text-gray-500">
+        Moyenne: <span class="font-semibold text-gray-700" x-text="formatPrice(estimation.estimated_avg_price)"></span>
+      </div>
+    </div>
+
+    <!-- Market Position -->
+    <div class="bg-white rounded-xl p-4 mb-4 shadow-sm">
+      <div class="flex items-center justify-between">
+        <div>
+          <span class="text-sm text-gray-600">Position sur le marché</span>
+          <div class="mt-1">
+            <span class="text-lg font-bold" 
+                  :class="getMarketPositionClass(estimation.market_position)"
+                  x-text="getMarketPositionLabel(estimation.market_position)">
+            </span>
+          </div>
+        </div>
+        <div class="text-right">
+          <span class="text-sm text-gray-600">Écart par rapport au marché</span>
+          <div class="mt-1">
+            <span class="text-lg font-bold" 
+                  :class="estimation.price_difference_percent < 0 ? 'text-green-600' : estimation.price_difference_percent > 0 ? 'text-red-600' : 'text-gray-700'"
+                  x-text="(estimation.price_difference_percent > 0 ? '+' : '') + estimation.price_difference_percent + '%'">
+            </span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Price Comparison Bar -->
+      <div class="mt-4">
+        <div class="relative h-4 bg-gray-200 rounded-full overflow-hidden">
+          <div class="absolute left-0 top-0 h-full bg-blue-500 transition-all"
+               :style="{ width: getListingPositionPercent(estimation) + '%' }">
+          </div>
+          <div class="absolute top-0 bottom-0 w-0.5 bg-gray-900"
+               :style="{ left: '50%' }">
+          </div>
+        </div>
+        <div class="flex justify-between mt-1 text-xs text-gray-500">
+          <span>Prix min marché</span>
+          <span>Prix moyen</span>
+          <span>Prix max marché</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Comparable Sales -->
+    <div x-show="estimation.comparable_sales_count > 0" class="bg-white rounded-xl p-4 mb-4 shadow-sm">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-sm font-semibold text-gray-700">Ventes comparables</span>
+        <span class="text-xs text-gray-500" x-text="estimation.comparable_sales_count + ' biens analysés'"></span>
+      </div>
+      <div class="space-y-2">
+        <template x-for="(sale, index) in getRecentComparableSales()" :key="index">
+          <div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+            <div>
+              <span class="text-sm font-medium text-gray-700" x-text="sale.address || sale.city"></span>
+              <span class="text-xs text-gray-500 ml-2" x-text="sale.surface_area + 'm² • ' + sale.bedrooms + ' ch.'"></span>
+            </div>
+            <span class="text-sm font-semibold text-gray-900" x-text="formatPrice(sale.sale_price)"></span>
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <!-- Geographic Analysis -->
+    <div x-show="geographicAnalysis" class="bg-white rounded-xl p-4 shadow-sm">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-sm font-semibold text-gray-700">Analyse géographique</span>
+        <span class="text-xs px-2 py-1 rounded-full"
+              :class="getTrendClass(geographicAnalysis.price_trend)"
+              x-text="getTrendLabel(geographicAnalysis.price_trend)">
+        </span>
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <span class="text-xs text-gray-500">Prix moyen au m²</span>
+          <div class="text-lg font-bold text-gray-900" x-text="formatPrice(geographicAnalysis.avg_price_per_sqm) + '/m²'"></div>
+        </div>
+        <div>
+          <span class="text-xs text-gray-500">Évolution prix</span>
+          <div class="text-lg font-bold" 
+               :class="geographicAnalysis.price_change_percent >= 0 ? 'text-green-600' : 'text-red-600'"
+               x-text="(geographicAnalysis.price_change_percent >= 0 ? '+' : '') + geographicAnalysis.price_change_percent + '%'">
+          </div>
+        </div>
+        <div>
+          <span class="text-xs text-gray-500">Biens en vente</span>
+          <div class="text-lg font-bold text-gray-900" x-text="geographicAnalysis.total_listings"></div>
+        </div>
+        <div>
+          <span class="text-xs text-gray-500">Ventes récentes</span>
+          <div class="text-lg font-bold text-gray-900" x-text="geographicAnalysis.total_sales"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fair Pricing Badge -->
+    <div x-show="estimation.is_priced_fairly" class="mt-4 flex items-center justify-center gap-2 bg-green-100 text-green-700 px-4 py-2 rounded-full">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+      </svg>
+      <span class="text-sm font-semibold">Prix équitable</span>
+    </div>
+  </div>
+
+  <!-- No Estimation Available -->
+  <div x-show="!loading && !error && !estimation" class="text-center py-8">
+    <svg class="w-12 h-12 mx-auto text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+    </svg>
+    <p class="text-gray-500">Aucune estimation disponible pour cette propriété</p>
+    <button @click="requestEstimation()" class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm">
+      Demander une estimation
+    </button>
+  </div>
+</div>
+
+<script>
+function priceEstimationDisplay() {
+  return {
+    loading: true,
+    error: null,
+    estimation: null,
+    geographicAnalysis: null,
+    
+    async loadEstimation() {
+      try {
+        // In production, fetch from API
+        // const response = await fetch(`/api/properties/${propertyId}/price-estimation/`);
+        // const data = await response.json();
+        
+        // Mock data for demo
+        setTimeout(() => {
+          this.estimation = {
+            estimated_min_price: 150000000,
+            estimated_max_price: 180000000,
+            estimated_avg_price: 165000000,
+            listing_price: 160000000,
+            price_difference_percent: -3.03,
+            is_priced_fairly: true,
+            market_position: 'at_market',
+            comparable_sales_count: 12,
+            confidence_score: 85,
+            analysis_date: new Date().toISOString()
+          };
+          
+          this.geographicAnalysis = {
+            avg_price_per_sqm: 250000,
+            min_price_per_sqm: 200000,
+            max_price_per_sqm: 300000,
+            price_trend: 'rising',
+            price_change_percent: 5.2,
+            total_listings: 45,
+            total_sales: 23
+          };
+          
+          this.loading = false;
+        }, 1000);
+        
+      } catch (err) {
+        this.error = 'Erreur lors du chargement de l\'estimation';
+        this.loading = false;
+      }
+    },
+    
+    formatPrice(price) {
+      return new Intl.NumberFormat('fr-FR', {
+        style: 'currency',
+        currency: 'XOF',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+      }).format(price);
+    },
+    
+    getConfidenceClass(score) {
+      if (score >= 80) return 'bg-green-100 text-green-700';
+      if (score >= 60) return 'bg-yellow-100 text-yellow-700';
+      return 'bg-red-100 text-red-700';
+    },
+    
+    getConfidenceLabel(score) {
+      if (score >= 80) return 'Haute confiance';
+      if (score >= 60) return 'Confiance moyenne';
+      return 'Faible confiance';
+    },
+    
+    getMarketPositionClass(position) {
+      switch(position) {
+        case 'below_market': return 'text-green-600';
+        case 'above_market': return 'text-red-600';
+        default: return 'text-blue-600';
+      }
+    },
+    
+    getMarketPositionLabel(position) {
+      switch(position) {
+        case 'below_market': return 'En dessous du marché';
+        case 'above_market': return 'Au-dessus du marché';
+        default: return 'Dans la moyenne';
+      }
+    },
+    
+    getListingPositionPercent(estimation) {
+      const range = estimation.estimated_max_price - estimation.estimated_min_price;
+      const position = (estimation.listing_price - estimation.estimated_min_price) / range;
+      return Math.max(0, Math.min(100, position * 100));
+    },
+    
+    getRecentComparableSales() {
+      // Mock comparable sales
+      return [
+        { address: 'Rue du Commerce', surface_area: 120, bedrooms: 3, sale_price: 155000000 },
+        { address: 'Avenue des Nations', surface_area: 135, bedrooms: 4, sale_price: 170000000 },
+        { address: 'Boulevard de la Liberté', surface_area: 110, bedrooms: 3, sale_price: 145000000 },
+      ];
+    },
+    
+    getTrendClass(trend) {
+      switch(trend) {
+        case 'rising': return 'bg-green-100 text-green-700';
+        case 'falling': return 'bg-red-100 text-red-700';
+        default: return 'bg-gray-100 text-gray-700';
+      }
+    },
+    
+    getTrendLabel(trend) {
+      switch(trend) {
+        case 'rising': return 'En hausse';
+        case 'falling': return 'En baisse';
+        default: return 'Stable';
+      }
+    },
+    
+    requestEstimation() {
+      this.loading = true;
+      this.loadEstimation();
+    }
+  };
+}
+</script>

@@ -1,0 +1,170 @@
+{% extends "dashboard/dashboard_base.html" %}
+{% block title %}Détail vérification — {{ site_settings.site_name }}{% endblock %}
+{% block dashboard_content %}
+<div class="w-full">
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-6">
+    <div class="flex items-center gap-3">
+      <a href="{% url 'dashboard:admin_identity_verifications' %}" class="text-gray-400 hover:text-gray-600 transition">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+      </a>
+      <h1 class="text-2xl font-bold font-display text-gray-900">Détail de la vérification</h1>
+    </div>
+    <div class="flex items-center gap-2">
+      {% if verification.status == 'pending' %}
+      <span class="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full bg-amber-100 text-amber-700">
+        <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+        En attente
+      </span>
+      {% elif verification.status == 'approved' %}
+      <span class="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-700">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+        Validé
+      </span>
+      {% elif verification.status == 'rejected' %}
+      <span class="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full bg-rose-100 text-rose-700">
+        <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+        Refusé
+      </span>
+      {% elif verification.status == 'resubmission_requested' %}
+      <span class="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full bg-blue-100 text-blue-700">
+        <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+        Nouvelle soumission demandée
+      </span>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Left Column: Documents -->
+    <div class="lg:col-span-2 space-y-6">
+      <!-- Recto -->
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+        <h2 class="text-lg font-bold text-gray-900 mb-4">Recto de la pièce d'identité</h2>
+        <div class="bg-gray-50 rounded-xl p-4 flex items-center justify-center">
+          <img src="{{ verification.id_document_front.url }}" class="max-h-96 rounded-lg shadow-sm" alt="Recto">
+        </div>
+      </div>
+
+      <!-- Verso -->
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+        <h2 class="text-lg font-bold text-gray-900 mb-4">Verso de la pièce d'identité</h2>
+        <div class="bg-gray-50 rounded-xl p-4 flex items-center justify-center">
+          <img src="{{ verification.id_document_back.url }}" class="max-h-96 rounded-lg shadow-sm" alt="Verso">
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Info & Actions -->
+    <div class="space-y-6">
+      <!-- Owner Info -->
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+        <h2 class="text-lg font-bold text-gray-900 mb-4">Informations du propriétaire</h2>
+        <div class="flex items-center gap-3 mb-4">
+          <img src="{{ verification.owner.get_avatar_url }}" class="w-16 h-16 rounded-full object-cover">
+          <div>
+            <p class="font-bold text-gray-900">{{ verification.owner.get_full_name|default:verification.owner.username }}</p>
+            <p class="text-sm text-gray-500">{{ verification.owner.email }}</p>
+          </div>
+        </div>
+        <div class="space-y-3 text-sm">
+          <div class="flex justify-between">
+            <span class="text-gray-500">Téléphone</span>
+            <span class="font-semibold text-gray-900">{{ verification.owner.phone|default:"—" }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-500">Date de création du compte</span>
+            <span class="font-semibold text-gray-900">{{ verification.owner.date_joined|date:"d/m/Y" }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-500">Nombre d'annonces</span>
+            <span class="font-semibold text-gray-900">{{ owner_properties.count }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-500">État du compte</span>
+            <span class="font-semibold {% if verification.owner.is_suspended %}text-rose-600{% else %}text-emerald-600{% endif %}">
+              {% if verification.owner.is_suspended %}Suspendu{% else %}Actif{% endif %}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Document Info -->
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+        <h2 class="text-lg font-bold text-gray-900 mb-4">Informations du document</h2>
+        <div class="space-y-3 text-sm">
+          <div class="flex justify-between">
+            <span class="text-gray-500">Type de document</span>
+            <span class="font-semibold text-gray-900">{{ verification.get_id_document_type_display|default:verification.id_document_type|default:"—" }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-500">Numéro</span>
+            <span class="font-semibold text-gray-900">{{ verification.id_document_number|default:"—" }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-500">Date de soumission</span>
+            <span class="font-semibold text-gray-900">{{ verification.submitted_at|date:"d/m/Y à H:i" }}</span>
+          </div>
+          {% if verification.reviewed_at %}
+          <div class="flex justify-between">
+            <span class="text-gray-500">Date de révision</span>
+            <span class="font-semibold text-gray-900">{{ verification.reviewed_at|date:"d/m/Y à H:i" }}</span>
+          </div>
+          {% endif %}
+          {% if verification.reviewed_by %}
+          <div class="flex justify-between">
+            <span class="text-gray-500">Révisé par</span>
+            <span class="font-semibold text-gray-900">{{ verification.reviewed_by.get_full_name|default:verification.reviewed_by.username }}</span>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Actions -->
+      {% if verification.status == 'pending' %}
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+        <h2 class="text-lg font-bold text-gray-900 mb-4">Actions</h2>
+        <form method="post" action="{% url 'dashboard:admin_identity_verification_action' verification.pk %}" class="space-y-3">
+          {% csrf_token %}
+          
+          <!-- Approve -->
+          <button type="submit" name="action" value="approve" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl px-6 py-3 transition shadow-md flex items-center justify-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+            Valider la vérification
+          </button>
+          
+          <!-- Reject -->
+          <div class="border-t border-gray-100 pt-3">
+            <label class="text-sm font-semibold text-gray-700 block mb-2">Motif du refus (obligatoire)</label>
+            <textarea name="reason" rows="3" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition" placeholder="Expliquez pourquoi cette demande est refusée..."></textarea>
+            <button type="submit" name="action" value="reject" class="w-full mt-3 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl px-6 py-3 transition shadow-md flex items-center justify-center gap-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+              Refuser la demande
+            </button>
+          </div>
+          
+          <!-- Request Resubmission -->
+          <div class="border-t border-gray-100 pt-3">
+            <label class="text-sm font-semibold text-gray-700 block mb-2">Motif de la demande (obligatoire)</label>
+            <textarea name="reason" rows="3" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition" placeholder="Expliquez pourquoi une nouvelle soumission est nécessaire..."></textarea>
+            <button type="submit" name="action" value="request_resubmission" class="w-full mt-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl px-6 py-3 transition shadow-md flex items-center justify-center gap-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+              Demander une nouvelle soumission
+            </button>
+          </div>
+        </form>
+      </div>
+      {% endif %}
+      
+      {% if verification.status == 'rejected' or verification.status == 'resubmission_requested' %}
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+        <h2 class="text-lg font-bold text-gray-900 mb-4">Motif</h2>
+        <div class="bg-gray-50 rounded-xl p-4">
+          <p class="text-sm text-gray-700">{{ verification.rejection_reason|default:"Aucun motif spécifié" }}</p>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

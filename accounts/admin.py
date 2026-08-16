@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import User
+from .models import User, IdentityVerificationRequest
 
 
 @admin.register(User)
@@ -11,3 +11,12 @@ class CustomUserAdmin(UserAdmin):
     fieldsets = UserAdmin.fieldsets + (
         ("DOMIORA", {"fields": ("role", "phone", "avatar", "bio", "is_suspended")}),
     )
+
+
+@admin.register(IdentityVerificationRequest)
+class IdentityVerificationRequestAdmin(admin.ModelAdmin):
+    list_display = ("id", "owner", "status", "submitted_at", "reviewed_at", "reviewed_by")
+    list_filter = ("status", "submitted_at", "reviewed_at")
+    search_fields = ("owner__username", "owner__email", "id_document_number")
+    readonly_fields = ("submitted_at", "reviewed_at")
+    date_hierarchy = "submitted_at"

@@ -27,8 +27,6 @@ class PropertyRequest(models.Model):
         ordering = ["-created_at"]
 
     def save(self, *args, **kwargs):
-        if not self.agent_id and self.property_id:
-            self.agent = self.property.agent
         super().save(*args, **kwargs)
 
     def __str__(self):

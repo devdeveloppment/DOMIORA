@@ -2,8 +2,16 @@
 {% load humanize %}
 {% block title %}Dashboard Agent — {{ site_settings.site_name }}{% endblock %}
 {% block dashboard_content %}
-<h1 class="text-2xl font-extrabold mb-1 reveal-up">Bonjour {{ user.first_name|default:user.username }} 👋</h1>
-<p class="text-gray-500 mb-6 reveal-up">Voici l'activité de votre portefeuille immobilier.</p>
+<div class="rounded-3xl border border-gray-200 dashboard-hero p-6 shadow-lg mb-8 reveal-up">
+  <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div>
+      <p class="text-xs font-semibold uppercase tracking-[0.2em] text-primary-600">Tableau de bord agent</p>
+      <h1 class="text-2xl font-extrabold text-gray-900">Bonjour {{ user.first_name|default:user.username }} 👋</h1>
+      <p class="mt-1 text-sm text-gray-600">Voici l'activité de votre portefeuille immobilier.</p>
+    </div>
+    <a href="{% url 'dashboard:agent_property_create' %}" class="btn-premium inline-flex items-center justify-center rounded-full bg-primary-600 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-primary-700 glow-effect">+ Ajouter un bien</a>
+  </div>
+</div>
 
 <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
   <div class="dashboard-card bg-white dark:bg-[#160f29] rounded-2xl shadow-card border border-gray-100 dark:border-white/5 p-5 hover-lift reveal-up">

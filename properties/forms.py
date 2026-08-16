@@ -10,13 +10,14 @@ class PropertyForm(forms.ModelForm):
         model = Property
         fields = [
             "title", "description", "property_type", "transaction_type", "price", "currency",
-            "country", "city", "address", "latitude", "longitude",
+            "country", "city", "neighborhood", "address", "latitude", "longitude",
             "bedrooms", "bathrooms", "surface_area", "floors", "year_built",
-            "status", "is_featured", "is_published", "amenities",
+            "status", "is_featured", "amenities", "virtual_tour_url", "uploaded_tour_video",
         ]
         widgets = {
             "description": forms.Textarea(attrs={"rows": 5}),
             "amenities": forms.CheckboxSelectMultiple,
+            "uploaded_tour_video": forms.FileInput(attrs={"accept": "video/mp4,video/webm,video/ogg"}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -29,11 +30,11 @@ class PropertyForm(forms.ModelForm):
 
 class AdminPropertyForm(PropertyForm):
     class Meta(PropertyForm.Meta):
-        fields = ["agent", "is_validated"] + PropertyForm.Meta.fields
+        fields = ["owner", "is_validated"] + PropertyForm.Meta.fields
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["agent"].widget.attrs["class"] = INPUT_CLASSES
+        self.fields["owner"].widget.attrs["class"] = INPUT_CLASSES
 
 
 class PropertyImageForm(forms.ModelForm):

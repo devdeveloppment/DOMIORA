@@ -1,0 +1,165 @@
+{% extends "dashboard/dashboard_base.html" %}
+{% block title %}Vérification d'identité — {{ site_settings.site_name }}{% endblock %}
+{% block dashboard_content %}
+<div class="max-w-3xl">
+  <h1 class="text-2xl font-extrabold mb-2">Vérification d'identité</h1>
+  <p class="text-gray-500 mb-8">Soumettez vos documents d'identité pour pouvoir publier des biens sur DOMIORA. Cette étape garantit la confiance des acheteurs et locataires.</p>
+
+  {% if user.verification_status == 'approved' %}
+  <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-8 text-center">
+    <div class="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+      <svg class="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+    </div>
+    <p class="text-emerald-700 font-bold text-xl mb-2">Votre identité a été vérifiée avec succès</p>
+    <p class="text-emerald-600 text-sm mb-4">Vous pouvez désormais publier vos annonces sans restriction.</p>
+    <span class="inline-block bg-emerald-100 text-emerald-700 text-xs font-bold px-4 py-2 rounded-full">✔ Propriétaire vérifié</span>
+  </div>
+
+  {% elif user.verification_status == 'pending' %}
+  <div class="bg-amber-50 border border-amber-200 rounded-2xl p-8 text-center mb-8">
+    <div class="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+      <svg class="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+    </div>
+    <p class="text-amber-700 font-bold text-xl mb-2">Vos documents sont en cours d'examen</p>
+    <p class="text-amber-600 text-sm mb-4">Vos documents sont actuellement en cours d'examen par un administrateur. Vous recevrez une notification dès que la vérification sera terminée.</p>
+    <div class="text-left bg-white rounded-xl p-4 mt-4">
+      <p class="text-xs text-gray-500 font-semibold">Date de soumission</p>
+      <p class="text-sm text-gray-700">{% if latest_request %}{{ latest_request.submitted_at|date:"d F Y à H:i" }}{% else %}—{% endif %}</p>
+      <p class="text-xs text-gray-500 font-semibold mt-3">Statut</p>
+      <p class="text-sm text-amber-600 font-semibold">En attente</p>
+    </div>
+    <div class="mt-4 pt-4 border-t border-amber-200">
+      <p class="text-xs text-gray-500 mb-2">Si vous avez soumis vos documents il y a plus de 24h sans réponse, vous pouvez resoumettre vos documents.</p>
+      <button type="button" onclick="document.getElementById('resubmitForm').classList.remove('hidden');" class="text-sm text-amber-700 hover:text-amber-800 font-semibold underline">
+        Resoumettre mes documents
+      </button>
+    </div>
+  </div>
+
+  {% elif user.verification_status == 'rejected' or user.verification_status == 'resubmission_requested' %}
+  <div class="bg-rose-50 border border-rose-200 rounded-2xl p-8 text-center mb-8">
+    <div class="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4">
+      <svg class="w-8 h-8 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+    </div>
+    <p class="text-rose-700 font-bold text-xl mb-2">Votre demande a été refusée</p>
+    <p class="text-rose-600 text-sm mb-4">Votre demande de vérification a été refusée pour le motif suivant :</p>
+    <div class="bg-white rounded-xl p-4 text-left mb-4">
+      <p class="text-sm text-gray-700">{{ user.verification_rejection_reason|default:"Aucun motif spécifié" }}</p>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if user.verification_status != 'approved' %}
+  <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 {% if user.verification_status == 'pending' %}hidden{% endif %}" id="resubmitForm">
+    <h2 class="text-lg font-bold text-gray-900 mb-2">Soumettre mes documents</h2>
+    <p class="text-sm text-gray-500 mb-6">Veuillez fournir les deux faces de votre pièce d'identité. Les documents doivent être lisibles et en couleur.</p>
+    
+    <form method="post" enctype="multipart/form-data" action="{% url 'dashboard:owner_verify_identity' %}" 
+          x-data="{ 
+            frontPreview: null, 
+            backPreview: null,
+            frontFile: null,
+            backFile: null,
+            handleFrontUpload(event) {
+              const file = event.target.files[0];
+              if (file) {
+                this.frontFile = file;
+                this.frontPreview = URL.createObjectURL(file);
+              }
+            },
+            handleBackUpload(event) {
+              const file = event.target.files[0];
+              if (file) {
+                this.backFile = file;
+                this.backPreview = URL.createObjectURL(file);
+              }
+            },
+            removeFront() {
+              this.frontPreview = null;
+              this.frontFile = null;
+              document.getElementById('id_document_front').value = '';
+            },
+            removeBack() {
+              this.backPreview = null;
+              this.backFile = null;
+              document.getElementById('id_document_back').value = '';
+            }
+          }"
+          class="space-y-6">
+      {% csrf_token %}
+      
+      <div>
+        <label class="text-sm font-semibold text-gray-700 block mb-2">Type de document</label>
+        <select name="id_document_type" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#71212d]/20 focus:border-[#71212d] transition">
+          <option value="cni">Carte nationale d'identité</option>
+          <option value="passport">Passeport</option>
+          <option value="permis">Permis de conduire</option>
+        </select>
+      </div>
+      
+      <div>
+        <label class="text-sm font-semibold text-gray-700 block mb-2">Numéro du document</label>
+        <input type="text" name="id_document_number" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#71212d]/20 focus:border-[#71212d] transition" placeholder="Ex: AB123456" required>
+      </div>
+      
+      <!-- Recto -->
+      <div>
+        <label class="text-sm font-semibold text-gray-700 block mb-2">Recto de la pièce d'identité <span class="text-red-500">*</span></label>
+        <div class="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:border-[#71212d]/40 transition relative" 
+             :class="{ 'border-[#71212d] bg-[#71212d]/5': frontPreview }">
+          
+          <div x-show="!frontPreview">
+            <svg class="w-10 h-10 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+            <p class="text-sm text-gray-500 mb-2">Glissez un fichier ou cliquez pour choisir</p>
+            <p class="text-xs text-gray-400">JPG, PNG — max 5MB</p>
+          </div>
+          
+          <div x-show="frontPreview" x-cloak class="relative">
+            <img :src="frontPreview" class="max-h-48 mx-auto rounded-lg shadow-sm">
+            <button type="button" @click="removeFront()" class="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 shadow-md transition">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+          </div>
+          
+          <input type="file" name="id_document_front" id="id_document_front" accept="image/*" 
+                 @change="handleFrontUpload($event)"
+                 class="absolute inset-0 opacity-0 cursor-pointer" required>
+        </div>
+      </div>
+      
+      <!-- Verso -->
+      <div>
+        <label class="text-sm font-semibold text-gray-700 block mb-2">Verso de la pièce d'identité <span class="text-red-500">*</span></label>
+        <div class="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:border-[#71212d]/40 transition relative"
+             :class="{ 'border-[#71212d] bg-[#71212d]/5': backPreview }">
+          
+          <div x-show="!backPreview">
+            <svg class="w-10 h-10 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+            <p class="text-sm text-gray-500 mb-2">Glissez un fichier ou cliquez pour choisir</p>
+            <p class="text-xs text-gray-400">JPG, PNG — max 5MB</p>
+          </div>
+          
+          <div x-show="backPreview" x-cloak class="relative">
+            <img :src="backPreview" class="max-h-48 mx-auto rounded-lg shadow-sm">
+            <button type="button" @click="removeBack()" class="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 shadow-md transition">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+          </div>
+          
+          <input type="file" name="id_document_back" id="id_document_back" accept="image/*" 
+                 @change="handleBackUpload($event)"
+                 class="absolute inset-0 opacity-0 cursor-pointer" required>
+        </div>
+      </div>
+      
+      <div class="pt-2">
+        <button type="submit" class="w-full bg-[#71212d] hover:bg-[#5a1a24] text-white font-bold rounded-xl px-6 py-4 transition shadow-md">
+          Soumettre les documents
+        </button>
+        <p class="text-xs text-gray-400 text-center mt-3">Vos documents sont traités de manière sécurisée et confidentielle.</p>
+      </div>
+    </form>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

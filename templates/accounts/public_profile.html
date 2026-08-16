@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}Profil de {% if owner %}{{ owner.get_full_name|default:owner.username }}{% else %}utilisateur{% endif %} — {{ site_settings.site_name }}{% endblock %}
+{% block content %}
+<section class="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-10">
+  <!-- Breadcrumb -->
+  <p class="text-gray-500 text-xs mb-6 font-medium">
+    <a href="{% url 'core:home' %}" class="hover:text-[#71212d]">Accueil</a> / 
+    <span class="text-gray-900">Profil de {% if owner %}{{ owner.get_full_name|default:owner.username }}{% else %}utilisateur{% endif %}</span>
+  </p>
+
+  {% if owner %}
+  <!-- Profile Header -->
+  <div class="bg-white rounded-3xl border border-gray-100 shadow-lg p-8 mb-8">
+    <div class="flex flex-col md:flex-row gap-6 items-start">
+      <img src="{{ owner.get_avatar_url }}" class="w-24 h-24 rounded-full object-cover border-4 border-gray-100">
+      <div class="flex-1">
+        <div class="flex items-center gap-3 flex-wrap">
+          <h1 class="text-2xl font-extrabold text-gray-900">{{ owner.get_full_name|default:owner.username }}</h1>
+          {% if owner.verification_badge_html %}
+          {{ owner.verification_badge_html|safe }}
+          {% endif %}
+        </div>
+        <p class="text-gray-500 mt-1">Propriétaire</p>
+        {% if owner.bio %}
+        <p class="text-gray-600 mt-3 text-sm leading-relaxed">{{ owner.bio }}</p>
+        {% endif %}
+        <div class="flex items-center gap-4 mt-4 text-sm text-gray-500">
+          <div class="flex items-center gap-1.5">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+            <span>Membre depuis {{ owner.created_at|date:"F Y" }}</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8"></path></svg>
+            <span>{{ owner.properties_count }} annonces publiées</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+            <span>{{ owner.active_properties_count }} annonces actives</span>
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-3 mt-4">
+          <span class="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">
+            {% if owner.average_response_minutes %}
+              🟢 Répond généralement en moins de {{ owner.average_response_display }}
+            {% else %}
+              🟢 Temps de réponse en cours de calcul
+            {% endif %}
+          </span>
+          <span class="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100">
+            Taux de réponse: {{ owner.response_rate }}%
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
+      <div class="bg-gray-50 rounded-2xl p-4 text-center">
+        <p class="text-2xl font-extrabold text-[#71212d]">{{ published_count }}</p>
+        <p class="text-xs text-gray-500 uppercase font-bold mt-1">Annonces publiées</p>
+      </div>
+      <div class="bg-gray-50 rounded-2xl p-4 text-center">
+        <p class="text-2xl font-extrabold text-[#71212d]">{{ active_count }}</p>
+        <p class="text-xs text-gray-500 uppercase font-bold mt-1">Annonces actives</p>
+      </div>
+      <div class="bg-gray-50 rounded-2xl p-4 text-center">
+        <p class="text-2xl font-extrabold text-[#71212d]">{{ total_views }}</p>
+        <p class="text-xs text-gray-500 uppercase font-bold mt-1">Total vues</p>
+      </div>
+      <div class="bg-gray-50 rounded-2xl p-4 text-center">
+        <p class="text-2xl font-extrabold text-[#71212d]">{{ total_favorites }}</p>
+        <p class="text-xs text-gray-500 uppercase font-bold mt-1">Favoris</p>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="bg-white rounded-3xl border border-gray-100 shadow-lg p-8 mb-8 text-center">
+    <h1 class="text-2xl font-extrabold text-gray-900">Utilisateur indisponible</h1>
+    <p class="text-gray-500 mt-3">Ce profil n'est pas accessible ou a été supprimé.</p>
+    <a href="{% url 'core:home' %}" class="inline-flex items-center mt-6 text-[#71212d] font-semibold hover:underline">Retour à l’accueil</a>
+  </div>
+  {% endif %}
+
+  <!-- Properties Section -->
+  <div>
+    <h2 class="text-2xl font-extrabold text-gray-900 mb-6">Annonces de {% if owner %}{{ owner.get_full_name|default:owner.username }}{% else %}utilisateur{% endif %}</h2>
+    {% if properties %}
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {% for property in properties %}
+        {% include "partials/property_card.html" %}
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="bg-gray-50 rounded-3xl border border-gray-100 p-12 text-center">
+      <div class="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center mx-auto mb-4">
+        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+      </div>
+      <p class="text-gray-500 font-medium">Aucune annonce publiée pour le moment</p>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

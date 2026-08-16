@@ -24,7 +24,7 @@ def agent_list(request):
 
 def agent_detail(request, pk):
     agent = get_object_or_404(Agent.objects.select_related("user").prefetch_related("specialties"), pk=pk)
-    properties = Property.objects.filter(agent=agent, is_published=True)
+    properties = Property.objects.filter(owner=agent.user, is_published=True)
     sold_count = properties.filter(status__in=["vendu", "loue"]).count()
     reviews = agent.reviews.select_related("user")[:10]
 

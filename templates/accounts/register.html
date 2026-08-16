@@ -1,43 +1,112 @@
 {% extends "base.html" %}
-{% block title %}Inscription — {{ site_settings.site_name }}{% endblock %}
+{% block title %}Créer un compte — {{ site_settings.site_name }}{% endblock %}
+
 {% block content %}
-<section class="min-h-[70vh] grid place-items-center py-16 px-4">
-  <div class="w-full max-w-lg bg-white rounded-2xl shadow-card border border-gray-100 p-8">
-    <h1 class="text-2xl font-extrabold text-center">Créer un compte</h1>
-    <p class="text-gray-500 text-sm text-center mt-1">Rejoignez {{ site_settings.site_name }} en quelques secondes</p>
-    <form method="post" class="mt-6 space-y-4">
-      {% csrf_token %}
-      <div class="grid grid-cols-2 gap-4">
-        {{ form.first_name.label_tag }}{{ form.first_name }}
-        {{ form.last_name.label_tag }}{{ form.last_name }}
+<div class="min-h-screen flex items-center justify-center bg-gray-50/50 py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-6xl w-full bg-white rounded-3xl shadow-xl overflow-hidden flex flex-col md:flex-row">
+    
+    <!-- Left side: Image -->
+    <div class="md:w-5/12 bg-gray-100 hidden md:block relative">
+      <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Immobilier Premium" class="absolute inset-0 w-full h-full object-cover">
+      <div class="absolute inset-0 bg-gradient-to-t from-[#3e0b14]/80 via-[#71212d]/40 to-transparent"></div>
+      <div class="absolute bottom-12 left-10 right-10">
+        <h2 class="text-3xl font-extrabold text-white mb-4 drop-shadow-md">Rejoignez DOMIORA</h2>
+        <p class="text-white/90 font-medium">La plateforme immobilière de référence pour vendre, louer et acheter en toute confiance.</p>
       </div>
-      <div>{{ form.username.label_tag }}{{ form.username }}</div>
-      <div>{{ form.email.label_tag }}{{ form.email }}</div>
-      <div>{{ form.phone.label_tag }}{{ form.phone }}</div>
+    </div>
 
-      <div>
-        <p class="text-sm font-semibold text-gray-700 mb-2">{{ form.role.label }}</p>
-        <div class="grid grid-cols-2 gap-3">
-          {% for radio in form.role %}
-          <label class="flex items-center gap-2 border border-gray-200 rounded-xl px-4 py-3 text-sm cursor-pointer has-[:checked]:border-primary-500 has-[:checked]:bg-primary-50">
-            {{ radio.tag }} {{ radio.choice_label }}
-          </label>
-          {% endfor %}
+    <!-- Right side: Form -->
+    <div class="md:w-7/12 p-8 sm:p-12" x-data="{ role: 'client' }">
+      
+      <div class="text-center mb-8">
+        <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight">Créer un compte</h2>
+        <p class="mt-2 text-sm text-gray-500">Choisissez votre profil pour commencer</p>
+      </div>
+
+      <!-- Role Selection Toggle -->
+      <div class="flex bg-gray-100 rounded-xl p-1 mb-8 max-w-sm mx-auto">
+        <button type="button" @click="role = 'client'" :class="role === 'client' ? 'bg-white shadow-sm text-[#71212d]' : 'text-gray-500 hover:text-gray-700'" class="flex-1 py-3 text-sm font-bold rounded-lg transition-all">Je suis client</button>
+        <button type="button" @click="role = 'owner'" :class="role === 'owner' ? 'bg-white shadow-sm text-[#71212d]' : 'text-gray-500 hover:text-gray-700'" class="flex-1 py-3 text-sm font-bold rounded-lg transition-all">Je suis propriétaire</button>
+      </div>
+
+      <form method="post" action="{% url 'accounts:register' %}" class="space-y-5 max-w-lg mx-auto">
+        {% csrf_token %}
+        
+        <!-- Hidden input to pass the selected role from Alpine to Django -->
+        <input type="hidden" name="role" :value="role">
+
+        {% if form.non_field_errors %}
+          <div class="p-4 rounded-lg bg-rose-50 border border-rose-100 text-rose-600 text-sm font-medium">
+            {{ form.non_field_errors }}
+          </div>
+        {% endif %}
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1">Prénom *</label>
+            {{ form.first_name }}
+            {% if form.first_name.errors %}<p class="text-xs text-rose-500 mt-1">{{ form.first_name.errors.0 }}</p>{% endif %}
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1">Nom *</label>
+            {{ form.last_name }}
+            {% if form.last_name.errors %}<p class="text-xs text-rose-500 mt-1">{{ form.last_name.errors.0 }}</p>{% endif %}
+          </div>
         </div>
-      </div>
 
-      <div class="grid grid-cols-2 gap-4">
-        {{ form.password1.label_tag }}{{ form.password1 }}
-        {{ form.password2.label_tag }}{{ form.password2 }}
-      </div>
+        <div>
+          <label class="block text-xs font-bold text-gray-700 mb-1">Nom d'utilisateur *</label>
+          {{ form.username }}
+          {% if form.username.errors %}<p class="text-xs text-rose-500 mt-1">{{ form.username.errors.0 }}</p>{% endif %}
+        </div>
 
-      {% for field in form %}
-        {% for error in field.errors %}<p class="text-xs text-red-500">{{ field.label }}: {{ error }}</p>{% endfor %}
-      {% endfor %}
+        <div>
+          <label class="block text-xs font-bold text-gray-700 mb-1">Adresse email *</label>
+          {{ form.email }}
+          {% if form.email.errors %}<p class="text-xs text-rose-500 mt-1">{{ form.email.errors.0 }}</p>{% endif %}
+        </div>
 
-      <button type="submit" class="w-full bg-primary-600 hover:bg-primary-500 transition text-white font-semibold rounded-full px-4 py-3">Créer mon compte</button>
-    </form>
-    <p class="text-center text-sm text-gray-500 mt-4">Déjà inscrit ? <a href="{% url 'accounts:login' %}" class="text-primary-600 hover:underline">Connectez-vous</a></p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1">Téléphone</label>
+            {{ form.phone }}
+            {% if form.phone.errors %}<p class="text-xs text-rose-500 mt-1">{{ form.phone.errors.0 }}</p>{% endif %}
+          </div>
+          <div x-show="role === 'owner'" x-transition>
+            <label class="block text-xs font-bold text-[#71212d] mb-1">WhatsApp (Obligatoire) *</label>
+            {{ form.whatsapp_number }}
+            {% if form.whatsapp_number.errors %}<p class="text-xs text-rose-500 mt-1">{{ form.whatsapp_number.errors.0 }}</p>{% endif %}
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1">Mot de passe *</label>
+            {{ form.password1 }}
+            {% if form.password1.errors %}<p class="text-xs text-rose-500 mt-1">{{ form.password1.errors.0 }}</p>{% endif %}
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1">Confirmer mot de passe *</label>
+            {{ form.password2 }}
+            {% if form.password2.errors %}<p class="text-xs text-rose-500 mt-1">{{ form.password2.errors.0 }}</p>{% endif %}
+          </div>
+        </div>
+
+        <div class="pt-4">
+          <button type="submit" class="w-full flex justify-center items-center py-4 px-4 border border-transparent rounded-xl shadow-md text-sm font-bold text-white bg-[#71212d] hover:bg-[#5a1a24] transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#71212d]">
+            Créer mon compte
+          </button>
+        </div>
+
+        <div class="text-center mt-6">
+          <p class="text-sm text-gray-600">
+            Vous avez déjà un compte ?
+            <a href="{% url 'accounts:login' %}" class="font-bold text-[#71212d] hover:underline">Connectez-vous</a>
+          </p>
+        </div>
+      </form>
+    </div>
+    
   </div>
-</section>
+</div>
 {% endblock %}

@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Mes alertes — {{ site_settings.site_name }}{% endblock %}
+{% block content %}
+<div class="max-w-[900px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-extrabold">Mes alertes</h1>
+    <a href="{% url 'properties:list' %}" class="text-sm text-primary-600 hover:underline">Nouvelle recherche</a>
+  </div>
+  {% if alerts %}
+  <div class="space-y-3">
+    {% for alert in alerts %}
+    <div class="rounded-xl border border-gray-200 bg-white p-4 flex items-center justify-between">
+      <div>
+        <p class="font-semibold">{{ alert.name }}</p>
+        <p class="text-xs text-gray-500">{{ alert.city|default:'Tous les lieux' }} · {{ alert.transaction_type|default:'Tous types' }} · {{ alert.price_min|default:'-' }} - {{ alert.price_max|default:'-' }}</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <form method="post" action="" class="inline">
+          {% csrf_token %}
+          <input type="hidden" name="alert_id" value="{{ alert.pk }}">
+          <input type="hidden" name="action" value="toggle">
+          <button class="rounded-full px-3 py-2 text-sm bg-{{ 'emerald' if alert.is_active else 'gray' }}-50 text-{{ 'emerald' if alert.is_active else 'gray' }}-700 border" type="submit">{{ 'Activée' if alert.is_active else 'Désactivée' }}</button>
+        </form>
+        <form method="post" action="" class="inline" onsubmit="return confirm('Supprimer cette alerte ?');">
+          {% csrf_token %}
+          <input type="hidden" name="alert_id" value="{{ alert.pk }}">
+          <input type="hidden" name="action" value="delete">
+          <button class="rounded-full px-3 py-2 text-sm bg-rose-50 text-rose-700 border" type="submit">Supprimer</button>
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="text-gray-500">Vous n'avez pas d'alertes enregistrées.</p>
+  {% endif %}
+</div>
+{% endblock %}

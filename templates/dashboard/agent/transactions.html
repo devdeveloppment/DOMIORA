@@ -2,9 +2,13 @@
 {% load humanize %}
 {% block title %}Transactions — {{ site_settings.site_name }}{% endblock %}
 {% block dashboard_content %}
-<div class="flex items-center justify-between mb-6">
-  <h1 class="text-2xl font-extrabold">Mes transactions</h1>
-  <div class="bg-white rounded-xl shadow-card border border-gray-100 px-5 py-3 text-right">
+<div class="rounded-3xl border border-gray-200 dashboard-hero p-6 shadow-lg mb-6 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+  <div>
+    <p class="text-xs font-semibold uppercase tracking-[0.2em] text-primary-600 mb-1">Transactions</p>
+    <h1 class="text-3xl font-extrabold text-gray-900">Mes transactions</h1>
+    <p class="mt-2 text-sm text-gray-600">Suivez vos revenus et votre historique de paiements.</p>
+  </div>
+  <div class="bg-white rounded-2xl shadow-card border border-gray-100 px-5 py-3 text-right">
     <p class="text-xs text-gray-400 uppercase font-bold">Revenus totaux</p>
     <p class="text-xl font-extrabold text-primary-700">{{ revenue|floatformat:0|intcomma }} FCFA</p>
   </div>

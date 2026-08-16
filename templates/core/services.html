@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block title %}Nos Services — {{ site_settings.site_name }}{% endblock %}
+{% block description %}Découvrez tous les services proposés par DOMIORA : achat, vente, location, estimation et accompagnement personnalisé.{% endblock %}
+
+{% block content %}
+<!-- Hero -->
+<section class="relative bg-[#71212d] py-20 overflow-hidden">
+  <div class="absolute inset-0 opacity-10">
+    <img src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80" alt="" class="w-full h-full object-cover">
+  </div>
+  <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+    <span class="inline-block bg-[#d4af37]/20 text-[#d4af37] text-xs font-bold px-4 py-2 rounded-full mb-6 uppercase tracking-widest">Ce que nous offrons</span>
+    <h1 class="text-4xl lg:text-5xl font-extrabold text-white tracking-tight mb-6">Nos Services Immobiliers</h1>
+    <p class="text-xl text-white/80 max-w-3xl mx-auto">
+      DOMIORA vous accompagne à chaque étape de votre projet immobilier, de la recherche à la signature, avec professionnalisme et transparence.
+    </p>
+  </div>
+</section>
+
+<!-- Services Grid -->
+<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+  <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+
+    <!-- Service 1: Achat -->
+    <div class="group bg-white rounded-3xl shadow-sm border border-gray-100 p-8 hover:shadow-xl hover:-translate-y-1 transition duration-300">
+      <div class="w-14 h-14 bg-[#71212d]/10 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-[#71212d] transition duration-300">
+        <svg class="w-7 h-7 text-[#71212d] group-hover:text-white transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+      </div>
+      <h2 class="text-xl font-bold text-gray-900 mb-3">Achat Immobilier</h2>
+      <p class="text-gray-600 leading-relaxed mb-6">Trouvez la propriété de vos rêves parmi des centaines d'annonces vérifiées. Nos experts vous guident jusqu'à la signature.</p>
+      <ul class="space-y-2 text-sm text-gray-500">
+        <li class="flex items-center gap-2"><span class="w-4 h-4 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-xs">✓</span> Annonces vérifiées</li>
+        <li class="flex items-center gap-2"><span class="w-4 h-4 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-xs">✓</span> Accompagnement personnalisé</li>
+        <li class="flex items-center gap-2"><span class="w-4 h-4 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-xs">✓</span> Négociation du prix</li>
+      </ul>
+    </div>
+
+    <!-- Service 2: Vente -->
+    <div class="group bg-white rounded-3xl shadow-sm border border-gray-100 p-8 hover:shadow-xl hover:-translate-y-1 transition duration-300">
+      <div class="w-14 h-14 bg-[#d4af37]/10 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-[#d4af37] transition duration-300">
+        <svg class="w-7 h-7 text-[#d4af37] group-hover:text-white transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+      </div>
+      <h2 class="text-xl font-bold text-gray-900 mb-3">Vente de Bien</h2>
+      <p class="text-gray-600 leading-relaxed mb-6">Vendez votre bien rapidement et au meilleur prix. Nous assurons la visibilité maximale de votre annonce auprès d'acheteurs qualifiés.</p>
+      <ul class="space-y-2 text-sm text-gray-500">
+        <li class="flex items-center gap-2"><span class="w-4 h-4 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-xs">✓</span> Publication gratuite</li>
+        <li class="flex items-center gap-2"><span class="w-4 h-4 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-xs">✓</span> Photos professionnelles</li>
+        <li class="flex items-center gap-2"><span class="w-4 h-4 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-xs">✓</span> Mise en relation directe</li>
+      </ul>
+    </div>
+
+    <!-- Service 3: Location -->
+    <div class="group bg-white rounded-3xl shadow-sm border border-gray-100 p-8 hover:shadow-xl hover:-translate-y-1 transition duration-300">
+      <div class="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-blue-500 transition duration-300">
+        <svg class="w-7 h-7 text-blue-500 group-hover:text-white transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path></svg>
+      </div>
+      <h2 class="text-xl font-bold text-gray-900 mb-3">Location</h2>
+      <p class="text-gray-600 leading-relaxed mb-6">Trouvez ou proposez un logement à louer. Court terme, long terme, meublé ou vide — toutes les options sont disponibles.</p>
+      <ul class="space-y-2 text-sm text-gray-500">
+        <li class="flex items-center gap-2"><span class="w-4 h-4 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-xs">✓</span> Contrats simplifiés</li>
+        <li class="flex items-center gap-2"><span class="w-4 h-4 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-xs">✓</span> Gestion des candidatures</li>
+        <li class="flex items-center gap-2"><span class="w-4 h-4 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-xs">✓</span> Visites planifiées</li>
+      </ul>
+    </div>
+
+    <!-- Service 4: Estimation -->
+    <div class="group bg-white rounded-3xl shadow-sm border border-gray-100 p-8 hover:shadow-xl hover:-translate-y-1 transition duration-300">
+      <div class="w-14 h-14 bg-purple-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-purple-500 transition duration-300">
+        <svg class="w-7 h-7 text-purple-500 group-hover:text-white transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+      </div>
+      <h2 class="text-xl font-bold text-gray-900 mb-3">Estimation de Bien</h2>
+      <p class="text-gray-600 leading-relaxed mb-6">Obtenez une estimation précise de la valeur de votre bien grâce à notre analyse de marché et nos données locales.</p>
+      <ul class="space-y-2 text-sm text-gray-500">
+        <li class="flex items-center gap-2"><span class="w-4 h-4 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-xs">✓</span> Rapport détaillé</li>
+        <li class="flex items-center gap-2"><span class="w-4 h-4 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-xs">✓</span> Comparaison marché</li>
+        <li class="flex items-center gap-2"><span class="w-4 h-4 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-xs">✓</span> Gratuit et sans engagement</li>
+      </ul>
+    </div>
+
+    <!-- Service 5: Accompagnement -->
+    <div class="group bg-white rounded-3xl shadow-sm border border-gray-100 p-8 hover:shadow-xl hover:-translate-y-1 transition duration-300">
+      <div class="w-14 h-14 bg-orange-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-orange-500 transition duration-300">
+        <svg class="w-7 h-7 text-orange-500 group-hover:text-white transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+      </div>
+      <h2 class="text-xl font-bold text-gray-900 mb-3">Accompagnement Juridique</h2>
+      <p class="text-gray-600 leading-relaxed mb-6">Nos partenaires juridiques vous accompagnent dans la rédaction et la vérification de vos contrats immobiliers.</p>
+      <ul class="space-y-2 text-sm text-gray-500">
+        <li class="flex items-center gap-2"><span class="w-4 h-4 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-xs">✓</span> Vérification des titres</li>
+        <li class="flex items-center gap-2"><span class="w-4 h-4 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-xs">✓</span> Conseil personnalisé</li>
+        <li class="flex items-center gap-2"><span class="w-4 h-4 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-xs">✓</span> Réseau de notaires</li>
+      </ul>
+    </div>
+
+    <!-- Service 6: IA -->
+    <div class="group bg-gradient-to-br from-[#71212d] to-[#5a1a24] rounded-3xl shadow-sm border border-[#71212d]/20 p-8 hover:shadow-xl hover:-translate-y-1 transition duration-300">
+      <div class="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center mb-6">
+        <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v10a2 2 0 01-2 2h-2m-4 0h4m-4 0v2m0-2v-2"></path></svg>
+      </div>
+      <h2 class="text-xl font-bold text-white mb-3">Assistant IA DOMIORA</h2>
+      <p class="text-white/80 leading-relaxed mb-6">Notre assistant intelligent répond à toutes vos questions 24h/24, vous aide dans votre recherche et vous oriente vers les meilleures offres.</p>
+      <ul class="space-y-2 text-sm text-white/70">
+        <li class="flex items-center gap-2"><span class="text-[#d4af37]">✓</span> Disponible 24h/24, 7j/7</li>
+        <li class="flex items-center gap-2"><span class="text-[#d4af37]">✓</span> Recommandations personnalisées</li>
+        <li class="flex items-center gap-2"><span class="text-[#d4af37]">✓</span> Réponses en temps réel</li>
+      </ul>
+    </div>
+
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="bg-gray-50 py-20 border-t border-gray-100">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+    <h2 class="text-3xl font-extrabold text-gray-900 mb-4">Prêt à démarrer votre projet ?</h2>
+    <p class="text-gray-600 text-lg mb-10">Rejoignez des milliers de propriétaires et acheteurs qui font confiance à DOMIORA.</p>
+    <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+      <a href="{% url 'properties:list' %}" class="inline-flex items-center gap-2 bg-[#71212d] text-white font-bold px-8 py-4 rounded-xl hover:bg-[#5a1a24] transition shadow-md">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+        Explorer les annonces
+      </a>
+      <a href="{% url 'core:contact' %}" class="inline-flex items-center gap-2 border-2 border-[#71212d] text-[#71212d] font-bold px-8 py-4 rounded-xl hover:bg-[#71212d]/5 transition">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+        Nous contacter
+      </a>
+    </div>
+  </div>
+</section>
+{% endblock %}

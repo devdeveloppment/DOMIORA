@@ -1,0 +1,17 @@
+{% extends "dashboard/dashboard_base.html" %}
+
+{% block title %}Statistiques Globales — {{ site_settings.site_name }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="w-full">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold font-display text-gray-900">Statistiques Globales</h1>
+  </div>
+
+  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center min-h-[400px] flex flex-col justify-center items-center">
+    <svg class="w-16 h-16 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path></svg>
+    <h2 class="text-xl font-bold text-gray-900 mb-2">Module en cours de déploiement</h2>
+    <p class="text-gray-500 max-w-md mx-auto">Le centre de statistiques avancées est actuellement en cours de mise en place. Vous pourrez bientôt y retrouver tous les KPI de DOMIORA.</p>
+  </div>
+</div>
+{% endblock %}

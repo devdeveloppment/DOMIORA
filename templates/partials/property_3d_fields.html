@@ -1,0 +1,18 @@
+<div class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-4 border border-purple-100">
+  <h3 class="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
+    <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+    Visite virtuelle & Vidéo
+  </h3>
+  <div class="space-y-3">
+    <div>
+      <label class="text-xs font-semibold text-gray-600 block mb-1">{{ form.virtual_tour_url.label }}</label>
+      {{ form.virtual_tour_url }}
+      <p class="text-xs text-gray-400 mt-1">Lien externe (Matterport, YouTube, etc.)</p>
+    </div>
+    <div>
+      <label class="text-xs font-semibold text-gray-600 block mb-1">{{ form.uploaded_tour_video.label }}</label>
+      {{ form.uploaded_tour_video }}
+      <p class="text-xs text-gray-400 mt-1">Vidéo MP4 filmée montrant la propriété</p>
+    </div>
+  </div>
+</div>

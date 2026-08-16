@@ -1,0 +1,41 @@
+{% extends "dashboard/dashboard_base.html" %}
+{% block title %}Vérifications — {{ site_settings.site_name }}{% endblock %}
+{% block dashboard_content %}
+<h1 class="text-2xl font-extrabold mb-6">Vérifications d'identité</h1>
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+  <table class="w-full text-sm">
+    <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+      <tr>
+        <th class="text-left px-5 py-3">Utilisateur</th>
+        <th class="text-left px-5 py-3">Rôle</th>
+        <th class="text-left px-5 py-3">Type de document</th>
+        <th class="text-left px-5 py-3">Statut</th>
+        <th class="text-right px-5 py-3">Actions</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-50">
+      {% for u in users %}
+      <tr class="hover:bg-gray-50">
+        <td class="px-5 py-4 font-semibold">{{ u.get_full_name|default:u.username }}</td>
+        <td class="px-5 py-4">{{ u.get_role_display }}</td>
+        <td class="px-5 py-4">{{ u.id_document_type|default:"—" }}</td>
+        <td class="px-5 py-4">
+          <span class="text-xs font-bold px-2.5 py-1 rounded-full {% if u.verification_status == 'approved' %}bg-emerald-50 text-emerald-700{% elif u.verification_status == 'rejected' %}bg-rose-50 text-rose-700{% else %}bg-amber-50 text-amber-700{% endif %}">{{ u.get_verification_status_display }}</span>
+        </td>
+        <td class="px-5 py-4 text-right space-x-2">
+          {% if u.id_document %}
+          <a href="{{ u.id_document.url }}" target="_blank" class="text-blue-600 hover:underline text-xs font-semibold">Voir document</a>
+          {% endif %}
+          {% if u.verification_status == 'pending' %}
+          <a href="{% url 'dashboard:admin_verify_user' u.pk 'approved' %}" class="text-emerald-600 hover:underline text-xs font-semibold">Approuver</a>
+          <a href="{% url 'dashboard:admin_verify_user' u.pk 'rejected' %}" class="text-rose-600 hover:underline text-xs font-semibold">Rejeter</a>
+          {% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5" class="text-center py-12 text-gray-400">Aucune demande de vérification.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

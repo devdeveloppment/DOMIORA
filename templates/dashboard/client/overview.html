@@ -1,0 +1,75 @@
+{% extends "dashboard/dashboard_base.html" %}
+{% block title %}Dashboard Client — {{ site_settings.site_name }}{% endblock %}
+{% block dashboard_content %}
+<div class="w-full" data-fade-in>
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-8">
+    <h1 class="text-2xl font-bold font-display text-gray-900">Dashboard Client</h1>
+    <a href="{% url 'properties:list' %}" hx-boost="false" class="text-sm font-semibold text-blue-600 hover:text-blue-800 transition">Voir le tableau complet →</a>
+  </div>
+
+  <!-- Vos favoris -->
+  <div class="mb-10">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-lg font-bold text-gray-900">Vos favoris</h2>
+    </div>
+    
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" data-stagger="0.1">
+      {% for f in recent_favorites|slice:":3" %}
+      <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition cursor-pointer group glass-card hover-lift">
+        <div class="aspect-[4/3] w-full overflow-hidden relative">
+          <img src="{{ f.property.primary_image }}" alt="{{ f.property.title }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+        </div>
+        <div class="p-4">
+          <h3 class="font-bold text-gray-900 truncate text-sm mb-1">{{ f.property.title }}</h3>
+          <p class="text-sm text-gray-500 font-medium">{{ f.property.price_display }}</p>
+        </div>
+      </div>
+      {% empty %}
+      <div class="col-span-full bg-white rounded-2xl border border-gray-100 p-6 text-center shadow-sm glass-card">
+        <p class="text-gray-500 font-medium">Vous n'avez pas encore de favoris.</p>
+        <a href="{% url 'properties:list' %}" hx-boost="false" class="inline-block mt-3 text-sm font-bold text-blue-600 hover:underline btn-premium btn-premium-secondary">Explorer les biens</a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Recherches sauvegardées -->
+  <div class="glass-card" data-slide-up>
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-lg font-bold text-gray-900">Recherches sauvegardées</h2>
+      <a href="#" class="text-sm font-semibold text-blue-600 hover:text-blue-800 transition">Voir tout →</a>
+    </div>
+
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <!-- Item 1 (Dummy data to match mockup if no real data) -->
+      <a href="#" class="flex items-center justify-between p-4 border-b border-gray-50 hover:bg-gray-50 transition group">
+        <div class="flex items-center gap-4">
+          <div class="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center text-green-600">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+          </div>
+          <div>
+            <h3 class="font-bold text-gray-900 text-sm">Villa à Lomé</h3>
+            <p class="text-xs text-gray-500 font-medium mt-0.5">50 000 000 FCFA</p>
+          </div>
+        </div>
+        <svg class="w-5 h-5 text-gray-300 group-hover:text-gray-500 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+      </a>
+
+      <!-- Item 2 -->
+      <a href="#" class="flex items-center justify-between p-4 hover:bg-gray-50 transition group">
+        <div class="flex items-center gap-4">
+          <div class="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center text-green-600">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+          </div>
+          <div>
+            <h3 class="font-bold text-gray-900 text-sm">Terrain à Agoè</h3>
+            <p class="text-xs text-gray-500 font-medium mt-0.5">20 000 FCFA / m²</p>
+          </div>
+        </div>
+        <svg class="w-5 h-5 text-gray-300 group-hover:text-gray-500 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

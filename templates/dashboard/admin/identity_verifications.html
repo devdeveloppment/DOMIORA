@@ -1,0 +1,124 @@
+{% extends "dashboard/dashboard_base.html" %}
+{% block title %}Vérifications d'identité — {{ site_settings.site_name }}{% endblock %}
+{% block dashboard_content %}
+<div class="w-full">
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold font-display text-gray-900">Vérifications d'identité</h1>
+    <div class="flex items-center gap-2">
+      <a href="?status=pending" class="text-sm font-semibold px-3 py-1.5 rounded-full {% if status_filter == 'pending' %}bg-amber-100 text-amber-700{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %} transition">
+        En attente
+      </a>
+      <a href="?status=approved" class="text-sm font-semibold px-3 py-1.5 rounded-full {% if status_filter == 'approved' %}bg-emerald-100 text-emerald-700{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %} transition">
+        Validées
+      </a>
+      <a href="?status=rejected" class="text-sm font-semibold px-3 py-1.5 rounded-full {% if status_filter == 'rejected' %}bg-rose-100 text-rose-700{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %} transition">
+        Refusées
+      </a>
+      {% if status_filter %}
+      <a href="?" class="text-sm font-semibold px-3 py-1.5 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition">
+        Tout
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full">
+        <thead class="bg-gray-50 border-b border-gray-100">
+          <tr>
+            <th class="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Propriétaire</th>
+            <th class="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</th>
+            <th class="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Téléphone</th>
+            <th class="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Date de soumission</th>
+            <th class="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Statut</th>
+            <th class="text-center px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-50">
+          {% for verification in page_obj %}
+          <tr class="hover:bg-gray-50 transition">
+            <td class="px-6 py-4">
+              <div class="flex items-center gap-3">
+                <img src="{{ verification.owner.get_avatar_url }}" class="w-10 h-10 rounded-full object-cover">
+                <div>
+                  <p class="font-semibold text-gray-900">{{ verification.owner.get_full_name|default:verification.owner.username }}</p>
+                  <p class="text-xs text-gray-500">Compte créé le {{ verification.owner.date_joined|date:"d/m/Y" }}</p>
+                </div>
+              </div>
+            </td>
+            <td class="px-6 py-4">
+              <p class="text-sm text-gray-700">{{ verification.owner.email }}</p>
+            </td>
+            <td class="px-6 py-4">
+              <p class="text-sm text-gray-700">{{ verification.owner.phone|default:"—" }}</p>
+            </td>
+            <td class="px-6 py-4">
+              <p class="text-sm text-gray-700">{{ verification.submitted_at|date:"d/m/Y à H:i" }}</p>
+            </td>
+            <td class="px-6 py-4">
+              {% if verification.status == 'pending' %}
+              <span class="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1 rounded-full bg-amber-100 text-amber-700">
+                <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                En attente
+              </span>
+              {% elif verification.status == 'approved' %}
+              <span class="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1 rounded-full bg-emerald-100 text-emerald-700">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                Validé
+              </span>
+              {% elif verification.status == 'rejected' %}
+              <span class="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1 rounded-full bg-rose-100 text-rose-700">
+                <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                Refusé
+              </span>
+              {% elif verification.status == 'resubmission_requested' %}
+              <span class="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1 rounded-full bg-blue-100 text-blue-700">
+                <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                Nouvelle soumission
+              </span>
+              {% endif %}
+            </td>
+            <td class="px-6 py-4 text-center">
+              <a href="{% url 'dashboard:admin_identity_verification_detail' verification.pk %}" class="inline-flex items-center gap-1 text-sm font-semibold text-blue-600 hover:text-blue-800 transition">
+                Voir détails
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+              </a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="6" class="px-6 py-12 text-center text-gray-400">
+              <p class="text-sm">Aucune demande de vérification trouvée.</p>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <div class="flex items-center justify-between px-6 py-4 border-t border-gray-100">
+      <p class="text-sm text-gray-500">
+        Affichage de {{ page_obj.start_index }} à {{ page_obj.end_index }} sur {{ page_obj.paginator.count }} demandes
+      </p>
+      <div class="flex items-center gap-2">
+        {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}" class="px-3 py-1.5 text-sm font-semibold text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition">
+          Précédent
+        </a>
+        {% endif %}
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}" class="px-3 py-1.5 text-sm font-semibold text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition">
+          Suivant
+        </a>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

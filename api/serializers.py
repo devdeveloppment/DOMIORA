@@ -53,9 +53,10 @@ class PropertyImageSerializer(serializers.ModelSerializer):
 class PropertySerializer(serializers.ModelSerializer):
     images = PropertyImageSerializer(many=True, read_only=True)
     amenities = AmenitySerializer(many=True, read_only=True)
-    agent = AgentSerializer(read_only=True)
+    owner = UserSerializer(read_only=True)
     primary_image = serializers.ReadOnlyField()
     badge_label = serializers.ReadOnlyField()
+    owner_verification_label = serializers.ReadOnlyField()
 
     class Meta:
         model = Property
@@ -63,8 +64,8 @@ class PropertySerializer(serializers.ModelSerializer):
             "id", "title", "slug", "description", "property_type", "transaction_type",
             "price", "currency", "country", "city", "address", "latitude", "longitude",
             "bedrooms", "bathrooms", "surface_area", "floors", "year_built", "status",
-            "is_featured", "is_published", "views_count", "agent", "images", "amenities",
-            "primary_image", "badge_label", "created_at", "updated_at",
+            "is_featured", "is_published", "views_count", "owner", "images", "amenities",
+            "primary_image", "badge_label", "owner_verification_label", "created_at", "updated_at",
         ]
         read_only_fields = ["id", "slug", "views_count", "created_at", "updated_at"]
 

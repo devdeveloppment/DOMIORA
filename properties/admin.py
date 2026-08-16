@@ -15,11 +15,11 @@ class AmenityAdmin(admin.ModelAdmin):
 
 @admin.register(Property)
 class PropertyAdmin(admin.ModelAdmin):
-    list_display = ("title", "transaction_type", "property_type", "price", "city", "status", "is_published", "is_featured", "agent")
+    list_display = ("title", "transaction_type", "property_type", "price", "city", "status", "is_published", "is_featured", "owner")
     list_filter = ("transaction_type", "property_type", "status", "is_published", "is_featured", "country")
     search_fields = ("title", "city", "address", "description")
     prepopulated_fields = {"slug": ("title",)}
     inlines = [PropertyImageInline]
     filter_horizontal = ("amenities",)
     list_editable = ("is_published", "is_featured", "status")
-    autocomplete_fields = ("agent",)
+    autocomplete_fields = ("owner",)

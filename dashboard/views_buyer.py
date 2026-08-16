@@ -6,6 +6,7 @@ from .decorators import role_required
 from favorites.models import Favorite
 from rental_requests.models import PropertyRequest
 from accounts.models import User
+from notifications.models import Notification
 
 
 @role_required(User.Role.BUYER)
@@ -13,7 +14,7 @@ def buyer_overview(request):
     favorites_count = Favorite.objects.filter(user=request.user).count()
     requests = PropertyRequest.objects.filter(user=request.user).select_related("property")
     context = {
-        "dash_role": "buyer", "active": "overview",
+        "active": "overview",
         "favorites_count": favorites_count,
         "requests_count": requests.count(),
         "pending_count": requests.filter(status="en_attente").count(),
@@ -29,7 +30,7 @@ def buyer_favorites(request):
     favorites = Favorite.objects.filter(user=request.user).select_related("property").prefetch_related("property__images")
     paginator = Paginator(favorites, 9)
     page_obj = paginator.get_page(request.GET.get("page"))
-    return render(request, "dashboard/buyer/favorites.html", {"page_obj": page_obj, "dash_role": "buyer", "active": "favorites"})
+    return render(request, "dashboard/buyer/favorites.html", {"page_obj": page_obj, "active": "favorites"})
 
 
 @role_required(User.Role.BUYER)
@@ -37,4 +38,15 @@ def buyer_requests(request):
     requests_qs = PropertyRequest.objects.filter(user=request.user).select_related("property", "agent__user")
     paginator = Paginator(requests_qs, 10)
     page_obj = paginator.get_page(request.GET.get("page"))
-    return render(request, "dashboard/buyer/requests.html", {"page_obj": page_obj, "dash_role": "buyer", "active": "requests"})
+    return render(request, "dashboard/buyer/requests.html", {"page_obj": page_obj, "active": "requests"})
+
+
+@role_required(User.Role.BUYER)
+def buyer_notifications(request):
+    notifications = Notification.objects.filter(user=request.user)
+    context = {
+        "dash_role": "buyer",
+        "active": "notifications",
+        "notifications": notifications,
+    }
+    return render(request, "notifications/list.html", context)

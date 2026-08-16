@@ -7,7 +7,7 @@ from django.db import transaction as db_transaction
 
 from accounts.models import User
 from agents.models import Agent, Specialty, AgentReview
-from properties.models import Property, Amenity
+from properties.models import Property, Amenity, PropertyUnlock, PropertyView
 from favorites.models import Favorite
 from rental_requests.models import PropertyRequest
 from transactions.models import Transaction
@@ -314,6 +314,28 @@ class Command(BaseCommand):
                 user.save()
             buyers.append(user)
 
+        owners = []
+        for i in range(min(12, len(FIRST_NAMES_BUYERS))):
+            first = FIRST_NAMES_BUYERS[i]
+            last = LAST_NAMES_BUYERS[i]
+            username = f"owner_{first.lower().replace('é','e').replace('è','e').replace('ê','e')}"
+            user, created = User.objects.get_or_create(
+                username=username,
+                defaults={
+                    "email": f"{username}@domiora.com",
+                    "first_name": first,
+                    "last_name": last,
+                    "role": User.Role.OWNER,
+                    "phone": f"+1-212-100-{1000+i}",
+                    "whatsapp_number": f"+1-212-100-{1000+i}",
+                    "verification_status": User.VerificationStatus.APPROVED if i % 2 == 0 else User.VerificationStatus.PENDING,
+                },
+            )
+            if created:
+                user.set_password("Owner1234!")
+                user.save()
+            owners.append(user)
+
         transaction_types = ["vente", "vente", "vente", "location"]
         property_types = list(TYPE_CATALOG.keys())
         properties = []
@@ -342,7 +364,7 @@ class Command(BaseCommand):
             sample_size = min(len(available_images), random.choice([2, 3, len(available_images)]))
 
             prop = Property.objects.create(
-                agent=random.choice(agents),
+                owner=random.choice(owners),
                 title=f"{title} #{i+1}",
                 description=(
                     f"Un {title.lower()} d'exception offrant un cadre de vie raffiné, alliant confort moderne et "
@@ -381,6 +403,31 @@ class Command(BaseCommand):
             for prop in random.sample(properties, min(random.randint(1, 6), len(properties))):
                 Favorite.objects.get_or_create(user=buyer, property=prop)
 
+        for buyer in buyers[:20]:
+            for prop in random.sample(properties, min(2, len(properties))):
+                unlock, created = PropertyUnlock.objects.get_or_create(user=buyer, property=prop)
+                if created and prop.owner:
+                    Notification.objects.get_or_create(
+                        user=prop.owner,
+                        title="Nouvelle mise en relation",
+                        defaults={
+                            "message": f"{buyer.get_full_name() or buyer.username} a débloqué « {prop.title} ».",
+                            "notification_type": "systeme",
+                            "link": prop.get_absolute_url(),
+                        },
+                    )
+
+        for buyer in buyers[:25]:
+            for prop in random.sample(properties, min(4, len(properties))):
+                PropertyView.objects.get_or_create(
+                    user=buyer,
+                    property=prop,
+                    defaults={
+                        "ip_address": "127.0.0.1",
+                        "session_key": f"seed-{buyer.username}",
+                    },
+                )
+
         request_types = ["visite", "location", "achat"]
         for _ in range(70):
             buyer = random.choice(buyers)
@@ -388,7 +435,7 @@ class Command(BaseCommand):
             PropertyRequest.objects.get_or_create(
                 user=buyer, property=prop,
                 defaults={
-                    "agent": prop.agent,
+                    "agent": random.choice(agents),
                     "request_type": random.choice(request_types),
                     "message": "Bonjour, je suis intéressé(e) par ce bien, serait-il possible d'organiser une visite ?",
                     "status": random.choices(["en_attente", "acceptee", "rejetee"], weights=[50, 35, 15])[0],
@@ -398,11 +445,12 @@ class Command(BaseCommand):
         sold_or_rented = [p for p in properties if p.status in ("vendu", "loue")]
         for prop in sold_or_rented:
             amount = prop.price
-            commission_rate = prop.agent.commission_rate if prop.agent else 5
+            agent = random.choice(agents)
+            commission_rate = agent.commission_rate if agent else 5
             Transaction.objects.get_or_create(
                 property=prop,
                 defaults={
-                    "agent": prop.agent,
+                    "agent": agent,
                     "client": random.choice(buyers),
                     "transaction_type": "location" if prop.status == "loue" else "vente",
                     "amount": amount,
@@ -424,7 +472,7 @@ class Command(BaseCommand):
             buyer = random.choice(buyers)
             prop = random.choice(properties)
             Appointment.objects.create(
-                user=buyer, agent=prop.agent, property=prop,
+                user=buyer, agent=random.choice(agents), property=prop,
                 scheduled_at=timezone.now() + timedelta(days=random.randint(-10, 20), hours=random.randint(8, 18)),
                 status=random.choices(["en_attente", "confirme", "annule", "termine"], weights=[35, 35, 10, 20])[0],
                 notes="Disponible en journée de préférence.",
@@ -433,11 +481,11 @@ class Command(BaseCommand):
         for _ in range(25):
             buyer = random.choice(buyers)
             prop = random.choice(properties)
-            conversation, _ = Conversation.objects.get_or_create(buyer=buyer, agent=prop.agent, property=prop)
+            conversation, _ = Conversation.objects.get_or_create(buyer=buyer, agent=random.choice(agents), property=prop)
             if not conversation.messages.exists():
                 Message.objects.create(conversation=conversation, sender=buyer, body=f"Bonjour, je suis intéressé(e) par « {prop.title} ». Est-il encore disponible ?")
                 if random.random() > 0.3:
-                    Message.objects.create(conversation=conversation, sender=prop.agent.user, body="Bonjour ! Oui, le bien est toujours disponible. Souhaitez-vous organiser une visite ?")
+                    Message.objects.create(conversation=conversation, sender=conversation.agent.user, body="Bonjour ! Oui, le bien est toujours disponible. Souhaitez-vous organiser une visite ?")
                 if random.random() > 0.6:
                     Message.objects.create(conversation=conversation, sender=buyer, body="Avec plaisir, quelles sont vos disponibilités cette semaine ?")
 
@@ -451,7 +499,7 @@ class Command(BaseCommand):
             Testimonial.objects.get_or_create(name=t["name"], defaults=t)
 
         self.stdout.write(self.style.SUCCESS("DOMIORA demo data seeded successfully!"))
-        self.stdout.write(f"-> {len(agents)} agents, {len(buyers)} buyers, {len(properties)} properties")
+        self.stdout.write(f"-> {len(agents)} agents, {len(owners)} owners, {len(buyers)} buyers, {len(properties)} properties")
         self.stdout.write("Admin login -> username: admin / password: Admin1234!")
         self.stdout.write("Agent login -> username: agent_sophie / password: Agent1234!")
         self.stdout.write("Buyer login -> username: buyer_julie / password: Buyer1234!")

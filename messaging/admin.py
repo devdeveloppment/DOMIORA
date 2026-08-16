@@ -9,5 +9,5 @@ class MessageInline(admin.TabularInline):
 
 @admin.register(Conversation)
 class ConversationAdmin(admin.ModelAdmin):
-    list_display = ("buyer", "agent", "property", "updated_at")
+    list_display = ("buyer", "owner", "property", "updated_at")
     inlines = [MessageInline]

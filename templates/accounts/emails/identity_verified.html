@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Votre identité a été validée - DOMIORA</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #71212d;
+        }
+        .header h1 {
+            color: #71212d;
+            margin: 0;
+            font-size: 24px;
+        }
+        .content {
+            padding: 20px 0;
+        }
+        .content h2 {
+            color: #71212d;
+            font-size: 20px;
+        }
+        .content p {
+            margin: 10px 0;
+        }
+        .button {
+            display: inline-block;
+            background-color: #71212d;
+            color: #ffffff;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        .button:hover {
+            background-color: #8a2a3d;
+        }
+        .footer {
+            text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+            font-size: 12px;
+            color: #666;
+        }
+        .success-icon {
+            font-size: 48px;
+            text-align: center;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>DOMIORA</h1>
+            <p>Plateforme Immobilière Premium</p>
+        </div>
+        
+        <div class="content">
+            <div class="success-icon">✅</div>
+            <h2>Félicitations ! Votre identité a été validée</h2>
+            
+            <p>Bonjour {{ user.first_name }},</p>
+            
+            <p>Nous avons le plaisir de vous informer que votre identité a été validée avec succès par notre équipe.</p>
+            
+            <p><strong>Vous pouvez maintenant :</strong></p>
+            <ul>
+                <li>✓ Publier vos propriétés sur DOMIORA</li>
+                <li>✓ Gérer vos annonces en toute autonomie</li>
+                <li>✓ Recevoir des demandes de visite</li>
+                <li>✓ Bénéficier de toutes les fonctionnalités pour propriétaires</li>
+            </ul>
+            
+            <p>Commencez dès maintenant à publier vos propriétés et atteignez des milliers de potentiels locataires ou acheteurs.</p>
+            
+            <center>
+                <a href="{{ dashboard_url }}" class="button">Accéder à mon Dashboard</a>
+            </center>
+            
+            <p>Si vous avez des questions, n'hésitez pas à nous contacter.</p>
+            
+            <p>Cordialement,<br>L'équipe DOMIORA</p>
+        </div>
+        
+        <div class="footer">
+            <p>© 2026 DOMIORA. Tous droits réservés.</p>
+            <p>Cet email a été envoyé automatiquement, merci de ne pas y répondre.</p>
+        </div>
+    </div>
+</body>
+</html>

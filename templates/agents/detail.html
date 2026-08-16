@@ -1,169 +1,144 @@
 {% extends "base.html" %}
-{% block title %}{{ agent.user.get_full_name }} — {{ site_settings.site_name }}{% endblock %}
+{% block title %}{{ agent.user.get_full_name }} - {{ site_settings.site_name }}{% endblock %}
+
 {% block content %}
-<section class="gradient-hero py-14">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <p class="text-white/40 text-xs mb-6"><a href="{% url 'core:home' %}" class="hover:text-white">Accueil</a> / <a href="{% url 'agents:list' %}" class="hover:text-white">Agents</a> / {{ agent.user.get_full_name }}</p>
-    <div class="flex flex-col sm:flex-row sm:items-center gap-6 justify-between">
-      <div class="flex items-center gap-5">
-        <img src="{{ agent.user.get_avatar_url }}" class="w-20 h-20 rounded-2xl object-cover">
-        <div>
-          <h1 class="text-3xl font-extrabold font-display text-white">{{ agent.user.get_full_name }}</h1>
-          <p class="text-white/50">{{ agent.agency_name|default:"Agent indépendant" }}</p>
-          <div class="flex items-center gap-2 mt-2 flex-wrap">
-            {% if agent.is_verified %}<span class="text-[11px] bg-emerald-500/20 text-emerald-300 font-bold px-3 py-1 rounded-full">✓ Agent vérifié</span>{% endif %}
-            {% if agent.is_top_agent %}<span class="text-[11px] bg-amber-400/20 text-amber-300 font-bold px-3 py-1 rounded-full">🏆 Top Agent</span>{% endif %}
-            {% if agent.license_number %}<span class="text-[11px] bg-white/10 text-white/70 font-bold px-3 py-1 rounded-full">LIC. {{ agent.license_number }}</span>{% endif %}
-            <span class="text-[11px] bg-primary-500/20 text-primary-200 font-bold px-3 py-1 rounded-full">{{ agent.commission_rate }}% commission</span>
-          </div>
+<section class="bg-[#71212d] relative pt-12 pb-24 overflow-hidden">
+  <div class="absolute inset-0 opacity-10">
+    <img src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80" alt="Background" class="w-full h-full object-cover">
+  </div>
+  <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <p class="text-white/60 text-xs mb-8 uppercase tracking-widest font-bold">
+      <a href="{% url 'core:home' %}" class="hover:text-white transition">Accueil</a> / 
+      <a href="{% url 'agents:list' %}" class="hover:text-white transition">Propriétaires</a> / 
+      <span class="text-[#d4af37]">{{ agent.user.get_full_name }}</span>
+    </p>
+
+    <div class="flex flex-col md:flex-row items-center md:items-start gap-8">
+      <div class="relative shrink-0">
+        <img src="{{ agent.user.get_avatar_url }}" class="w-32 h-32 md:w-40 md:h-40 rounded-3xl object-cover border-4 border-white shadow-xl">
+        {% if agent.is_verified %}
+        <div class="absolute -bottom-3 -right-3 bg-emerald-500 text-white p-2 rounded-full shadow-lg border-2 border-white" title="Propriétaire vérifié">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
         </div>
+        {% endif %}
       </div>
-      <div class="bg-white/5 border border-white/10 rounded-2xl p-4 text-right">
-        <p class="text-xs text-white/40 uppercase font-bold">Spécialités</p>
-        <div class="flex gap-2 mt-2 flex-wrap justify-end">
-          {% for s in agent.specialties.all %}<span class="text-[11px] bg-white/10 text-white px-3 py-1 rounded-full">{{ s.name }}</span>{% endfor %}
+      <div class="text-center md:text-left flex-1">
+        <h1 class="text-3xl md:text-4xl lg:text-5xl font-extrabold text-white tracking-tight mb-2">{{ agent.user.get_full_name }}</h1>
+        <p class="text-xl text-white/80 mb-6 font-medium">{{ agent.agency_name|default:"Propriétaire indépendant" }}</p>
+        
+        <div class="flex flex-wrap items-center justify-center md:justify-start gap-3">
+          {% if agent.is_verified %}
+          <span class="text-xs bg-emerald-500/20 text-emerald-300 font-bold px-4 py-1.5 rounded-full border border-emerald-500/30">✓ Vérifié</span>
+          {% endif %}
+          <span class="text-xs bg-white/10 text-white font-bold px-4 py-1.5 rounded-full backdrop-blur-sm">Membre depuis {{ agent.created_at|date:"F Y" }}</span>
         </div>
-        <p class="text-xs text-white/40 mt-3">Membre depuis {{ agent.created_at|date:"F Y" }}</p>
       </div>
     </div>
   </div>
 </section>
 
-<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 grid lg:grid-cols-3 gap-8">
-  <div class="lg:col-span-2 space-y-10">
-    <div class="grid grid-cols-3 gap-4">
-      <div class="bg-white dark:bg-[#160f29] dark:border dark:border-white/10 rounded-2xl shadow-card p-5 text-center hover-lift">
-        <p class="text-2xl font-extrabold font-display text-primary-700 dark:text-primary-300">{{ active_count }}</p>
-        <p class="text-xs text-gray-400 mt-1">Biens actifs</p>
-      </div>
-      <div class="bg-white dark:bg-[#160f29] dark:border dark:border-white/10 rounded-2xl shadow-card p-5 text-center hover-lift">
-        <p class="text-2xl font-extrabold font-display text-primary-700 dark:text-primary-300">{{ sold_count }}</p>
-        <p class="text-xs text-gray-400 mt-1">Transactions</p>
-      </div>
-      <div class="bg-white dark:bg-[#160f29] dark:border dark:border-white/10 rounded-2xl shadow-card p-5 text-center hover-lift">
-        <p class="text-2xl font-extrabold font-display text-primary-700 dark:text-primary-300">★ {{ agent.average_rating }}</p>
-        <p class="text-xs text-gray-400 mt-1">{{ agent.review_count }} avis</p>
-      </div>
-    </div>
-
-    {% if agent.bio %}
-    <div>
-      <h2 class="font-display text-lg font-bold mb-3 dark:text-white">À propos</h2>
-      <p class="text-gray-600 dark:text-gray-400 leading-relaxed">{{ agent.bio }}</p>
-    </div>
-    {% endif %}
-
-    <div>
-      <h2 class="font-display text-lg font-bold mb-4 dark:text-white">Portefeuille de biens</h2>
-      <div class="grid sm:grid-cols-2 gap-6">
-        {% for property in properties %}
-          {% include "partials/property_card.html" %}
-        {% empty %}
-          <p class="text-gray-400 col-span-full">Aucun bien publié pour le moment.</p>
-        {% endfor %}
-      </div>
-    </div>
-
-    <div>
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="font-display text-lg font-bold dark:text-white">Avis clients ({{ agent.review_count }})</h2>
-      </div>
-
-      {% if user.is_authenticated and not user_has_reviewed and user.role == 'buyer' %}
-      <form method="post" class="bg-white dark:bg-[#160f29] dark:border dark:border-white/10 rounded-2xl shadow-card p-5 mb-6 space-y-3">
-        {% csrf_token %}
-        <p class="font-semibold text-sm dark:text-white">Laisser un avis sur {{ agent.user.first_name }}</p>
-        <div class="grid sm:grid-cols-2 gap-3">
-          <div><label class="text-xs font-semibold text-gray-600 dark:text-gray-300">{{ review_form.rating.label }}</label>{{ review_form.rating }}</div>
+<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 -mt-16 relative z-20">
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    
+    <!-- Main Content -->
+    <div class="lg:col-span-2 space-y-8">
+      
+      <!-- Stats -->
+      <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 grid grid-cols-2 md:grid-cols-3 gap-6 text-center divide-x divide-gray-100">
+        <div>
+          <p class="text-xs uppercase text-gray-500 font-bold mb-1">Annonces</p>
+          <p class="text-3xl font-extrabold text-gray-900">{{ agent.total_properties_count }}</p>
         </div>
-        <div>{{ review_form.comment }}</div>
-        <button type="submit" class="bg-primary-600 hover:bg-primary-500 transition text-white font-semibold rounded-full px-5 py-2 text-sm">Publier mon avis</button>
-      </form>
-      {% elif user_has_reviewed %}
-      <p class="text-xs text-gray-400 mb-6">✓ Vous avez déjà laissé un avis pour cet agent.</p>
-      {% endif %}
-
-      <div class="space-y-4">
-        {% for r in reviews %}
-        <div class="bg-white dark:bg-[#160f29] dark:border dark:border-white/10 rounded-2xl shadow-card p-5">
-          <div class="flex items-center justify-between">
-            <p class="font-semibold text-sm dark:text-white">{{ r.user.get_full_name }}</p>
-            <p class="text-amber-400 text-sm">{% for i in "12345" %}{% if forloop.counter <= r.rating %}★{% else %}☆{% endif %}{% endfor %}</p>
+        <div>
+          <p class="text-xs uppercase text-gray-500 font-bold mb-1">Évaluation</p>
+          <div class="flex items-center justify-center gap-2">
+            <span class="text-[#d4af37]">★</span>
+            <span class="text-3xl font-extrabold text-gray-900">{{ agent.rating|floatformat:1|default:"0.0" }}</span>
           </div>
-          {% if r.comment %}<p class="text-sm text-gray-500 dark:text-gray-400 mt-2">{{ r.comment }}</p>{% endif %}
-          <p class="text-xs text-gray-300 mt-2">{{ r.created_at|date:"d M Y" }}</p>
         </div>
-        {% empty %}
-        <p class="text-gray-400 text-sm">Aucun avis pour le moment.</p>
-        {% endfor %}
+        <div class="col-span-2 md:col-span-1 hidden md:block">
+          <p class="text-xs uppercase text-gray-500 font-bold mb-1">Réactivité</p>
+          <p class="text-3xl font-extrabold text-gray-900">{{ agent.response_time_hours }}h</p>
+        </div>
       </div>
+
+      <!-- About -->
+      {% if agent.bio %}
+      <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
+        <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+          <svg class="w-6 h-6 text-[#71212d]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          À propos
+        </h2>
+        <p class="text-gray-600 leading-relaxed text-lg">{{ agent.bio|linebreaksbr }}</p>
+      </div>
+      {% endif %}
+
+      <!-- Annonces -->
+      <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
+        <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+          <svg class="w-6 h-6 text-[#71212d]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+          Ses annonces
+        </h2>
+        
+        <div class="grid sm:grid-cols-2 gap-6">
+          {% for prop in properties|slice:":4" %}
+            <a href="{{ prop.get_absolute_url }}" class="group block bg-gray-50 rounded-2xl overflow-hidden hover:shadow-lg transition">
+              <div class="relative h-40">
+                <img src="{{ prop.primary_image }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                <div class="absolute top-2 right-2 bg-white/90 backdrop-blur-sm text-xs font-bold px-2 py-1 rounded-lg">
+                  {{ prop.get_transaction_type_display }}
+                </div>
+              </div>
+              <div class="p-4">
+                <p class="font-bold text-gray-900 truncate">{{ prop.title }}</p>
+                <p class="text-[#71212d] font-extrabold mt-1">{{ prop.price_display }}</p>
+              </div>
+            </a>
+          {% empty %}
+            <p class="text-gray-500 italic col-span-2">Ce propriétaire n'a pas encore publié d'annonces.</p>
+          {% endfor %}
+        </div>
+        
+        {% if properties|length > 4 %}
+        <div class="mt-6 text-center">
+          <a href="{% url 'properties:list' %}" class="inline-block px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold rounded-xl transition text-sm">Voir toutes les annonces</a>
+        </div>
+        {% endif %}
+      </div>
+
     </div>
+
+    <!-- Sidebar Contacts -->
+    <aside class="space-y-6">
+      
+      <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 sticky top-24">
+        <h3 class="text-xs uppercase text-gray-400 font-bold tracking-widest mb-6">Contact direct</h3>
+        
+        <div class="space-y-3">
+          {% if agent.user.phone %}
+          <a href="tel:{{ agent.user.phone }}" class="flex items-center justify-center gap-3 w-full border-2 border-[#71212d] text-[#71212d] hover:bg-[#71212d] hover:text-white transition font-bold rounded-xl px-4 py-4 shadow-sm">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+            Appeler
+          </a>
+          {% endif %}
+          
+          {% if agent.user.whatsapp_number %}
+          <a href="https://wa.me/{{ agent.user.whatsapp_number|cut:' '|cut:'+' }}" target="_blank" class="flex items-center justify-center gap-3 w-full bg-[#25D366] hover:bg-[#1EBE55] transition text-white font-bold rounded-xl px-4 py-4 shadow-sm">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            WhatsApp
+          </a>
+          {% endif %}
+          
+          <a href="mailto:{{ agent.user.email }}" class="flex items-center justify-center gap-3 w-full bg-gray-100 hover:bg-gray-200 text-gray-800 transition font-bold rounded-xl px-4 py-4 shadow-sm">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+            Envoyer un email
+          </a>
+        </div>
+      </div>
+
+    </aside>
+
   </div>
-
-  <aside class="space-y-5">
-    <div class="bg-white dark:bg-[#160f29] dark:border dark:border-white/10 rounded-2xl shadow-card p-5">
-      <p class="text-xs uppercase text-gray-400 font-bold mb-3">Contacter l'agent</p>
-      {% if agent.user.phone %}
-      <a href="tel:{{ agent.user.phone }}" class="block w-full text-center bg-primary-600 hover:bg-primary-500 transition text-white font-semibold rounded-full px-4 py-2.5 text-sm mb-2">📞 {{ agent.user.phone }}</a>
-      {% endif %}
-      <a href="mailto:{{ agent.user.email }}" class="block w-full text-center border border-gray-200 dark:border-white/10 dark:text-gray-200 text-gray-700 font-semibold rounded-full px-4 py-2.5 text-sm mb-2">✉️ {{ agent.user.email }}</a>
-
-      {% if user.is_authenticated and user.role == 'buyer' %}
-      <form method="post" action="{% url 'messaging:start_conversation' agent.pk %}" class="mb-2">
-        {% csrf_token %}
-        <input type="hidden" name="message" value="Bonjour, je souhaiterais échanger avec vous.">
-        <button class="w-full text-center bg-primary-50 text-primary-700 font-semibold rounded-full px-4 py-2.5 text-sm">💬 Envoyer un message</button>
-      </form>
-      <button @click="$dispatch('open-agent-appointment-modal')" class="w-full text-center border border-primary-200 text-primary-700 font-semibold rounded-full px-4 py-2.5 text-sm">📅 Prendre rendez-vous</button>
-      {% endif %}
-
-      <p class="text-xs text-gray-400 mt-3">⏱ Délai de réponse: {{ agent.response_time_hours }}h</p>
-    </div>
-    {% if agent.facebook or agent.instagram or agent.linkedin or agent.twitter %}
-    <div class="bg-white dark:bg-[#160f29] dark:border dark:border-white/10 rounded-2xl shadow-card p-5">
-      <p class="text-xs uppercase text-gray-400 font-bold mb-3">Réseaux sociaux</p>
-      <div class="flex gap-3">
-        {% if agent.facebook %}<a href="{{ agent.facebook }}" class="hover:scale-110 transition-transform" aria-label="Facebook">
-          <svg class="w-5 h-5" fill="#1877F2" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-        </a>{% endif %}
-        {% if agent.instagram %}<a href="{{ agent.instagram }}" class="hover:scale-110 transition-transform" aria-label="Instagram">
-          <svg class="w-5 h-5" fill="url(#instagram-gradient-agent)" viewBox="0 0 24 24"><defs><linearGradient id="instagram-gradient-agent" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#833AB4"/><stop offset="50%" style="stop-color:#FD1D1D"/><stop offset="100%" style="stop-color:#F77737"/></linearGradient></defs><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
-        </a>{% endif %}
-        {% if agent.linkedin %}<a href="{{ agent.linkedin }}" class="hover:scale-110 transition-transform" aria-label="LinkedIn">
-          <svg class="w-5 h-5" fill="#0A66C2" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
-        </a>{% endif %}
-        {% if agent.twitter %}<a href="{{ agent.twitter }}" class="hover:scale-110 transition-transform" aria-label="X (Twitter)">
-          <svg class="w-5 h-5" fill="black" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-        </a>{% endif %}
-      </div>
-    </div>
-    {% endif %}
-  </aside>
 </section>
 
-{% if user.is_authenticated %}
-<div x-data="{ open: false }" @open-agent-appointment-modal.window="open = true">
-  <div x-cloak x-show="open" x-transition.opacity class="fixed inset-0 z-[70] bg-black/60 flex items-center justify-center p-4" @click.self="open=false">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
-      <h3 class="font-display font-bold text-lg mb-1">Prendre rendez-vous</h3>
-      <p class="text-sm text-gray-500 mb-4">avec {{ agent.user.get_full_name }}</p>
-      <form method="post" action="{% url 'appointments:book' agent.pk %}" class="space-y-3">
-        {% csrf_token %}
-        <div>
-          <label class="text-xs font-semibold text-gray-600">Date et heure souhaitées</label>
-          <input type="datetime-local" name="scheduled_at" required class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm">
-        </div>
-        <div>
-          <label class="text-xs font-semibold text-gray-600">Note (optionnel)</label>
-          <textarea name="notes" rows="2" class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm"></textarea>
-        </div>
-        <div class="flex gap-2 pt-2">
-          <button type="submit" class="flex-1 bg-primary-600 hover:bg-primary-500 transition text-white font-semibold rounded-full px-4 py-2.5 text-sm">Confirmer</button>
-          <button type="button" @click="open=false" class="border border-gray-200 text-gray-600 font-semibold rounded-full px-4 py-2.5 text-sm">Annuler</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-{% endif %}
 {% endblock %}

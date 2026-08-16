@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}Inscription Propriétaire — {{ site_settings.site_name }}{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center bg-gray-50/50 py-14 px-4">
+  <div class="max-w-6xl w-full bg-white rounded-3xl shadow-xl overflow-hidden flex flex-col md:flex-row">
+
+    <!-- Left panel -->
+    <div class="md:w-5/12 bg-[#71212d] hidden md:flex flex-col justify-between p-12">
+      <div>
+        <a href="{% url 'core:home' %}" class="text-white/80 text-sm font-semibold hover:text-white flex items-center gap-1.5">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+          Retour
+        </a>
+      </div>
+      <div>
+        <div class="w-14 h-14 rounded-2xl bg-white/15 flex items-center justify-center mb-6">
+          <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+        </div>
+        <h2 class="text-3xl font-extrabold text-white mb-4 leading-tight">Compte Propriétaire</h2>
+        <p class="text-white/70 mb-8 leading-relaxed">Publiez vos biens gratuitement et recevez des contacts qualifiés directement sur votre tableau de bord.</p>
+        <ul class="space-y-3">
+          <li class="flex items-start gap-3 text-white/80 text-sm">
+            <svg class="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            Tableau de bord dédié avec gestion complète de vos annonces
+          </li>
+          <li class="flex items-start gap-3 text-white/80 text-sm">
+            <svg class="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            Messagerie sécurisée — seuls les clients ayant payé peuvent vous contacter
+          </li>
+          <li class="flex items-start gap-3 text-white/80 text-sm">
+            <svg class="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            Notifications en temps réel pour chaque mise en relation
+          </li>
+        </ul>
+      </div>
+      <p class="text-white/40 text-xs">© DOMIORA — Plateforme immobilière sécurisée</p>
+    </div>
+
+    <!-- Right panel: form -->
+    <div class="md:w-7/12 p-8 sm:p-12 flex flex-col justify-center">
+      <div class="mb-8">
+        <p class="text-xs font-bold text-[#71212d] uppercase tracking-widest mb-2">Étape 1 sur 2</p>
+        <h1 class="text-2xl font-extrabold text-gray-900 mb-1">Créez votre compte propriétaire</h1>
+        <p class="text-sm text-gray-500">Renseignez vos informations pour accéder à votre espace de gestion.</p>
+      </div>
+
+      {% if form.non_field_errors %}
+      <div class="mb-4 p-4 rounded-xl bg-rose-50 border border-rose-100 text-rose-600 text-sm font-medium">
+        {{ form.non_field_errors.0 }}
+      </div>
+      {% endif %}
+
+      <form method="post" class="space-y-5">
+        {% csrf_token %}
+        <input type="hidden" name="role" value="owner">
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <!-- Prénom -->
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1">Prénom *</label>
+            {{ form.first_name }}
+            {% if form.first_name.errors %}<p class="text-xs text-rose-500 mt-1">{{ form.first_name.errors.0 }}</p>{% endif %}
+          </div>
+          <!-- Nom -->
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1">Nom *</label>
+            {{ form.last_name }}
+            {% if form.last_name.errors %}<p class="text-xs text-rose-500 mt-1">{{ form.last_name.errors.0 }}</p>{% endif %}
+          </div>
+        </div>
+
+        <!-- Nom d'utilisateur -->
+        <div>
+          <label class="block text-xs font-bold text-gray-700 mb-1">Nom d'utilisateur *</label>
+          {{ form.username }}
+          {% if form.username.errors %}<p class="text-xs text-rose-500 mt-1">{{ form.username.errors.0 }}</p>{% endif %}
+        </div>
+
+        <!-- Email -->
+        <div>
+          <label class="block text-xs font-bold text-gray-700 mb-1">Adresse e-mail *</label>
+          {{ form.email }}
+          {% if form.email.errors %}<p class="text-xs text-rose-500 mt-1">{{ form.email.errors.0 }}</p>{% endif %}
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <!-- Téléphone -->
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1">Téléphone</label>
+            {{ form.phone }}
+          </div>
+          <!-- WhatsApp -->
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1">WhatsApp <span class="text-[#71212d]">*</span></label>
+            {{ form.whatsapp_number }}
+            {% if form.whatsapp_number.errors %}<p class="text-xs text-rose-500 mt-1">{{ form.whatsapp_number.errors.0 }}</p>{% endif %}
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <!-- Mot de passe -->
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1">Mot de passe *</label>
+            {{ form.password1 }}
+            {% if form.password1.errors %}<p class="text-xs text-rose-500 mt-1">{{ form.password1.errors.0 }}</p>{% endif %}
+          </div>
+          <!-- Confirmation -->
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1">Confirmer le mot de passe *</label>
+            {{ form.password2 }}
+            {% if form.password2.errors %}<p class="text-xs text-rose-500 mt-1">{{ form.password2.errors.0 }}</p>{% endif %}
+          </div>
+        </div>
+
+        <button type="submit" id="btn-submit-register-owner" class="w-full bg-[#71212d] hover:bg-[#5a1a24] text-white font-bold py-4 rounded-xl transition shadow-md text-sm mt-2">
+          Créer mon compte propriétaire →
+        </button>
+
+        <p class="text-center text-sm text-gray-500 mt-4">
+          Déjà inscrit ?
+          <a href="{% url 'accounts:login' %}" class="text-[#71212d] font-bold hover:underline">Se connecter</a>
+        </p>
+      </form>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

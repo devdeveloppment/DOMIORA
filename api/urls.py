@@ -16,5 +16,9 @@ router.register("me", views.MeView, basename="me")
 
 urlpatterns = [
     path("auth/token/", obtain_auth_token, name="api_token_auth"),
+    path("verification/submit/", views.verification_submit, name="verification_submit"),
+    path("verification/resume/<int:verification_id>/", views.verification_resume, name="verification_resume"),
+    path("chat/", views.chat_assistant, name="chat_assistant"),
+    path("admin/notifications/", views.admin_notification_webhook, name="admin_notification_webhook"),
     path("", include(router.urls)),
 ]

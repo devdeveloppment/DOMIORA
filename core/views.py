@@ -6,22 +6,22 @@ from django.db.models import Count, Sum, Q
 from django.http import JsonResponse
 
 from properties.models import Property
-from agents.models import Agent
+from accounts.models import User
 from .models import Testimonial
 from .forms import ContactForm
 
 
 def home(request):
-    featured = Property.objects.select_related('agent', 'agent__user').prefetch_related('images').filter(is_published=True, is_validated=True, is_featured=True)[:3]
-    for_sale = Property.objects.select_related('agent', 'agent__user').prefetch_related('images').filter(is_published=True, is_validated=True, transaction_type="vente").exclude(status="brouillon")[:6]
-    recently_sold = Property.objects.select_related('agent', 'agent__user').prefetch_related('images').filter(status__in=["vendu", "loue"], is_published=True, is_validated=True)[:8]
-    agents = Agent.objects.select_related('user').filter(is_verified=True).order_by("-rating")[:3]
+    featured = Property.objects.select_related('owner').prefetch_related('images').filter(is_published=True, is_validated=True, is_featured=True)[:3]
+    for_sale = Property.objects.select_related('owner').prefetch_related('images').filter(is_published=True, is_validated=True).exclude(status="brouillon")[:8]
+    recently_sold = Property.objects.select_related('owner').prefetch_related('images').filter(status__in=["vendu", "loue"], is_published=True, is_validated=True)[:8]
     testimonials = Testimonial.objects.filter(is_published=True)[:3]
 
     stats = {
         "sold": Property.objects.filter(status__in=["vendu", "loue"], is_validated=True).count(),
         "clients": Property.objects.filter(requests__isnull=False).values("requests__user").distinct().count(),
-        "agents": Agent.objects.filter(is_verified=True).count(),
+        "owners": User.objects.filter(role=User.Role.OWNER, verification_status='approved').count(),
+        "properties": Property.objects.filter(is_published=True, is_validated=True).count(),
         "years": 5,
     }
 
@@ -29,20 +29,16 @@ def home(request):
         "featured": featured,
         "for_sale": for_sale,
         "recently_sold": recently_sold,
-        "agents": agents,
         "testimonials": testimonials,
         "stats": stats,
         "countries": Property.objects.values_list("country", flat=True).distinct(),
         "property_types": Property.PropertyType.choices,
-        "category_tiles": [
-            ("villa", "Villas", "🏡"),
-            ("appartement", "Appartements", "🏢"),
-            ("penthouse", "Penthouses", "🌆"),
-            ("studio", "Studios", "🛋"),
-            ("maison_de_ville", "Maisons de ville", "🏘"),
-            ("loft", "Lofts", "🏭"),
-        ],
     }
+    # Provide a safe default for templates that expect `favorite_ids`.
+    # Templates may render property cards for anonymous users or views
+    # that don't include favorites in their context; ensure an empty
+    # list is available to avoid VariableDoesNotExist errors.
+    context.setdefault("favorite_ids", [])
     return render(request, "core/home.html", context)
 
 
@@ -88,16 +84,6 @@ def search_suggestions(request):
                 "subtitle": f"{p.city}, {p.country} · {p.price_display}",
                 "image": p.primary_image,
             })
-        agents = Agent.objects.filter(
-            Q(user__first_name__icontains=q) | Q(user__last_name__icontains=q) | Q(agency_name__icontains=q)
-        )[:3]
-        for a in agents:
-            results.append({
-                "url": a.get_absolute_url(),
-                "title": a.user.get_full_name(),
-                "subtitle": f"Agent · {a.agency_name or 'Indépendant'}",
-                "image": a.user.get_avatar_url(),
-            })
     return JsonResponse({"results": results})
 
 
@@ -117,9 +103,22 @@ def assistant_chat(request):
     if not message:
         return JsonResponse({"error": "message is required"}, status=400)
 
-    result = get_assistant_reply(message, conversation_history=history[-8:])
+    # Pass the user object for role detection
+    result = get_assistant_reply(message, conversation_history=history[-8:], user=request.user)
     matches_data = [
         {"title": p.title, "url": p.get_absolute_url(), "price": p.price_display, "image": p.primary_image}
         for p in result["matches"][:3]
     ]
     return JsonResponse({"reply": result["reply"], "matches": matches_data, "source": result["source"]})
+
+
+def donate(request):
+    return render(request, "core/donate.html")
+
+
+def services(request):
+    return render(request, "core/services.html")
+
+
+def blog(request):
+    return render(request, "core/blog.html", {"articles": []})

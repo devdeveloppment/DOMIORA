@@ -7,7 +7,15 @@ from accounts.models import User
 def dashboard_redirect(request):
     user = request.user
     if user.is_superuser or user.role == User.Role.ADMIN:
+        request.session['dash_role'] = 'admin'
+        request.session.modified = True
         return redirect("dashboard:admin_overview")
-    if user.role == User.Role.AGENT:
-        return redirect("dashboard:agent_overview")
-    return redirect("dashboard:buyer_overview")
+    if user.role == User.Role.OWNER or user.role == User.Role.AGENT:
+        request.session['dash_role'] = 'owner'
+        request.session.modified = True
+        return redirect("dashboard:owner_overview")
+    # Default: client
+    request.session['dash_role'] = 'client'
+    request.session.modified = True
+    return redirect("dashboard:client_overview")
+

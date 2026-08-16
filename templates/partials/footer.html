@@ -9,7 +9,7 @@
     </div>
   </div>
 
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 grid grid-cols-1 md:grid-cols-4 gap-10">
+  <div class="max-w-[1440px] 2xl:max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-14 grid grid-cols-1 md:grid-cols-4 gap-10">
     <div>
       <div class="flex items-center gap-2.5 text-white font-extrabold text-lg mb-3">
         {% if site_settings.logo %}
@@ -52,7 +52,7 @@
         <li><a href="{% url 'core:home' %}" class="hover:text-white">Accueil</a></li>
         <li><a href="{% url 'properties:list' %}" class="hover:text-white">Propriétés</a></li>
         <li><a href="{% url 'core:about' %}" class="hover:text-white">À propos</a></li>
-        <li><a href="{% url 'agents:list' %}" class="hover:text-white">Nos agents</a></li>
+        <li><a href="{% url 'agents:list' %}" class="hover:text-white">Nos propriétaires</a></li>
         <li><a href="{% url 'core:contact' %}" class="hover:text-white">Contact</a></li>
       </ul>
     </div>
@@ -78,6 +78,6 @@
   </div>
 
   <div class="border-t border-white/10 py-6 px-4 text-center text-xs text-white/40">
-    © {% now "Y" %} {{ site_settings.site_name }}. Tous droits réservés. — {{ site_settings.tagline }}
+    &copy; {% now "Y" %} {{ site_settings.site_name }}. Tous droits réservés. &mdash; {{ site_settings.tagline }}
   </div>
 </footer>

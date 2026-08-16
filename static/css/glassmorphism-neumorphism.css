@@ -1,0 +1,246 @@
+/* DOMIORA Glassmorphism and Neumorphism Effects */
+
+/* Glassmorphism Effects */
+.glass {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.glass-dark {
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.glass-card {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 20px;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.glass-header {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}
+
+.glass-sidebar {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-right: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 4px 0 30px rgba(0, 0, 0, 0.1);
+}
+
+.glass-modal {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 24px;
+  box-shadow: 
+    0 25px 50px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+/* Neumorphism Effects */
+.neumorphism {
+  background: #f0f0f0;
+  border-radius: 20px;
+  box-shadow: 
+    8px 8px 16px #d1d1d1,
+    -8px -8px 16px #ffffff;
+}
+
+.neumorphism-dark {
+  background: #2d2d2d;
+  border-radius: 20px;
+  box-shadow: 
+    8px 8px 16px #1a1a1a,
+    -8px -8px 16px #404040;
+}
+
+.neumorphism-inset {
+  background: #f0f0f0;
+  border-radius: 20px;
+  box-shadow: 
+    inset 4px 4px 8px #d1d1d1,
+    inset -4px -4px 8px #ffffff;
+}
+
+.neumorphism-button {
+  background: #f0f0f0;
+  border-radius: 12px;
+  border: none;
+  padding: 12px 24px;
+  color: #333;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 
+    4px 4px 8px #d1d1d1,
+    -4px -4px 8px #ffffff;
+  transition: all 0.3s ease;
+}
+
+.neumorphism-button:hover {
+  box-shadow: 
+    6px 6px 12px #d1d1d1,
+    -6px -6px 12px #ffffff;
+}
+
+.neumorphism-button:active {
+  box-shadow: 
+    inset 2px 2px 4px #d1d1d1,
+    inset -2px -2px 4px #ffffff;
+}
+
+.neumorphism-input {
+  background: #f0f0f0;
+  border-radius: 12px;
+  border: none;
+  padding: 12px 16px;
+  color: #333;
+  box-shadow: 
+    inset 4px 4px 8px #d1d1d1,
+    inset -4px -4px 8px #ffffff;
+}
+
+.neumorphism-card {
+  background: #f0f0f0;
+  border-radius: 24px;
+  padding: 24px;
+  box-shadow: 
+    12px 12px 24px #d1d1d1,
+    -12px -12px 24px #ffffff;
+}
+
+/* Combined Effects */
+.glass-neumorphism {
+  background: rgba(240, 240, 240, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 20px;
+  box-shadow: 
+    8px 8px 16px rgba(0, 0, 0, 0.1),
+    -8px -8px 16px rgba(255, 255, 255, 0.8);
+}
+
+/* Premium Glass Effect */
+.glass-premium {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 24px;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Frosted Glass Effect */
+.frosted-glass {
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+/* Morphing Effect */
+.morph {
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.morph:hover {
+  transform: translateY(-5px) scale(1.02);
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.15),
+    0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Gradient Glass */
+.gradient-glass {
+  background: linear-gradient(135deg, rgba(113, 33, 45, 0.2), rgba(11, 59, 92, 0.2));
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .glass-card,
+  .glass-modal,
+  .neumorphism-card {
+    border-radius: 16px;
+    padding: 16px;
+  }
+  
+  .neumorphism {
+    box-shadow: 
+      4px 4px 8px #d1d1d1,
+      -4px -4px 8px #ffffff;
+  }
+}
+
+/* Dark Mode Support */
+.dark .glass {
+  background: rgba(0, 0, 0, 0.3);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark .glass-card {
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.1));
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark .neumorphism {
+  background: #2d2d2d;
+  box-shadow: 
+    8px 8px 16px #1a1a1a,
+    -8px -8px 16px #404040;
+}
+
+/* Animation Classes */
+.animate-glass {
+  animation: glassPulse 3s ease-in-out infinite;
+}
+
+@keyframes glassPulse {
+  0%, 100% {
+    background: rgba(255, 255, 255, 0.1);
+  }
+  50% {
+    background: rgba(255, 255, 255, 0.15);
+  }
+}
+
+/* Utility Classes */
+.glass-hover:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.neumorphism-pressed {
+  box-shadow: 
+    inset 4px 4px 8px #d1d1d1,
+    inset -4px -4px 8px #ffffff;
+}

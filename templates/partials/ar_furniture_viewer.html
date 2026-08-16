@@ -1,0 +1,370 @@
+<div x-data="arFurnitureViewer()" x-init="init()" class="relative bg-gray-900 rounded-2xl overflow-hidden" x-cloak>
+  <!-- AR Status -->
+  <div class="absolute top-4 left-4 z-20">
+    <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold"
+          :class="arStatus === 'active' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'">
+      <span class="w-2 h-2 rounded-full" :class="arStatus === 'active' ? 'bg-green-400 animate-pulse' : 'bg-yellow-400'"></span>
+      <span x-text="arStatus === 'active' ? 'AR Actif' : 'Initialisation...'"></span>
+    </span>
+  </div>
+
+  <!-- Camera View -->
+  <div class="relative h-[500px] bg-gray-800">
+    <video ref="cameraVideo" autoplay playsinline muted class="w-full h-full object-cover"></video>
+    
+    <!-- AR Overlay Canvas -->
+    <canvas ref="arCanvas" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
+    
+    <!-- Furniture Selection Panel -->
+    <div x-show="showFurniturePanel" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 translate-y-4"
+         x-transition:enter-end="opacity-100 translate-y-0"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 translate-y-0"
+         x-transition:leave-end="opacity-0 translate-y-4"
+         class="absolute bottom-4 left-4 right-4 bg-gray-800/95 backdrop-blur-md rounded-xl p-4">
+      <h3 class="text-white font-semibold mb-3">Sélectionner un meuble</h3>
+      <div class="grid grid-cols-4 gap-2 max-h-40 overflow-y-auto">
+        <template x-for="furniture in furnitureList" :key="furniture.id">
+          <button @click="selectFurniture(furniture)"
+                  class="relative rounded-lg overflow-hidden transition-all hover:ring-2 hover:ring-blue-500"
+                  :class="selectedFurniture?.id === furniture.id ? 'ring-2 ring-blue-500' : ''">
+            <img :src="furniture.thumbnail" :alt="furniture.name" class="w-full h-16 object-cover">
+            <div class="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs p-1 truncate">
+              <span x-text="furniture.name"></span>
+            </div>
+          </button>
+        </template>
+      </div>
+    </div>
+
+    <!-- Selected Furniture Info -->
+    <div x-show="selectedFurniture" 
+         class="absolute top-4 right-4 bg-gray-800/95 backdrop-blur-md rounded-xl p-3 w-48">
+      <img :src="selectedFurniture.thumbnail" :alt="selectedFurniture.name" class="w-full h-24 object-cover rounded-lg mb-2">
+      <h4 class="text-white font-semibold text-sm" x-text="selectedFurniture.name"></h4>
+      <p class="text-gray-400 text-xs" x-text="selectedFurniture.category"></p>
+      <div class="mt-2 text-xs text-gray-300">
+        <p>Dimensions: <span x-text="selectedFurniture.width + 'x' + selectedFurniture.height + 'x' + selectedFurniture.depth + 'm'"></span></p>
+        <p x-show="selectedFurniture.price">Prix: <span x-text="selectedFurniture.price + ' ' + selectedFurniture.currency"></span></p>
+      </div>
+      <button @click="removeFurniture()" class="mt-2 w-full bg-red-500/20 text-red-400 text-xs py-1.5 rounded-lg hover:bg-red-500/30 transition">
+        Retirer
+      </button>
+    </div>
+
+    <!-- Controls -->
+    <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2">
+      <!-- Toggle Furniture Panel -->
+      <button @click="showFurniturePanel = !showFurniturePanel" 
+              class="w-12 h-12 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-all">
+        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path>
+        </svg>
+      </button>
+
+      <!-- Rotate -->
+      <button @click="rotateFurniture()" 
+              class="w-12 h-12 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-all">
+        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+        </svg>
+      </button>
+
+      <!-- Scale -->
+      <button @click="scaleFurniture(1.1)" 
+              class="w-12 h-12 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-all">
+        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+        </svg>
+      </button>
+
+      <button @click="scaleFurniture(0.9)" 
+              class="w-12 h-12 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-all">
+        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path>
+        </svg>
+      </button>
+
+      <!-- Reset View -->
+      <button @click="resetView()" 
+              class="w-12 h-12 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-all">
+        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Error State -->
+    <div x-show="arStatus === 'error'" class="absolute inset-0 flex items-center justify-center bg-gray-900/90">
+      <div class="text-center text-white p-6">
+        <svg class="w-16 h-16 mx-auto mb-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+        </svg>
+        <p class="text-lg font-semibold mb-2">Erreur d'accès caméra</p>
+        <p class="text-sm text-gray-300 mb-4" x-text="error"></p>
+        <button @click="init()" class="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg text-sm font-semibold transition">
+          Réessayer
+        </button>
+      </div>
+    </div>
+
+    <!-- Instructions -->
+    <div x-show="!selectedFurniture && arStatus !== 'error'" 
+         class="absolute inset-0 flex items-center justify-center bg-black/50">
+      <div class="text-center text-white">
+        <svg class="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+        </svg>
+        <p class="text-lg font-semibold mb-2">Visualisation AR</p>
+        <p class="text-sm text-gray-300">Sélectionnez un meuble pour le visualiser dans votre espace</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function arFurnitureViewer() {
+  return {
+    arStatus: 'initializing',
+    showFurniturePanel: true,
+    selectedFurniture: null,
+    
+    cameraStream: null,
+    furnitureRotation: 0,
+    furnitureScale: 1,
+    error: null,
+    
+    // Sample furniture data (in production, load from API)
+    furnitureList: [
+      {
+        id: 1,
+        name: 'Canapé moderne',
+        category: 'Salon',
+        thumbnail: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=200',
+        width: 2.5,
+        height: 0.9,
+        depth: 1.0,
+        price: 1200,
+        currency: 'EUR'
+      },
+      {
+        id: 2,
+        name: 'Table basse',
+        category: 'Salon',
+        thumbnail: 'https://images.unsplash.com/photo-1533090481720-856c6e3c1fdc?w=200',
+        width: 1.2,
+        height: 0.45,
+        depth: 0.6,
+        price: 350,
+        currency: 'EUR'
+      },
+      {
+        id: 3,
+        name: 'Lit king size',
+        category: 'Chambre',
+        thumbnail: 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=200',
+        width: 2.0,
+        height: 0.5,
+        depth: 2.2,
+        price: 1800,
+        currency: 'EUR'
+      },
+      {
+        id: 4,
+        name: 'Bureau',
+        category: 'Bureau',
+        thumbnail: 'https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?w=200',
+        width: 1.6,
+        height: 0.75,
+        depth: 0.8,
+        price: 450,
+        currency: 'EUR'
+      },
+      {
+        id: 5,
+        name: 'Chaise design',
+        category: 'Salon',
+        thumbnail: 'https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?w=200',
+        width: 0.6,
+        height: 0.9,
+        depth: 0.6,
+        price: 280,
+        currency: 'EUR'
+      },
+      {
+        id: 6,
+        name: 'Table à manger',
+        category: 'Salle à manger',
+        thumbnail: 'https://images.unsplash.com/photo-1617806118233-18e1de247200?w=200',
+        width: 1.8,
+        height: 0.75,
+        depth: 0.9,
+        price: 650,
+        currency: 'EUR'
+      },
+      {
+        id: 7,
+        name: 'Armoire',
+        category: 'Chambre',
+        thumbnail: 'https://images.unsplash.com/photo-1558997519-83ea9252edf8?w=200',
+        width: 1.5,
+        height: 2.0,
+        depth: 0.6,
+        price: 890,
+        currency: 'EUR'
+      },
+      {
+        id: 8,
+        name: 'Lampe de table',
+        category: 'Salon',
+        thumbnail: 'https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=200',
+        width: 0.3,
+        height: 0.5,
+        depth: 0.3,
+        price: 120,
+        currency: 'EUR'
+      }
+    ],
+    
+    async init() {
+      try {
+        // Check if running on HTTPS or localhost
+        const isSecure = window.location.protocol === 'https:' || 
+                         window.location.hostname === 'localhost' || 
+                         window.location.hostname === '127.0.0.1';
+        
+        if (!isSecure) {
+          console.warn('Camera access requires HTTPS or localhost');
+          this.arStatus = 'error';
+          this.error = 'L\'accès à la caméra nécessite HTTPS. Utilisez localhost ou HTTPS.';
+          return;
+        }
+        
+        // Request camera access
+        this.cameraStream = await navigator.mediaDevices.getUserMedia({
+          video: { 
+            facingMode: 'environment',
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          }
+        });
+        
+        this.$refs.cameraVideo.srcObject = this.cameraStream;
+        
+        // Initialize AR canvas
+        this.initARCanvas();
+        
+        this.arStatus = 'active';
+        
+      } catch (error) {
+        console.error('Error accessing camera:', error);
+        this.arStatus = 'error';
+        
+        // Provide helpful error message based on error type
+        if (error.name === 'NotAllowedError') {
+          this.error = 'Accès caméra refusé. Veuillez autoriser l\'accès dans les paramètres du navigateur.';
+        } else if (error.name === 'NotFoundError') {
+          this.error = 'Aucune caméra détectée. Vérifiez que votre appareil dispose d\'une caméra.';
+        } else if (error.name === 'NotReadableError') {
+          this.error = 'La caméra est déjà utilisée par une autre application.';
+        } else {
+          this.error = 'Impossible d\'accéder à la caméra: ' + error.message;
+        }
+      }
+    },
+    
+    initARCanvas() {
+      const canvas = this.$refs.arCanvas;
+      const ctx = canvas.getContext('2d');
+      
+      // Set canvas size to match video
+      canvas.width = this.$refs.cameraVideo.videoWidth || 1280;
+      canvas.height = this.$refs.cameraVideo.videoHeight || 720;
+      
+      // Start AR rendering loop
+      this.renderARLoop(ctx, canvas);
+    },
+    
+    renderARLoop(ctx, canvas) {
+      const render = () => {
+        // Clear canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw selected furniture if any
+        if (this.selectedFurniture) {
+          this.drawFurniture(ctx, canvas);
+        }
+        
+        requestAnimationFrame(render);
+      };
+      
+      render();
+    },
+    
+    drawFurniture(ctx, canvas) {
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      
+      ctx.save();
+      
+      // Apply transformations
+      ctx.translate(centerX, centerY);
+      ctx.rotate(this.furnitureRotation * Math.PI / 180);
+      ctx.scale(this.furnitureScale, this.furnitureScale);
+      
+      // Draw furniture placeholder (in production, use 3D model)
+      const width = this.selectedFurniture.width * 100;
+      const height = this.selectedFurniture.height * 100;
+      
+      // Draw shadow
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+      ctx.beginPath();
+      ctx.ellipse(0, height/2 + 10, width/2, height/4, 0, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Draw furniture box
+      ctx.fillStyle = 'rgba(100, 150, 200, 0.7)';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+      ctx.lineWidth = 2;
+      
+      ctx.beginPath();
+      ctx.rect(-width/2, -height/2, width, height);
+      ctx.fill();
+      ctx.stroke();
+      
+      // Draw dimensions label
+      ctx.fillStyle = 'white';
+      ctx.font = '14px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText(`${this.selectedFurniture.width}m x ${this.selectedFurniture.depth}m`, 0, height/2 + 30);
+      
+      ctx.restore();
+    },
+    
+    selectFurniture(furniture) {
+      this.selectedFurniture = furniture;
+      this.furnitureRotation = 0;
+      this.furnitureScale = 1;
+    },
+    
+    removeFurniture() {
+      this.selectedFurniture = null;
+    },
+    
+    rotateFurniture() {
+      this.furnitureRotation = (this.furnitureRotation + 45) % 360;
+    },
+    
+    scaleFurniture(factor) {
+      this.furnitureScale = Math.max(0.5, Math.min(3, this.furnitureScale * factor));
+    },
+    
+    resetView() {
+      this.furnitureRotation = 0;
+      this.furnitureScale = 1;
+    }
+  };
+}
+</script>

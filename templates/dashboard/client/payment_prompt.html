@@ -1,0 +1,35 @@
+{% extends "dashboard/dashboard_base.html" %}
+{% block title %}Tableau de bord Client — {{ site_settings.site_name }}{% endblock %}
+{% block dashboard_content %}
+<div class="max-w-2xl mx-auto text-center py-12">
+  <div class="w-20 h-20 rounded-full bg-[#71212d]/10 flex items-center justify-center mx-auto mb-6">
+    <svg class="w-10 h-10 text-[#71212d]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+  </div>
+  
+  <h1 class="text-3xl font-extrabold text-gray-900 mb-3">Accédez à votre tableau de bord</h1>
+  <p class="text-gray-500 mb-8 text-lg">
+    Pour accéder à votre tableau de bord client et contacter les propriétaires, vous devez d'abord effectuer les frais de mise en relation pour un bien.
+  </p>
+  
+  <div class="bg-gray-50 rounded-2xl border border-gray-200 p-6 mb-8">
+    <div class="flex items-center justify-center gap-4 mb-4">
+      <div class="text-center">
+        <p class="text-3xl font-extrabold text-[#71212d]">500 FCFA</p>
+        <p class="text-sm text-gray-500 mt-1">Frais de mise en relation</p>
+      </div>
+    </div>
+    <p class="text-sm text-gray-600">
+      Ce paiement unique par bien vous donne accès aux coordonnées du propriétaire, à la messagerie, et à toutes les fonctionnalités du tableau de bord client.
+    </p>
+  </div>
+  
+  <div class="flex flex-col sm:flex-row gap-4 justify-center">
+    <a href="{% url 'properties:list' %}" hx-boost="false" class="px-6 py-3 rounded-xl border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition">
+      Parcourir les annonces
+    </a>
+    <a href="{% url 'properties:list' %}" hx-boost="false" class="px-6 py-3 rounded-xl bg-[#71212d] text-white font-semibold hover:bg-[#5a1a24] transition shadow-md">
+      Trouver un bien à débloquer
+    </a>
+  </div>
+</div>
+{% endblock %}

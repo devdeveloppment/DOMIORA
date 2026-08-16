@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{% block title %}Blog Immobilier — {{ site_settings.site_name }}{% endblock %}
+{% block description %}Conseils, tendances et actualités du marché immobilier. Le blog DOMIORA pour vous aider à mieux investir.{% endblock %}
+
+{% block content %}
+<!-- Hero -->
+<section class="relative bg-[#71212d] py-20 overflow-hidden">
+  <div class="absolute inset-0 opacity-10">
+    <img src="https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80" alt="" class="w-full h-full object-cover">
+  </div>
+  <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+    <span class="inline-block bg-[#d4af37]/20 text-[#d4af37] text-xs font-bold px-4 py-2 rounded-full mb-6 uppercase tracking-widest">Conseils & Tendances</span>
+    <h1 class="text-4xl lg:text-5xl font-extrabold text-white tracking-tight mb-6">Le Blog DOMIORA</h1>
+    <p class="text-xl text-white/80 max-w-3xl mx-auto">
+      Des conseils d'experts, des tendances du marché et des guides pratiques pour réussir vos projets immobiliers.
+    </p>
+  </div>
+</section>
+
+<!-- Featured Article -->
+<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+  <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden flex flex-col lg:flex-row group hover:shadow-xl transition duration-300">
+    <div class="relative lg:w-1/2 h-64 lg:h-auto overflow-hidden">
+      <img src="https://images.unsplash.com/photo-1582268611958-ebfd161ef9cf?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80" alt="Article vedette" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+      <div class="absolute top-4 left-4 bg-[#d4af37] text-white text-xs font-bold px-3 py-1.5 rounded-full">Article vedette</div>
+    </div>
+    <div class="lg:w-1/2 p-8 lg:p-12 flex flex-col justify-center">
+      <p class="text-xs uppercase font-bold text-[#71212d] tracking-widest mb-3">Guide Pratique</p>
+      <h2 class="text-2xl lg:text-3xl font-extrabold text-gray-900 mb-4">Comment bien évaluer le prix d'un bien immobilier ?</h2>
+      <p class="text-gray-600 leading-relaxed mb-6">Découvrez les critères essentiels qui influencent la valeur d'un bien : localisation, état général, superficie et tendances du marché local.</p>
+      <div class="flex items-center gap-4 mb-6">
+        <img src="https://ui-avatars.com/api/?name=Equipe+Domiora&background=71212d&color=fff&size=40" class="w-10 h-10 rounded-full">
+        <div>
+          <p class="text-sm font-bold text-gray-900">Équipe DOMIORA</p>
+          <p class="text-xs text-gray-400">15 Juin 2026 · 8 min de lecture</p>
+        </div>
+      </div>
+      <a href="#" class="inline-flex items-center gap-2 text-[#71212d] font-bold hover:gap-3 transition-all">
+        Lire l'article
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- Articles Grid -->
+<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
+  <div class="flex items-center justify-between mb-10">
+    <h2 class="text-2xl font-extrabold text-gray-900">Derniers articles</h2>
+    <div class="flex gap-2">
+      <button class="px-4 py-2 bg-[#71212d] text-white text-sm font-bold rounded-full">Tous</button>
+      <button class="px-4 py-2 bg-gray-100 text-gray-600 text-sm font-semibold rounded-full hover:bg-gray-200 transition">Achat</button>
+      <button class="px-4 py-2 bg-gray-100 text-gray-600 text-sm font-semibold rounded-full hover:bg-gray-200 transition">Location</button>
+      <button class="px-4 py-2 bg-gray-100 text-gray-600 text-sm font-semibold rounded-full hover:bg-gray-200 transition">Conseils</button>
+    </div>
+  </div>
+
+  <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+
+    {% for article in articles %}
+    <article class="group bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition duration-300">
+      <div class="relative h-48 overflow-hidden">
+        <img src="{{ article.image }}" alt="{{ article.title }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+        <div class="absolute top-3 left-3 bg-white/90 text-[#71212d] text-xs font-bold px-3 py-1 rounded-full">{{ article.category }}</div>
+      </div>
+      <div class="p-6">
+        <h3 class="font-bold text-gray-900 text-lg mb-2 line-clamp-2 group-hover:text-[#71212d] transition">{{ article.title }}</h3>
+        <p class="text-gray-500 text-sm line-clamp-3 mb-4">{{ article.excerpt }}</p>
+        <div class="flex items-center justify-between pt-4 border-t border-gray-100">
+          <span class="text-xs text-gray-400">{{ article.date }} · {{ article.read_time }}</span>
+          <a href="#" class="text-[#71212d] font-bold text-sm hover:underline">Lire →</a>
+        </div>
+      </div>
+    </article>
+    {% empty %}
+    <!-- Static articles while no blog backend -->
+    {% for i in "123456" %}
+    <article class="group bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition duration-300">
+      {% if forloop.counter == 1 %}
+      <div class="relative h-48 overflow-hidden">
+        <img src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+        <div class="absolute top-3 left-3 bg-white/90 text-[#71212d] text-xs font-bold px-3 py-1 rounded-full">Conseils</div>
+      </div>
+      <div class="p-6">
+        <h3 class="font-bold text-gray-900 text-lg mb-2 group-hover:text-[#71212d] transition">10 erreurs à éviter lors d'un premier achat immobilier</h3>
+        <p class="text-gray-500 text-sm mb-4">Découvrez les pièges les plus courants et comment les éviter pour sécuriser votre premier investissement immobilier.</p>
+        <div class="flex items-center justify-between pt-4 border-t border-gray-100">
+          <span class="text-xs text-gray-400">12 Juin 2026 · 6 min</span>
+          <a href="#" class="text-[#71212d] font-bold text-sm hover:underline">Lire →</a>
+        </div>
+      </div>
+      {% elif forloop.counter == 2 %}
+      <div class="relative h-48 overflow-hidden">
+        <img src="https://images.unsplash.com/photo-1570129477492-45c003edd2be?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+        <div class="absolute top-3 left-3 bg-white/90 text-[#71212d] text-xs font-bold px-3 py-1 rounded-full">Location</div>
+      </div>
+      <div class="p-6">
+        <h3 class="font-bold text-gray-900 text-lg mb-2 group-hover:text-[#71212d] transition">Locataire ou propriétaire : quel choix est le plus avantageux ?</h3>
+        <p class="text-gray-500 text-sm mb-4">Une analyse détaillée des avantages et inconvénients de chaque option en fonction de votre situation personnelle.</p>
+        <div class="flex items-center justify-between pt-4 border-t border-gray-100">
+          <span class="text-xs text-gray-400">8 Juin 2026 · 7 min</span>
+          <a href="#" class="text-[#71212d] font-bold text-sm hover:underline">Lire →</a>
+        </div>
+      </div>
+      {% elif forloop.counter == 3 %}
+      <div class="relative h-48 overflow-hidden">
+        <img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+        <div class="absolute top-3 left-3 bg-white/90 text-[#71212d] text-xs font-bold px-3 py-1 rounded-full">Investissement</div>
+      </div>
+      <div class="p-6">
+        <h3 class="font-bold text-gray-900 text-lg mb-2 group-hover:text-[#71212d] transition">Immobilier en Afrique de l'Ouest : où investir en 2026 ?</h3>
+        <p class="text-gray-500 text-sm mb-4">Les villes les plus prometteuses pour un investissement immobilier rentable en Afrique subsaharienne cette année.</p>
+        <div class="flex items-center justify-between pt-4 border-t border-gray-100">
+          <span class="text-xs text-gray-400">5 Juin 2026 · 9 min</span>
+          <a href="#" class="text-[#71212d] font-bold text-sm hover:underline">Lire →</a>
+        </div>
+      </div>
+      {% elif forloop.counter == 4 %}
+      <div class="relative h-48 overflow-hidden">
+        <img src="https://images.unsplash.com/photo-1449844908441-8829872d2607?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+        <div class="absolute top-3 left-3 bg-white/90 text-[#71212d] text-xs font-bold px-3 py-1 rounded-full">Décoration</div>
+      </div>
+      <div class="p-6">
+        <h3 class="font-bold text-gray-900 text-lg mb-2 group-hover:text-[#71212d] transition">Comment valoriser son bien avant de le mettre en vente ?</h3>
+        <p class="text-gray-500 text-sm mb-4">Le home staging et les rénovations stratégiques qui peuvent augmenter la valeur de votre bien de 10 à 20%.</p>
+        <div class="flex items-center justify-between pt-4 border-t border-gray-100">
+          <span class="text-xs text-gray-400">1 Juin 2026 · 5 min</span>
+          <a href="#" class="text-[#71212d] font-bold text-sm hover:underline">Lire →</a>
+        </div>
+      </div>
+      {% elif forloop.counter == 5 %}
+      <div class="relative h-48 overflow-hidden">
+        <img src="https://images.unsplash.com/photo-1554469384-e58fac16e23a?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+        <div class="absolute top-3 left-3 bg-white/90 text-[#71212d] text-xs font-bold px-3 py-1 rounded-full">Financement</div>
+      </div>
+      <div class="p-6">
+        <h3 class="font-bold text-gray-900 text-lg mb-2 group-hover:text-[#71212d] transition">Financement immobilier : tout savoir sur les prêts bancaires</h3>
+        <p class="text-gray-500 text-sm mb-4">Guide complet sur les types de crédits, les taux d'intérêt et les conditions d'obtention d'un prêt immobilier.</p>
+        <div class="flex items-center justify-between pt-4 border-t border-gray-100">
+          <span class="text-xs text-gray-400">28 Mai 2026 · 10 min</span>
+          <a href="#" class="text-[#71212d] font-bold text-sm hover:underline">Lire →</a>
+        </div>
+      </div>
+      {% elif forloop.counter == 6 %}
+      <div class="relative h-48 overflow-hidden">
+        <img src="https://images.unsplash.com/photo-1515263487990-61b07816b324?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+        <div class="absolute top-3 left-3 bg-white/90 text-[#71212d] text-xs font-bold px-3 py-1 rounded-full">Juridique</div>
+      </div>
+      <div class="p-6">
+        <h3 class="font-bold text-gray-900 text-lg mb-2 group-hover:text-[#71212d] transition">Les droits et obligations du propriétaire bailleur</h3>
+        <p class="text-gray-500 text-sm mb-4">Ce que dit la loi sur vos droits en tant que propriétaire et les obligations légales envers vos locataires.</p>
+        <div class="flex items-center justify-between pt-4 border-t border-gray-100">
+          <span class="text-xs text-gray-400">24 Mai 2026 · 8 min</span>
+          <a href="#" class="text-[#71212d] font-bold text-sm hover:underline">Lire →</a>
+        </div>
+      </div>
+      {% endif %}
+    </article>
+    {% endfor %}
+    {% endfor %}
+  </div>
+
+  <!-- Newsletter -->
+  <div class="mt-20 bg-gradient-to-br from-[#71212d] to-[#5a1a24] rounded-3xl p-10 lg:p-16 text-center text-white">
+    <h2 class="text-2xl lg:text-3xl font-extrabold mb-4">Restez informé des dernières tendances</h2>
+    <p class="text-white/80 mb-8 max-w-xl mx-auto">Recevez nos meilleurs articles et conseils immobiliers directement dans votre boîte mail, une fois par semaine.</p>
+    <form class="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+      <input type="email" placeholder="Votre adresse email" class="flex-1 px-5 py-4 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#d4af37]">
+      <button type="submit" class="px-6 py-4 bg-[#d4af37] hover:bg-[#b8962e] text-white font-bold rounded-xl transition whitespace-nowrap">
+        S'abonner
+      </button>
+    </form>
+    <p class="text-white/50 text-xs mt-4">Aucun spam, désabonnement en un clic.</p>
+  </div>
+</section>
+{% endblock %}

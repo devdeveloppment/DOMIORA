@@ -5,11 +5,23 @@ from . import views
 app_name = "accounts"
 
 urlpatterns = [
+    # ── Legacy & Owner registration ──────────────────────────────────────────
     path("inscription/", views.register, name="register"),
-    path("connexion/", auth_views.LoginView.as_view(template_name="accounts/login.html"), name="login"),
-    path("deconnexion/", auth_views.LogoutView.as_view(), name="logout"),
-    path("profil/", views.profile, name="profile"),
+    path("inscription/proprietaire/", views.register_owner, name="register_owner"),
+    path("publier-un-bien/", views.publish_landing, name="publish_landing"),
 
+    # ── Client post-payment registration ────────────────────────────────────
+    path("inscription/client/<slug:slug>/", views.register_client_post_payment, name="register_client_post_payment"),
+
+    # ── Auth ─────────────────────────────────────────────────────────────────
+    path("connexion/", views.CustomLoginView.as_view(), name="login"),
+    path("deconnexion/", auth_views.LogoutView.as_view(), name="logout"),
+    path("admin-login/", views.admin_login, name="admin_login"),  # Admin-only login
+    path("mon-espace/", views.client_login, name="client_login"),  # Client-only login
+    path("profil/", views.profile, name="profile"),
+    path("u/<str:username>/", views.public_profile, name="public_profile"),
+
+    # ── Password reset ────────────────────────────────────────────────────────
     path(
         "mot-de-passe-oublie/",
         auth_views.PasswordResetView.as_view(

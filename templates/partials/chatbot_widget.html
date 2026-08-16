@@ -1,0 +1,253 @@
+<!-- AI Chatbot Widget -->
+<div x-data="chatbotWidget()" x-init="initChatbot()" class="fixed bottom-6 right-6 z-50">
+  <!-- Chat Button -->
+  <button @click="isOpen = !isOpen" 
+          class="w-16 h-16 rounded-full bg-[#71212d] hover:bg-[#8a2a3d] text-white shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-110"
+          :class="isOpen ? 'hidden' : 'flex'">
+    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
+    </svg>
+  </button>
+
+  <!-- Chat Window -->
+  <div x-show="isOpen" 
+       x-transition:enter="transition ease-out duration-300"
+       x-transition:enter-start="opacity-0 translate-y-4 scale-95"
+       x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+       x-transition:leave="transition ease-in duration-200"
+       x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+       x-transition:leave-end="opacity-0 translate-y-4 scale-95"
+       class="absolute bottom-20 right-0 w-96 bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-200">
+    
+    <!-- Header -->
+    <div class="bg-[#71212d] text-white px-5 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+          </svg>
+        </div>
+        <div>
+          <h3 class="font-bold">Assistant DOMIORA</h3>
+          <p class="text-xs text-white/80" x-text="isLoading ? 'En train de réfléchir...' : 'En ligne'"></p>
+        </div>
+      </div>
+      <button @click="isOpen = false" class="text-white/80 hover:text-white transition">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Messages Container -->
+    <div class="h-80 overflow-y-auto p-4 space-y-4 bg-gray-50" id="chat-messages">
+      <!-- Welcome Message -->
+      <div x-show="messages.length === 0" class="text-center py-8">
+        <div class="w-16 h-16 rounded-full bg-[#71212d]/10 flex items-center justify-center mx-auto mb-4">
+          <svg class="w-8 h-8 text-[#71212d]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
+          </svg>
+        </div>
+        <h4 class="font-bold text-gray-900 mb-2">Bonjour ! 👋</h4>
+        <p class="text-sm text-gray-600">Je suis l'assistant DOMIORA. Comment puis-je vous aider aujourd'hui ?</p>
+        <div class="mt-4 space-y-2">
+          <button @click="sendQuickMessage('Je cherche un appartement à louer')" 
+                  class="w-full text-left px-4 py-2 bg-white rounded-lg border border-gray-200 hover:border-[#71212d] hover:text-[#71212d] transition text-sm">
+            🏠 Je cherche un appartement à louer
+          </button>
+          <button @click="sendQuickMessage('Quels sont les biens disponibles ?')" 
+                  class="w-full text-left px-4 py-2 bg-white rounded-lg border border-gray-200 hover:border-[#71212d] hover:text-[#71212d] transition text-sm">
+            🔍 Quels sont les biens disponibles ?
+          </button>
+          <button @click="sendQuickMessage('Comment fonctionne la visite ?')" 
+                  class="w-full text-left px-4 py-2 bg-white rounded-lg border border-gray-200 hover:border-[#71212d] hover:text-[#71212d] transition text-sm">
+            📅 Comment fonctionne la visite ?
+          </button>
+        </div>
+      </div>
+
+      <!-- Messages -->
+      <template x-for="(msg, index) in messages" :key="index">
+        <div :class="msg.role === 'user' ? 'flex justify-end' : 'flex justify-start'">
+          <div :class="msg.role === 'user' 
+                ? 'bg-[#71212d] text-white rounded-2xl rounded-br-sm' 
+                : 'bg-white text-gray-800 rounded-2xl rounded-bl-sm border border-gray-200'" 
+               class="max-w-[80%] px-4 py-3 shadow-sm">
+            <p class="text-sm whitespace-pre-wrap" x-text="msg.content"></p>
+            <p class="text-[10px] mt-1 opacity-70" x-text="msg.time"></p>
+          </div>
+        </div>
+      </template>
+
+      <!-- Property Matches -->
+      <template x-if="propertyMatches.length > 0">
+        <div class="space-y-2">
+          <p class="text-xs font-semibold text-gray-500">Biens correspondants :</p>
+          <template x-for="prop in propertyMatches" :key="prop.url">
+            <a :href="prop.url" target="_blank" 
+               class="block bg-white rounded-lg border border-gray-200 p-3 hover:border-[#71212d] transition">
+              <div class="flex gap-3">
+                <img :src="prop.image" class="w-16 h-16 rounded-lg object-cover" :alt="prop.title">
+                <div class="flex-1">
+                  <p class="font-semibold text-sm text-gray-900" x-text="prop.title"></p>
+                  <p class="text-xs text-[#71212d] font-bold" x-text="prop.price"></p>
+                </div>
+              </div>
+            </a>
+          </template>
+        </div>
+      </template>
+
+      <!-- Loading Indicator -->
+      <div x-show="isLoading" class="flex justify-start">
+        <div class="bg-white rounded-2xl rounded-bl-sm border border-gray-200 px-4 py-3 shadow-sm">
+          <div class="flex gap-1">
+            <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+            <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+            <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Input Area -->
+    <div class="p-4 bg-white border-t border-gray-200">
+      <form @submit.prevent="sendMessage" class="flex gap-2">
+        <input type="text" 
+               x-model="inputMessage" 
+               placeholder="Écrivez votre message..." 
+               :disabled="isLoading"
+               class="flex-1 px-4 py-3 rounded-xl border border-gray-200 focus:border-[#71212d] focus:ring-2 focus:ring-[#71212d]/20 outline-none transition text-sm">
+        <button type="submit" 
+                :disabled="isLoading || !inputMessage.trim()"
+                class="px-4 py-3 bg-[#71212d] hover:bg-[#8a2a3d] disabled:bg-gray-300 text-white rounded-xl transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+          </svg>
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+function chatbotWidget() {
+  return {
+    isOpen: false,
+    isLoading: false,
+    inputMessage: '',
+    messages: [],
+    propertyMatches: [],
+    conversationHistory: [],
+
+    initChatbot() {
+      // Load conversation from localStorage if available
+      const saved = localStorage.getItem('domiora_chat_history');
+      if (saved) {
+        try {
+          this.conversationHistory = JSON.parse(saved);
+          this.messages = this.conversationHistory.slice(-10);
+        } catch (e) {
+          console.error('Error loading chat history:', e);
+        }
+      }
+    },
+
+    async sendMessage() {
+      const message = this.inputMessage.trim();
+      if (!message || this.isLoading) return;
+
+      // Add user message
+      const userMsg = {
+        role: 'user',
+        content: message,
+        time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+      };
+      this.messages.push(userMsg);
+      this.conversationHistory.push(userMsg);
+      this.inputMessage = '';
+      this.isLoading = true;
+      this.propertyMatches = [];
+
+      // Save to localStorage
+      localStorage.setItem('domiora_chat_history', JSON.stringify(this.conversationHistory));
+
+      // Scroll to bottom
+      this.$nextTick(() => {
+        const container = document.getElementById('chat-messages');
+        container.scrollTop = container.scrollHeight;
+      });
+
+      try {
+        const response = await fetch('/api/chat/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': this.getCsrfToken()
+          },
+          body: JSON.stringify({
+            message: message,
+            history: this.conversationHistory
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.error) {
+          throw new Error(data.error);
+        }
+
+        // Add assistant response
+        const assistantMsg = {
+          role: 'assistant',
+          content: data.response,
+          time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+        };
+        this.messages.push(assistantMsg);
+        this.conversationHistory.push(assistantMsg);
+
+        // Add property matches if available
+        if (data.properties && data.properties.length > 0) {
+          this.propertyMatches = data.properties;
+        }
+
+        // Save to localStorage
+        localStorage.setItem('domiora_chat_history', JSON.stringify(this.conversationHistory));
+
+      } catch (error) {
+        console.error('Error sending message:', error);
+        const errorMsg = {
+          role: 'assistant',
+          content: 'Désolé, une erreur s\'est produite. Veuillez réessayer.',
+          time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+        };
+        this.messages.push(errorMsg);
+      } finally {
+        this.isLoading = false;
+
+        // Scroll to bottom
+        this.$nextTick(() => {
+          const container = document.getElementById('chat-messages');
+          container.scrollTop = container.scrollHeight;
+        });
+      }
+    },
+
+    sendQuickMessage(message) {
+      this.inputMessage = message;
+      this.sendMessage();
+    },
+
+    getCsrfToken() {
+      const cookies = document.cookie.split(';');
+      for (let cookie of cookies) {
+        const [name, value] = cookie.trim().split('=');
+        if (name === 'csrftoken') {
+          return decodeURIComponent(value);
+        }
+      }
+      return '';
+    }
+  };
+}
+</script>

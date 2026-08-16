@@ -1,16 +1,20 @@
 {% extends "dashboard/dashboard_base.html" %}
 {% block title %}Utilisateurs — {{ site_settings.site_name }}{% endblock %}
 {% block dashboard_content %}
-<div class="flex items-center justify-between mb-6 flex-wrap gap-3">
-  <h1 class="text-2xl font-extrabold">Gestion des utilisateurs</h1>
-  <form method="get" class="flex items-center gap-2">
-    <select name="role" onchange="this.form.submit()" class="rounded-full border border-gray-200 text-sm px-3 py-2">
+<div class="rounded-3xl border border-gray-200 dashboard-hero p-6 shadow-lg mb-6 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+  <div>
+    <p class="text-xs font-semibold uppercase tracking-[0.2em] text-primary-600 mb-1">Utilisateurs</p>
+    <h1 class="text-3xl font-extrabold text-gray-900">{{ title_override|default:"Gestion des utilisateurs" }}</h1>
+    <p class="mt-2 text-sm text-gray-600">Filtrez, recherchez et gérez les comptes du portail.</p>
+  </div>
+  <form method="get" class="flex flex-col sm:flex-row items-stretch gap-3 w-full sm:w-auto">
+    <select name="role" onchange="this.form.submit()" class="w-full sm:w-auto rounded-full border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-sm transition focus:outline-none focus:ring-2 focus:ring-primary-200">
       <option value="">Tous les rôles</option>
-      <option value="buyer" {% if request.GET.role == "buyer" %}selected{% endif %}>Acheteurs</option>
-      <option value="agent" {% if request.GET.role == "agent" %}selected{% endif %}>Agents</option>
+      <option value="buyer" {% if request.GET.role == "buyer" %}selected{% endif %}>Acheteurs / Locataires</option>
+      <option value="owner" {% if request.GET.role == "owner" %}selected{% endif %}>Propriétaires</option>
       <option value="admin" {% if request.GET.role == "admin" %}selected{% endif %}>Admins</option>
     </select>
-    <input type="text" name="q" value="{{ request.GET.q }}" placeholder="Rechercher..." class="rounded-full border border-gray-200 text-sm px-4 py-2">
+    <input type="text" name="q" value="{{ request.GET.q }}" placeholder="Rechercher..." class="w-full sm:w-72 rounded-full border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700 shadow-sm transition focus:outline-none focus:ring-2 focus:ring-primary-200">
   </form>
 </div>
 

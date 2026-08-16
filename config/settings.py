@@ -47,7 +47,10 @@ INSTALLED_APPS = [
     "appointments",
     "dashboard",
     "api",
-    "subscriptions",
+    "virtual_tours",
+    "ar_furniture",
+    "price_analysis",
+    "property_boost",
 ]
 
 MIDDLEWARE = [
@@ -60,6 +63,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "dashboard.middleware.DashboardRoleMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -77,6 +81,7 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "core.context_processors.site_settings",
                 "notifications.context_processors.unread_notifications",
+                "dashboard.context_processors.user_dash_role",
             ],
         },
     },
@@ -99,6 +104,16 @@ DATABASES = {
 }
 
 # ----------------------------------------------------------------------------
+# Session
+# ----------------------------------------------------------------------------
+SESSION_ENGINE = "django.contrib.sessions.backends.db"
+SESSION_COOKIE_AGE = 86400 * 7  # 7 days
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SECURE = False  # Set to True in production with HTTPS
+SESSION_SAVE_EVERY_REQUEST = False
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+
+# ----------------------------------------------------------------------------
 # Auth
 # ----------------------------------------------------------------------------
 AUTH_USER_MODEL = "accounts.User"
@@ -114,6 +129,10 @@ LOGIN_URL = "accounts:login"
 LOGIN_REDIRECT_URL = "dashboard:redirect"
 LOGOUT_REDIRECT_URL = "core:home"
 
+# CSRF settings
+CSRF_COOKIE_HTTPONLY = False
+CSRF_COOKIE_SECURE = False  # Set to True in production with HTTPS
+
 # ----------------------------------------------------------------------------
 # Internationalization
 # ----------------------------------------------------------------------------
@@ -125,7 +144,7 @@ USE_TZ = True
 # ----------------------------------------------------------------------------
 # Static & media files
 # ----------------------------------------------------------------------------
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
@@ -135,6 +154,13 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 STORAGES = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
     "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
+    "videos": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+        "OPTIONS": {
+            "location": BASE_DIR / "media" / "properties" / "generated_tours",
+            "base_url": "/media/properties/generated_tours/",
+        }
+    },
 }
 
 WHITENOISE_MANIFEST_STRICT = False
@@ -178,6 +204,19 @@ EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="DOMIORA <contact@domiora.com>")
 ADMIN_NOTIFICATION_EMAIL = env("ADMIN_NOTIFICATION_EMAIL", default="contact@domiora.com")
 
+# Base URL for n8n webhooks (use ngrok for localhost)
+BASE_URL = env("BASE_URL", default="http://127.0.0.1:8000")
+
+# Gemini API Key for AI assistant
+GEMINI_API_KEY = env("GEMINI_API_KEY", default="")
+
+# n8n Webhooks
+N8N_IDENTITY_VERIFICATION_WEBHOOK = env(
+    "N8N_IDENTITY_VERIFICATION_WEBHOOK",
+    default="https://deniscodeur.app.n8n.cloud/webhook/domiora-identity-verification"
+)
+N8N_ADMIN_NOTIFICATION_WEBHOOK = env("N8N_ADMIN_NOTIFICATION_WEBHOOK", default="")
+
 # ----------------------------------------------------------------------------
 # Django REST Framework
 # ----------------------------------------------------------------------------
@@ -214,3 +253,55 @@ SITE_NAME = "DOMIORA"
 # Optional: enables the real Claude-powered AI assistant widget.
 # Leave empty to use the built-in rule-based fallback (still functional, no cost).
 ANTHROPIC_API_KEY = env("ANTHROPIC_API_KEY", default="")
+
+# ----------------------------------------------------------------------------
+# Logging
+# ----------------------------------------------------------------------------
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+}
+
+# ----------------------------------------------------------------------------
+# Payment Settings
+# ----------------------------------------------------------------------------
+PAYMENT_LINK = "https://neopixel-studio.mymaketou.store/fr/products/domiora/checkout"
+PAYMENT_AMOUNT = 500  # FCFA
+
+# ⚠️ IMPORTANT: Must be configured via environment variables (.env)
+# DO NOT commit real credentials to version control
+CINETPAY_API_KEY = env("CINETPAY_API_KEY", default="")
+CINETPAY_SITE_ID = env("CINETPAY_SITE_ID", default="")
+CINETPAY_SECRET_KEY = env("CINETPAY_SECRET_KEY", default="")
+
+# ----------------------------------------------------------------------------
+# Celery Configuration
+# ----------------------------------------------------------------------------
+CELERY_BROKER_URL = "filesystem://"
+CELERY_BROKER_TRANSPORT_OPTIONS = {
+    "data_folder_in": BASE_DIR / ".celery" / "broker" / "out",
+    "data_folder_out": BASE_DIR / ".celery" / "broker" / "out",
+    "data_folder_processed": BASE_DIR / ".celery" / "broker" / "processed",
+}
+# CELERY_RESULT_BACKEND = "redis://localhost:6379/0" # Désactivé sans Redis
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = TIME_ZONE
+

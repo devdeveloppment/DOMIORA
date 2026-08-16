@@ -1,0 +1,46 @@
+{% extends "dashboard/dashboard_base.html" %}
+{% block title %}Vérification d'identité — {{ site_settings.site_name }}{% endblock %}
+{% block dashboard_content %}
+<h1 class="text-2xl font-extrabold mb-2">Vérification d'identité</h1>
+<p class="text-gray-500 mb-6">Soumettez vos documents d'identité pour pouvoir publier des biens sur la plateforme.</p>
+
+{% if user.verification_status == 'approved' %}
+<div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-6 text-center">
+  <p class="text-emerald-700 font-bold text-lg mb-1">✓ Identité vérifiée</p>
+  <p class="text-emerald-600 text-sm">Votre identité a été vérifiée avec succès. Vous pouvez publier des biens.</p>
+</div>
+{% elif user.verification_status == 'pending' %}
+<div class="bg-amber-50 border border-amber-200 rounded-2xl p-6 text-center">
+  <p class="text-amber-700 font-bold text-lg mb-1">⏳ Vérification en cours</p>
+  <p class="text-amber-600 text-sm">Vos documents sont en cours de vérification par un administrateur.</p>
+</div>
+{% elif user.verification_status == 'rejected' %}
+<div class="bg-rose-50 border border-rose-200 rounded-2xl p-6 text-center mb-6">
+  <p class="text-rose-700 font-bold text-lg mb-1">✕ Vérification rejetée</p>
+  <p class="text-rose-600 text-sm">Votre demande a été rejetée. Veuillez soumettre de nouveaux documents.</p>
+</div>
+{% endif %}
+
+{% if user.verification_status != 'approved' and user.verification_status != 'pending' %}
+<form method="post" enctype="multipart/form-data" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-5 max-w-lg">
+  {% csrf_token %}
+  <div>
+    <label class="text-sm font-semibold text-gray-700 block mb-1">Type de document</label>
+    <select name="id_document_type" class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm">
+      <option value="cni">Carte nationale d'identité</option>
+      <option value="passport">Passeport</option>
+      <option value="permis">Permis de conduire</option>
+    </select>
+  </div>
+  <div>
+    <label class="text-sm font-semibold text-gray-700 block mb-1">Numéro du document</label>
+    <input type="text" name="id_document_number" class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm" placeholder="Ex: AB123456" required>
+  </div>
+  <div>
+    <label class="text-sm font-semibold text-gray-700 block mb-1">Photo/scan du document</label>
+    <input type="file" name="id_document" accept="image/*,.pdf" class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm" required>
+  </div>
+  <button type="submit" class="bg-[#71212d] hover:bg-[#5a1a24] text-white font-semibold rounded-full px-6 py-3 transition">Soumettre pour vérification</button>
+</form>
+{% endif %}
+{% endblock %}
