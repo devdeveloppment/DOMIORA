@@ -10,14 +10,14 @@ immobiliers et administrateurs autour d'un catalogue de biens d'exception. Const
 
 ## 1. Stack technique
 
-| Couche       | Technologie |
-|--------------|-------------|
-| Frontend     | HTML5, Tailwind CSS (CDN), Alpine.js, Chart.js |
-| Backend      | Python / Django, Django REST Framework |
-| Base de données | PostgreSQL (SQLite en local par défaut) |
-| E-mails      | Django Email Backend (SMTP, configurable via `.env`) |
-| Médias       | Upload d'images, galeries multiples |
-| Sécurité     | CSRF, validation de formulaires, rôles & permissions, `.env` |
+| Couche          | Technologie                                                  |
+| --------------- | ------------------------------------------------------------ |
+| Frontend        | HTML5, Tailwind CSS (CDN), Alpine.js, Chart.js               |
+| Backend         | Python / Django, Django REST Framework                       |
+| Base de données | PostgreSQL (SQLite en local par défaut)                      |
+| E-mails         | Django Email Backend (SMTP, configurable via `.env`)         |
+| Médias          | Upload d'images, galeries multiples                          |
+| Sécurité        | CSRF, validation de formulaires, rôles & permissions, `.env` |
 
 ## 2. Architecture du projet
 
@@ -86,11 +86,11 @@ et l'admin Django sur **http://127.0.0.1:8000/admin/**.
 
 ### Comptes de démonstration (créés par `seed_demo_data`)
 
-| Rôle    | Identifiant       | Mot de passe   |
-|---------|-------------------|----------------|
-| Admin   | `admin`           | `Admin1234!`   |
-| Agent   | `agent_sophie`    | `Agent1234!`   |
-| Acheteur| `buyer_julie`     | `Buyer1234!`   |
+| Rôle     | Identifiant    | Mot de passe |
+| -------- | -------------- | ------------ |
+| Admin    | `admin`        | `Admin1234!` |
+| Agent    | `agent_sophie` | `Agent1234!` |
+| Acheteur | `buyer_julie`  | `Buyer1234!` |
 
 (D'autres agents `agent_thomas`, `agent_marie`, `agent_hugo`... et acheteurs `buyer_antoine`, `buyer_claire`...
 sont aussi créés (20 agents et 50 acheteurs au total), tous avec le même schéma de mot de passe
@@ -132,7 +132,7 @@ EMAIL_PORT=587
 EMAIL_USE_TLS=True
 EMAIL_HOST_USER=votre-email@gmail.com
 EMAIL_HOST_PASSWORD=votre-mot-de-passe-application
-DEFAULT_FROM_EMAIL=DOMIORA <contact@domiora.com>
+DEFAULT_FROM_EMAIL=DOMIORA <denistchil@gmail.com>
 ```
 
 Les e-mails sont envoyés automatiquement pour : inscription, contact, mise à jour
@@ -141,6 +141,7 @@ du statut d'une demande (acceptée/rejetée).
 ## 6. Fonctionnalités principales
 
 ### Innovation & fonctionnalités avancées (v2)
+
 - **Assistant IA conversationnel** (bulle flottante) : recherche de biens en langage naturel.
   Fonctionne immédiatement en mode "intelligent par mots-clés" (sans coût), et passe en mode
   Claude (Anthropic) dès que `ANTHROPIC_API_KEY` est renseigné dans `.env`.
@@ -158,6 +159,7 @@ du statut d'une demande (acceptée/rejetée).
 - **Partage social** : WhatsApp, Facebook, e-mail, lien copié, sur chaque fiche bien.
 
 ### Site public
+
 - Page d'accueil premium (hero, recherche avancée, biens en vedette, agents, témoignages, stats)
 - Recherche avancée multi-critères (type, transaction, prix, ville, pays, chambres, sdb, surface)
 - Catalogue avec pagination, vue grille / liste, tri (récent / prix / popularité)
@@ -166,16 +168,19 @@ du statut d'une demande (acceptée/rejetée).
 - Page contact avec envoi d'e-mail automatique
 
 ### Authentification
+
 - Inscription (acheteur ou agent), connexion, déconnexion
 - Mot de passe oublié / réinitialisation (par e-mail)
 - Modification du profil (y compris photo)
 
 ### Dashboard Acheteur / Locataire (`/dashboard/acheteur/`)
+
 - Aperçu (statistiques personnelles)
 - Favoris (ajout / suppression, persistant en base)
 - Mes demandes (historique + statut)
 
 ### Dashboard Agent (`/dashboard/agent/`)
+
 - Aperçu (KPIs, revenus, biens & demandes récents)
 - Gestion des biens : CRUD complet, upload multi-images, publier/dépublier
 - Demandes reçues : accepter / rejeter (déclenche notification + e-mail au client)
@@ -183,6 +188,7 @@ du statut d'une demande (acceptée/rejetée).
 - Profil agent (agence, licence, bio, réseaux sociaux)
 
 ### Dashboard Administrateur (`/dashboard/admin-panel/`)
+
 - Totalement séparé du site public et du dashboard agent/acheteur
 - Statistiques globales + graphique Chart.js (volume de transactions / 6 mois)
 - Gestion des utilisateurs (CRUD, activation/suspension)
@@ -192,20 +198,21 @@ du statut d'une demande (acceptée/rejetée).
 - Accès direct à l'admin Django (`/admin/`) pour une gestion bas niveau complète
 
 ### API REST (`/api/`)
+
 Construite avec Django REST Framework, prête pour une future application mobile :
 
-| Endpoint                  | Description |
-|----------------------------|--------------|
-| `POST /api/auth/token/`    | Authentification (obtention d'un token) |
-| `/api/properties/`         | CRUD biens (lecture publique, écriture agents/admin) |
-| `/api/agents/`              | Liste / détail des agents |
-| `/api/amenities/`           | Équipements disponibles |
-| `/api/specialties/`         | Spécialités agents |
-| `/api/favorites/`           | Favoris de l'utilisateur connecté |
-| `/api/requests/`            | Demandes de location/achat/visite |
-| `/api/transactions/`        | Historique des transactions (lecture) |
-| `/api/notifications/`       | Notifications utilisateur |
-| `/api/me/`                  | Profil de l'utilisateur connecté |
+| Endpoint                | Description                                          |
+| ----------------------- | ---------------------------------------------------- |
+| `POST /api/auth/token/` | Authentification (obtention d'un token)              |
+| `/api/properties/`      | CRUD biens (lecture publique, écriture agents/admin) |
+| `/api/agents/`          | Liste / détail des agents                            |
+| `/api/amenities/`       | Équipements disponibles                              |
+| `/api/specialties/`     | Spécialités agents                                   |
+| `/api/favorites/`       | Favoris de l'utilisateur connecté                    |
+| `/api/requests/`        | Demandes de location/achat/visite                    |
+| `/api/transactions/`    | Historique des transactions (lecture)                |
+| `/api/notifications/`   | Notifications utilisateur                            |
+| `/api/me/`              | Profil de l'utilisateur connecté                     |
 
 Filtres, recherche et tri disponibles via `django-filter` / DRF (`?search=`, `?ordering=`,
 `?property_type=`, `?transaction_type=`, etc.). Pagination par page de 12 éléments.
@@ -213,6 +220,7 @@ Filtres, recherche et tri disponibles via `django-filter` / DRF (`?search=`, `?o
 ## 7. Données de démonstration
 
 La commande `python manage.py seed_demo_data` génère :
+
 - 1 administrateur, **20 agents** (spécialités, licences, taux de commission, vérification), **50 acheteurs**
 - **120 propriétés** dont le **titre, le type et les photos sont cohérents entre eux** (une « Villa... »
   a bien des photos de villa et `property_type=villa`), réparties sur 15 villes (US, FR, TG) avec
@@ -222,6 +230,7 @@ La commande `python manage.py seed_demo_data` génère :
 - Notifications de bienvenue et 5 témoignages clients
 
 Options :
+
 ```bash
 python manage.py seed_demo_data --properties 200 --agents 20 --buyers 50
 ```
@@ -276,4 +285,4 @@ depuis Gunicorn (pas besoin de Nginx pour les assets en environnement simple).
 
 ---
 
-**Contact projet :** businessriztech@gmail.com · +228 90 56 78 48 / +228 99 79 46 29
+**Contact projet :** denistchil@gmail.com · +228 90 56 78 48 / +228 99 79 46 29

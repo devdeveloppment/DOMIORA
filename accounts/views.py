@@ -10,7 +10,7 @@ from .models import User
 
 
 class CustomLoginView(LoginView):
-    """Custom login view that blocks admin access."""
+    """Vue de connexion standard avec blocage explicite des comptes admin."""
     template_name = "accounts/login.html"
     
     def form_valid(self, form):
@@ -23,14 +23,19 @@ class CustomLoginView(LoginView):
                 "<a href='/accounts/admin-login/' class='underline font-bold'>Accéder à la connexion admin</a>"
             )
             return self.form_invalid(form)
+        
+        # Set the appropriate session role based on user role
+        if user.role == User.Role.OWNER:
+            self.request.session['dash_role'] = 'owner'
+        elif user.role == User.Role.CLIENT:
+            self.request.session['dash_role'] = 'client'
+        self.request.session.modified = True
+        
         return super().form_valid(form)
 
 
 def client_login(request):
-    """
-    Simple client login page for existing clients who have already paid.
-    Allows login with email or phone + password.
-    """
+    """Connexion spéciale pour les clients déjà payants et autorisés à entrer dans l'espace client."""
     # Redirect if already logged in as client
     if request.user.is_authenticated and request.user.role == User.Role.CLIENT:
         return redirect("dashboard:client_overview")
@@ -83,7 +88,7 @@ def client_login(request):
 # Legacy register view (kept for admin use / direct URL access)
 # ─────────────────────────────────────────────────────────────────────────────
 def register(request):
-    """Legacy route — redirect everyone to the appropriate registration page."""
+    """Route historique : redirige vers la bonne page d'inscription selon le parcours."""
     return redirect("accounts:publish_landing")
 
 
@@ -91,9 +96,7 @@ def register(request):
 # Landing page: "Publier un bien"
 # ─────────────────────────────────────────────────────────────────────────────
 def publish_landing(request):
-    """Intermediate page for the 'Publier un bien' button."""
-    if request.user.is_authenticated and request.user.role == User.Role.OWNER:
-        return redirect("dashboard:owner_property_create")
+    """Page intermédiaire pour le bouton de publication d'un bien."""
     return render(request, "accounts/publish_landing.html")
 
 
@@ -101,19 +104,10 @@ def publish_landing(request):
 # Owner-only registration
 # ─────────────────────────────────────────────────────────────────────────────
 def register_owner(request):
-    """
-    Registration page exclusively for property owners.
-    Flow:
-      1. User fills the form
-      2. Account is created (NOT auto-logged in)
-      3. User is redirected to the login page → lands on owner dashboard
-    
-    Note: The form is shown even if an admin is browsing the site,
-    so testing the flow works without having to log out first.
-    """
-    # Only skip the form if already logged in AS an owner
-    if request.user.is_authenticated and request.user.role == User.Role.OWNER:
-        return redirect("dashboard:owner_overview")
+    """Inscription réservée aux propriétaires immobiliers."""
+    if request.user.is_authenticated:
+        user_name = request.user.get_full_name() or request.user.username
+        messages.warning(request, f"Vous êtes déjà connecté en tant que {user_name}. Si vous souhaitez créer un nouveau compte, veuillez vous déconnecter d'abord.")
 
     if request.method == "POST":
         form = OwnerRegisterForm(request.POST)
@@ -127,10 +121,8 @@ def register_owner(request):
                 f"Bienvenue {user.first_name} ! Votre compte propriétaire a été créé. "
                 "Connectez-vous maintenant pour accéder à votre tableau de bord."
             )
-            # Redirect to login — "next" sends them directly to owner dashboard
-            from django.urls import reverse
-            login_url = reverse("accounts:login")
-            return redirect(f"{login_url}?next=/dashboard/proprietaire/")
+            # Redirect to the main login which is now the dedicated owner login
+            return redirect("accounts:login")
     else:
         form = OwnerRegisterForm()
     return render(request, "accounts/register_owner.html", {"form": form})
@@ -141,11 +133,7 @@ def register_owner(request):
 # Client registration AFTER payment (auto-unlock + auto-login)
 # ─────────────────────────────────────────────────────────────────────────────
 def register_client_post_payment(request, slug):
-    """
-    Called after successful Maketou payment.
-    Creates a client account, logs them in automatically, creates the PropertyUnlock,
-    then redirects to the payment confirmation page with full contact details.
-    """
+    """Crée le compte client après paiement et débloque immédiatement le bien concerné."""
     from properties.models import Property, PropertyUnlock
 
     property_obj = None
@@ -206,6 +194,7 @@ def register_client_post_payment(request, slug):
 # ─────────────────────────────────────────────────────────────────────────────
 @login_required
 def profile(request):
+    """Permet à l'utilisateur de modifier son profil et ses informations de contact."""
     if request.method == "POST":
         form = ProfileForm(request.POST, request.FILES, instance=request.user)
         if form.is_valid():
@@ -221,7 +210,7 @@ def profile(request):
 # Public Profile
 # ─────────────────────────────────────────────────────────────────────────────
 def public_profile(request, username):
-    """Public profile page for property owners"""
+    """Affiche le profil public d'un propriétaire avec ses biens publiés."""
     owner = get_object_or_404(User, username=username, role=User.Role.OWNER)
     
     # Get owner's published properties
@@ -282,11 +271,7 @@ def _send_welcome_email(user):
 # Admin-only login (separate from user authentication)
 # ─────────────────────────────────────────────────────────────────────────────
 def admin_login(request):
-    """
-    Dedicated admin login page.
-    Accessible only via specific URL /admin-login/
-    Only allows admin accounts to log in.
-    """
+    """Page de connexion dédiée aux administrateurs du système."""
     # Redirect if already logged in as admin
     if request.user.is_authenticated and (request.user.is_superuser or request.user.role == User.Role.ADMIN):
         return redirect("dashboard:admin_overview")
@@ -320,3 +305,9 @@ def admin_login(request):
             messages.error(request, "Veuillez remplir tous les champs.")
     
     return render(request, "accounts/admin_login.html")
+
+def custom_logout(request):
+    """Déconnexion personnalisée pour éviter les problèmes de rotation CSRF sur les requêtes."""
+    from django.contrib.auth import logout
+    logout(request)
+    return redirect("core:home")

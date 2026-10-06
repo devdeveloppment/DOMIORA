@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "domiora-claude-cloud": {
+      "url": "https://domiora-mcp.onrender.com/mcp",
+      "headers": {
+        "Authorization": "Bearer REPLACE_WITH_MCP_ACCESS_TOKEN"
+      }
+    }
+  }
+}

@@ -12,7 +12,7 @@
       <p class="text-sm text-gray-400 mt-0.5">{{ page_obj.paginator.count }} bien{{ page_obj.paginator.count|pluralize }} au total</p>
     </div>
     <div class="flex items-center gap-3">
-      <a href="{% url 'dashboard:owner_property_create' %}" class="inline-flex items-center gap-2 bg-blue-600 text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:bg-blue-700 transition shadow-sm">
+      <a href="{% url 'dashboard:owner_property_create' %}" class="inline-flex items-center gap-2 bg-primary-600 text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:bg-primary-700 transition shadow-sm">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
         Ajouter
       </a>
@@ -42,8 +42,9 @@
                      onerror="this.src='https://placehold.co/48x48/f3f4f6/9ca3af?text=?'">
                 <div class="min-w-0">
                   <a href="{{ p.get_absolute_url }}" target="_blank"
-                     class="font-semibold text-gray-900 hover:text-blue-600 transition block truncate max-w-[220px]">{{ p.title }}</a>
+                     class="font-semibold text-gray-900 hover:text-primary-600 transition block truncate max-w-[220px]">{{ p.title }}</a>
                   <span class="text-xs text-gray-400">{{ p.city }}{% if p.neighborhood %}, {{ p.neighborhood }}{% endif %}</span>
+                  <a href="{% url 'dashboard:owner_property_edit' p.pk %}" class="block text-[11px] mt-0.5 {% if p.video_status == 'done' %}text-emerald-600{% elif p.video_status == 'failed' %}text-rose-600{% elif p.video_status == 'pending' %}text-gray-400{% else %}text-amber-600{% endif %}">Visite virtuelle : {{ p.get_video_status_display|lower }}{% if p.video_status in 'preparing generating assembling' %} ({{ p.video_progress }} %){% endif %}</a>
                 </div>
               </div>
             </td>
@@ -72,7 +73,7 @@
             <td class="px-5 py-4 text-right">
               <div class="flex items-center justify-end gap-2">
                 <a href="{% url 'dashboard:owner_property_edit' p.pk %}"
-                   class="text-xs font-semibold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2.5 py-1.5 rounded-lg transition">Modifier</a>
+                   class="text-xs font-semibold text-primary-600 hover:text-primary-800 bg-primary-50 hover:bg-primary-100 px-2.5 py-1.5 rounded-lg transition">Modifier</a>
                 <form method="post" action="{% url 'dashboard:owner_property_delete' p.pk %}" class="inline"
                       onsubmit="return confirm('Supprimer définitivement ce bien ?');">
                   {% csrf_token %}
@@ -85,7 +86,7 @@
           <tr>
             <td colspan="5" class="py-20 text-center text-gray-400">
               <svg class="w-12 h-12 mx-auto mb-3 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
-              <p class="font-medium">Vous n'avez pas encore de bien. <a href="{% url 'dashboard:owner_property_create' %}" class="text-blue-600 hover:underline">En ajouter un</a></p>
+              <p class="font-medium">Vous n'avez pas encore de bien. <a href="{% url 'dashboard:owner_property_create' %}" class="text-primary-600 hover:underline">En ajouter un</a></p>
             </td>
           </tr>
           {% endfor %}

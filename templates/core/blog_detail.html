@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% load static %}
+{% load humanize %}
+{% block title %}{{ article.title }} — {{ site_settings.site_name }}{% endblock %}
+{% block description %}{{ article.excerpt|truncatewords:30 }}{% endblock %}
+
+{% block content %}
+<article class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+  <div class="grid lg:grid-cols-3 gap-12">
+    <!-- Main Content -->
+    <div class="lg:col-span-2">
+      <!-- Article Header -->
+      <header class="mb-10">
+        <span class="inline-block bg-primary-100 text-primary-700 text-xs font-bold px-3 py-1.5 rounded-full mb-4">
+          {{ article.get_status_display }}
+        </span>
+        <h1 class="text-4xl lg:text-5xl font-extrabold font-display text-gray-900 leading-tight mb-6">
+          {{ article.title }}
+        </h1>
+        <p class="text-lg text-gray-600 leading-relaxed mb-6">
+          {{ article.excerpt }}
+        </p>
+        <div class="flex items-center gap-4 text-sm text-gray-500">
+          <div class="flex items-center gap-2">
+            <div class="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 font-bold">
+              {{ article.author.get_full_name|default:article.author.username|first|upper }}
+            </div>
+            <span class="font-semibold">
+              {{ article.author.get_full_name|default:article.author.username }}
+            </span>
+          </div>
+          <span>•</span>
+          <span>{{ article.published_at|date:"d M Y" }}</span>
+          <span>•</span>
+          <span>{{ article.view_count }} vues</span>
+        </div>
+      </header>
+
+      <!-- Featured Image -->
+      {% if article.featured_image %}
+      <div class="mb-8 rounded-2xl overflow-hidden shadow-lg">
+        <img src="{{ article.featured_image.url }}" alt="{{ article.title }}" class="w-full h-auto object-cover">
+      </div>
+      {% endif %}
+
+      <!-- Article Content -->
+      <div class="prose prose-lg max-w-none text-gray-700 leading-relaxed">
+        {{ article.content|linebreaks }}
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="lg:col-span-1 space-y-8">
+      <!-- Author Info -->
+      <div class="bg-white rounded-2xl shadow-card border border-gray-100 p-6">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-12 h-12 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-bold">
+            {{ article.author.get_full_name|default:article.author.username|first|upper }}
+          </div>
+          <div>
+            <p class="font-bold text-gray-900">{{ article.author.get_full_name|default:article.author.username }}</p>
+            <p class="text-xs text-gray-500">Auteur</p>
+          </div>
+        </div>
+        <p class="text-sm text-gray-600">
+          Découvrez d'autres articles de cet auteur et suivez son actualité immobilière.
+        </p>
+      </div>
+
+      <!-- Related Articles -->
+      <div class="bg-white rounded-2xl shadow-card border border-gray-100 p-6">
+        <h3 class="font-bold text-gray-900 mb-4">Articles récents</h3>
+        <div class="space-y-4">
+          {% for art in articles|slice:":4" %}
+          {% if art.pk != article.pk %}
+          <a href="{{ art.get_absolute_url }}" class="block group">
+            <div class="flex gap-3">
+              {% if art.featured_image %}
+              <img src="{{ art.featured_image.url }}" alt="{{ art.title }}" class="w-16 h-16 object-cover rounded-lg">
+              {% else %}
+              <div class="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
+                <span class="text-xs text-gray-400">No image</span>
+              </div>
+              {% endif %}
+              <div class="flex-1">
+                <h4 class="font-semibold text-sm text-gray-900 group-hover:text-primary-600 transition line-clamp-2">{{ art.title }}</h4>
+                <p class="text-xs text-gray-500 mt-1">{{ art.published_at|date:"d M Y" }}</p>
+              </div>
+            </div>
+          </a>
+          {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</article>
+{% endblock %}

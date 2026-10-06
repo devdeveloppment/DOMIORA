@@ -1,22 +1,22 @@
 {% extends "dashboard/dashboard_base.html" %}
 {% block title %}Dashboard Client — {{ site_settings.site_name }}{% endblock %}
 {% block dashboard_content %}
-<div class="w-full" data-fade-in>
+<div class="w-full animate-fade-in-up">
   <!-- Header -->
-  <div class="flex items-center justify-between mb-8">
+  <div class="flex items-center justify-between mb-8 animate-fade-in-scale stagger-1">
     <h1 class="text-2xl font-bold font-display text-gray-900">Dashboard Client</h1>
-    <a href="{% url 'properties:list' %}" hx-boost="false" class="text-sm font-semibold text-blue-600 hover:text-blue-800 transition">Voir le tableau complet →</a>
+    <a href="{% url 'properties:list' %}" hx-boost="false" class="text-sm font-semibold text-primary-600 hover:text-primary-800 transition">Voir le tableau complet →</a>
   </div>
 
   <!-- Vos favoris -->
-  <div class="mb-10">
+  <div class="mb-10 animate-fade-in-up stagger-2">
     <div class="flex items-center justify-between mb-4">
       <h2 class="text-lg font-bold text-gray-900">Vos favoris</h2>
     </div>
     
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" data-stagger="0.1">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {% for f in recent_favorites|slice:":3" %}
-      <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition cursor-pointer group glass-card hover-lift">
+      <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition cursor-pointer group glass-card card-hover animate-fade-in-scale" style="animation-delay: {{ forloop.counter0|add:2 }}00ms">
         <div class="aspect-[4/3] w-full overflow-hidden relative">
           <img src="{{ f.property.primary_image }}" alt="{{ f.property.title }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
         </div>
@@ -26,26 +26,26 @@
         </div>
       </div>
       {% empty %}
-      <div class="col-span-full bg-white rounded-2xl border border-gray-100 p-6 text-center shadow-sm glass-card">
+      <div class="col-span-full bg-white rounded-2xl border border-gray-100 p-6 text-center shadow-sm glass-card animate-fade-in-scale">
         <p class="text-gray-500 font-medium">Vous n'avez pas encore de favoris.</p>
-        <a href="{% url 'properties:list' %}" hx-boost="false" class="inline-block mt-3 text-sm font-bold text-blue-600 hover:underline btn-premium btn-premium-secondary">Explorer les biens</a>
+        <a href="{% url 'properties:list' %}" hx-boost="false" class="inline-block mt-3 text-sm font-bold text-primary-600 hover:underline btn-premium btn-premium-secondary">Explorer les biens</a>
       </div>
       {% endfor %}
     </div>
   </div>
 
   <!-- Recherches sauvegardées -->
-  <div class="glass-card" data-slide-up>
+  <div class="glass-card animate-fade-in-up stagger-4">
     <div class="flex items-center justify-between mb-4">
       <h2 class="text-lg font-bold text-gray-900">Recherches sauvegardées</h2>
-      <a href="#" class="text-sm font-semibold text-blue-600 hover:text-blue-800 transition">Voir tout →</a>
+      <a href="#" class="text-sm font-semibold text-primary-600 hover:text-primary-800 transition">Voir tout →</a>
     </div>
 
     <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
       <!-- Item 1 (Dummy data to match mockup if no real data) -->
-      <a href="#" class="flex items-center justify-between p-4 border-b border-gray-50 hover:bg-gray-50 transition group">
+      <a href="#" class="flex items-center justify-between p-4 border-b border-gray-50 hover:bg-gray-50 transition group animate-slide-in-left stagger-5">
         <div class="flex items-center gap-4">
-          <div class="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center text-green-600">
+          <div class="w-10 h-10 rounded-lg bg-accent-50 flex items-center justify-center text-accent-600">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
           </div>
           <div>
@@ -57,9 +57,9 @@
       </a>
 
       <!-- Item 2 -->
-      <a href="#" class="flex items-center justify-between p-4 hover:bg-gray-50 transition group">
+      <a href="#" class="flex items-center justify-between p-4 hover:bg-gray-50 transition group animate-slide-in-left" style="animation-delay: 0.6s">
         <div class="flex items-center gap-4">
-          <div class="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center text-green-600">
+          <div class="w-10 h-10 rounded-lg bg-accent-50 flex items-center justify-center text-accent-600">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
           </div>
           <div>

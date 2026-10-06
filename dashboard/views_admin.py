@@ -2,7 +2,7 @@ import json
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.db.models import Sum, Count
+from django.db.models import Sum, Count, Q
 from django.db.models.functions import TruncMonth
 from django.utils import timezone
 from datetime import timedelta
@@ -16,10 +16,17 @@ from site_settings.models import SiteSettings
 from properties.forms import AdminPropertyForm, PropertyImageFormSet
 from notifications.models import Notification
 
+# Tableau de bord administratif principal.
+# Cette vue centralise les statistiques, les activités récentes et la synthèse
+# de l'état global du site pour l'administrateur.
+
 
 @role_required(User.Role.ADMIN)
 def admin_overview(request):
+    """Vue d'accueil de l'administration : statistiques globales et activité récente."""
     six_months_ago = timezone.now() - timedelta(days=180)
+    
+    # Only use real transactions for statistics - no demo data
     monthly = (
         Transaction.objects.filter(transaction_date__gte=six_months_ago)
         .annotate(month=TruncMonth("transaction_date"))
@@ -27,8 +34,21 @@ def admin_overview(request):
         .annotate(total=Sum("amount"), count=Count("id"))
         .order_by("month")
     )
-    chart_labels = [m["month"].strftime("%b %Y") for m in monthly]
-    chart_values = [float(m["total"] or 0) for m in monthly]
+    
+    # Handle case with no real transactions
+    if not monthly:
+        # Create empty chart data for last 6 months
+        chart_labels = []
+        chart_values = []
+        for i in range(6):
+            month = timezone.now() - timedelta(days=30*i)
+            chart_labels.append(month.strftime("%b %Y"))
+            chart_values.append(0)
+        chart_labels.reverse()
+        chart_values.reverse()
+    else:
+        chart_labels = [m["month"].strftime("%b %Y") for m in monthly]
+        chart_values = [float(m["total"] or 0) for m in monthly]
 
     # Unified activity feed (Stripe/Notion-style recent activity stream)
     activity = []
@@ -38,6 +58,7 @@ def admin_overview(request):
         activity.append({"icon": "🏠", "text": f"Nouveau bien publié : « {p.title} »", "time": p.created_at})
     for r in PropertyRequest.objects.order_by("-created_at")[:6]:
         activity.append({"icon": "📨", "text": f"{r.user.get_full_name() or r.user.username} a fait une demande pour « {r.property.title} »", "time": r.created_at})
+    # Only include real transactions in activity feed
     for t in Transaction.objects.order_by("-created_at")[:6]:
         activity.append({"icon": "💰", "text": f"Transaction enregistrée : « {t.property.title} » — ${t.amount:,.0f}".replace(",", " "), "time": t.created_at})
     activity.sort(key=lambda a: a["time"], reverse=True)
@@ -48,43 +69,75 @@ def admin_overview(request):
     for p in prop_distribution:
         p["label"] = str(p["property_type"]).replace("_", " ").title()
 
-    # Enhanced statistics
+    # Enhanced statistics — all aggregated into minimal DB round-trips
     from favorites.models import Favorite
     from properties.models import PropertyUnlock
     from messaging.models import Message
-    
+
     today = timezone.now().date()
-    today_properties = Property.objects.filter(created_at__date=today).count()
-    verified_owners = User.objects.filter(role=User.Role.OWNER, verification_status=User.VerificationStatus.APPROVED).count()
-    new_owners_this_month = User.objects.filter(role=User.Role.OWNER, date_joined__gte=six_months_ago).count()
-    total_views = Property.objects.aggregate(total=Sum('views_count'))['total'] or 0
+
+    # Single aggregate for all Property counts
+    prop_agg = Property.objects.aggregate(
+        total=Count('id'),
+        published=Count('id', filter=Q(is_published=True, is_validated=True)),
+        pending_validation=Count('id', filter=Q(is_validated=False)),
+        for_rent=Count('id', filter=Q(transaction_type='location')),
+        for_sale=Count('id', filter=Q(transaction_type='vente')),
+        sold=Count('id', filter=Q(status='vendu')),
+        rented=Count('id', filter=Q(status='loue')),
+        today_new=Count('id', filter=Q(created_at__date=today)),
+        total_views=Sum('views_count'),
+    )
+
+    # Single aggregate for all User counts
+    user_agg = User.objects.aggregate(
+        clients=Count('id', filter=Q(role=User.Role.CLIENT)),
+        owners=Count('id', filter=Q(role=User.Role.OWNER)),
+        verified_owners=Count('id', filter=Q(role=User.Role.OWNER, verification_status=User.VerificationStatus.APPROVED)),
+        new_owners=Count('id', filter=Q(role=User.Role.OWNER, date_joined__gte=six_months_ago)),
+    )
+
+    # Single aggregate for all Transaction amounts (only real transactions)
+    txn_agg = Transaction.objects.aggregate(
+        total_count=Count('id'),
+        total_revenue=Sum('amount'),
+        total_commission=Sum('commission_amount'),
+    )
+    
+    # Log info about real vs demo data
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"Real transactions count: {txn_agg['total_count']}")
+    logger.info(f"Real total revenue: {txn_agg['total_revenue']}")
+
     total_favorites = Favorite.objects.count()
     total_unlocks = PropertyUnlock.objects.count()
     total_messages = Message.objects.count()
+    pending_requests_count = PropertyRequest.objects.filter(status='en_attente').count()
 
     context = {
         "dash_role": "admin", "active": "overview",
-        "clients_count": User.objects.filter(role=User.Role.CLIENT).count(),
-        "owners_count": User.objects.filter(role=User.Role.OWNER).count(),
-        "verified_owners": verified_owners,
-        "new_owners_this_month": new_owners_this_month,
-        "properties_count": Property.objects.count(),
-        "today_properties": today_properties,
-        "published_properties_count": Property.objects.filter(is_published=True, is_validated=True).count(),
-        "transactions_count": Transaction.objects.count(),
-        "pending_requests_count": PropertyRequest.objects.filter(status="en_attente").count(),
-        "for_rent_count": Property.objects.filter(transaction_type="location").count(),
-        "for_sale_count": Property.objects.filter(transaction_type="vente").count(),
-        "sold_count": Property.objects.filter(status="vendu").count(),
-        "rented_count": Property.objects.filter(status="loue").count(),
-        "pending_validation_count": Property.objects.filter(is_validated=False).count(),
-        "total_revenue": Transaction.objects.aggregate(total=Sum("amount"))["total"] or 0,
-        "total_commission": Transaction.objects.aggregate(total=Sum("commission_amount"))["total"] or 0,
-        "total_views": total_views,
+        "clients_count": user_agg['clients'],
+        "owners_count": user_agg['owners'],
+        "verified_owners": user_agg['verified_owners'],
+        "new_owners_this_month": user_agg['new_owners'],
+        "properties_count": prop_agg['total'],
+        "today_properties": prop_agg['today_new'],
+        "published_properties_count": prop_agg['published'],
+        "transactions_count": txn_agg['total_count'],
+        "pending_requests_count": pending_requests_count,
+        "for_rent_count": prop_agg['for_rent'],
+        "for_sale_count": prop_agg['for_sale'],
+        "sold_count": prop_agg['sold'],
+        "rented_count": prop_agg['rented'],
+        "pending_validation_count": prop_agg['pending_validation'],
+        "total_revenue": txn_agg['total_revenue'] or 0,
+        "total_commission": txn_agg['total_commission'] or 0,
+        "total_views": prop_agg['total_views'] or 0,
         "total_favorites": total_favorites,
         "total_unlocks": total_unlocks,
         "total_messages": total_messages,
-        "recent_transactions": Transaction.objects.select_related("property", "client").order_by("-transaction_date")[:5],
+        "recent_transactions": Transaction.objects.select_related("property", "client").order_by("-transaction_date")[:5] if Transaction.objects.exists() else [],
         "recent_users": User.objects.order_by("-date_joined")[:5],
         "chart_labels": json.dumps(chart_labels),
         "chart_values": json.dumps(chart_values),
@@ -96,6 +149,7 @@ def admin_overview(request):
 
 @role_required(User.Role.ADMIN)
 def admin_users(request):
+    """Liste les utilisateurs du système avec filtres et pagination."""
     users = User.objects.all().order_by("-date_joined")
     role = request.GET.get("role")
     if role:
@@ -140,6 +194,7 @@ def admin_properties(request):
 
 @role_required(User.Role.ADMIN)
 def admin_property_create(request):
+    """Crée une propriété depuis l'espace d'administration."""
     if request.method == "POST":
         form = AdminPropertyForm(request.POST)
         formset = PropertyImageFormSet(request.POST, request.FILES)
@@ -159,6 +214,7 @@ def admin_property_create(request):
 
 @role_required(User.Role.ADMIN)
 def admin_property_edit(request, pk):
+    """Modifie une propriété existante depuis l'administration."""
     property_obj = get_object_or_404(Property, pk=pk)
     if request.method == "POST":
         form = AdminPropertyForm(request.POST, instance=property_obj)
@@ -178,12 +234,39 @@ def admin_property_edit(request, pk):
 
 @role_required(User.Role.ADMIN)
 def admin_property_validate(request, pk):
+    """Valide une annonce et la publie immédiatement."""
     property = get_object_or_404(Property, pk=pk)
     property.is_validated = True
     property.is_published = True
     property.validation_status = Property.ValidationStatus.APPROVED
     property.save(update_fields=["is_validated", "is_published", "validation_status"])
-    messages.success(request, "Annonce validée et publiée.")
+
+    # La validation ne dépend jamais de la vidéo : la génération est mise en file (Celery)
+    # et n'est relancée que si aucune vidéo n'est prête ou en cours.
+    from properties.video.service import has_ready_video, in_progress, request_virtual_tour
+
+    if has_ready_video(property):
+        messages.success(request, "Annonce validée et publiée. La visite virtuelle est déjà disponible.")
+    elif in_progress(property):
+        messages.success(request, "Annonce validée et publiée. La visite virtuelle est en cours de génération.")
+    else:
+        queued, video_message = request_virtual_tour(property)
+        messages.success(request, "Annonce validée et publiée.")
+        (messages.info if queued else messages.warning)(request, video_message)
+
+    return redirect("dashboard:admin_properties")
+
+
+@role_required(User.Role.ADMIN)
+def admin_property_video_generate(request, pk):
+    """L'administrateur peut (re)lancer la visite virtuelle de n'importe quel bien (sans le publier)."""
+    if request.method != "POST":
+        return redirect("dashboard:admin_properties")
+    from properties.video.service import request_virtual_tour
+
+    property = get_object_or_404(Property, pk=pk)
+    queued, video_message = request_virtual_tour(property)
+    (messages.success if queued else messages.warning)(request, video_message)
     return redirect("dashboard:admin_properties")
 
 
@@ -209,6 +292,7 @@ def admin_property_delete(request, pk):
 
 @role_required(User.Role.ADMIN)
 def admin_transactions(request):
+    """Affiche les transactions réelles enregistrées dans le système."""
     transactions = Transaction.objects.select_related("property", "property__owner", "client").order_by("-transaction_date")
     status = request.GET.get("status")
     if status:
@@ -220,6 +304,7 @@ def admin_transactions(request):
 
 @role_required(User.Role.ADMIN)
 def admin_settings(request):
+    """Gère les paramètres globaux du site et les coordonnées de contact."""
     settings_obj = SiteSettings.load()
     if request.method == "POST":
         for field in [
@@ -242,11 +327,19 @@ def admin_settings(request):
 
 @role_required(User.Role.ADMIN)
 def admin_finances(request):
+    """Affiche les éléments financiers du système : revenus et paiements."""
     from django.db.models import Sum
     from properties.models import PropertyUnlock
 
+    # Only real transactions contribute to revenue
     total_revenue = Transaction.objects.aggregate(total=Sum("commission_amount"))["total"] or 0
     recent_unlocks = PropertyUnlock.objects.select_related("user", "property", "property__owner").order_by("-unlocked_at")[:20]
+
+    # Log real revenue info
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"Real revenue from transactions: {total_revenue}")
+    logger.info(f"Total paid relations: {PropertyUnlock.objects.count()}")
 
     context = {
         "dash_role": "admin",
@@ -254,12 +347,14 @@ def admin_finances(request):
         "total_revenue": total_revenue,
         "total_paid_relations": PropertyUnlock.objects.count(),
         "recent_unlocks": recent_unlocks,
+        "note": "Statistiques basées uniquement sur les transactions réelles (pas de données de test)"
     }
     return render(request, "dashboard/admin/finances.html", context)
 
 
 @role_required(User.Role.ADMIN)
 def admin_verifications(request):
+    """Liste les propriétaires dont la vérification d'identité est en cours ou terminée."""
     owners = User.objects.filter(role=User.Role.OWNER).exclude(verification_status=User.VerificationStatus.UNVERIFIED).order_by("-verification_date", "-date_joined")
     status = request.GET.get("status")
     if status:
@@ -272,6 +367,7 @@ def admin_verifications(request):
 
 @role_required(User.Role.ADMIN)
 def admin_verification_update(request, pk):
+    """Approuve ou refuse la vérification d'un propriétaire."""
     owner_user = get_object_or_404(User, pk=pk, role=User.Role.OWNER)
     
     if request.method == "POST":
@@ -321,6 +417,7 @@ def admin_verification_update(request, pk):
 
 @role_required(User.Role.ADMIN)
 def admin_owners(request):
+    """Liste les propriétaires enregistrés sur la plateforme."""
     owners = User.objects.filter(role=User.Role.OWNER).order_by("-date_joined")
     paginator = Paginator(owners, 15)
     page_obj = paginator.get_page(request.GET.get("page"))
@@ -328,10 +425,12 @@ def admin_owners(request):
 
 @role_required(User.Role.ADMIN)
 def admin_stats(request):
+    """Page des statistiques avancées de l'administration."""
     return render(request, "dashboard/admin/stats.html", {"dash_role": "admin", "active": "stats"})
 
 @role_required(User.Role.ADMIN)
 def admin_reports(request):
+    """Page des rapports et analyses de l'administration."""
     return render(request, "dashboard/admin/reports.html", {"dash_role": "admin", "active": "reports"})
 
 
@@ -380,8 +479,9 @@ def admin_identity_verification_detail(request, pk):
 
 @role_required(User.Role.ADMIN)
 def admin_identity_verification_action(request, pk):
-    """Approve, reject, or request resubmission for a verification request."""
+    """Approve, reject, request resubmission, schedule visit, or complete visit for a verification request."""
     from accounts.models import IdentityVerificationRequest
+    from datetime import datetime
     
     verification = get_object_or_404(IdentityVerificationRequest, pk=pk)
     
@@ -430,6 +530,52 @@ def admin_identity_verification_action(request, pk):
                 user=verification.owner,
                 title="Nouvelle soumission requise",
                 message=f"L'administrateur vous demande de fournir de nouveaux documents afin de finaliser la vérification de votre identité. Motif : {reason}",
+                notification_type="systeme",
+                link="/dashboard/proprietaire/verification-identite/"
+            )
+        
+        elif action == "schedule_visit":
+            visit_date_str = request.POST.get("visit_date")
+            agent_name = request.POST.get("agent_name")
+            
+            if not visit_date_str or not agent_name:
+                messages.error(request, "Veuillez fournir la date de visite et le nom de l'agent.")
+                return redirect("dashboard:admin_identity_verification_detail", pk=pk)
+            
+            try:
+                visit_date = datetime.fromisoformat(visit_date_str)
+                verification.schedule_field_visit(request.user, visit_date, agent_name)
+                messages.success(request, f"Une visite sur le terrain a été programmée pour {verification.owner.get_full_name()}.")
+                
+                # Send notification to owner
+                Notification.objects.create(
+                    user=verification.owner,
+                    title="Visite sur le terrain programmée",
+                    message=f"Une visite de vérification sur le terrain a été programmée le {visit_date.strftime('%d/%m/%Y à %H:%M')}. Un agent DOMIORA vous contactera pour confirmer le rendez-vous.",
+                    notification_type="systeme",
+                    link="/dashboard/proprietaire/verification-identite/"
+                )
+            except ValueError:
+                messages.error(request, "Format de date invalide.")
+                return redirect("dashboard:admin_identity_verification_detail", pk=pk)
+        
+        elif action == "complete_visit":
+            visit_notes = request.POST.get("visit_notes", "")
+            property_verified = request.POST.get("property_verified") == "on"
+            property_notes = request.POST.get("property_notes", "")
+            
+            if not visit_notes:
+                messages.error(request, "Veuillez fournir des notes pour la visite.")
+                return redirect("dashboard:admin_identity_verification_detail", pk=pk)
+            
+            verification.complete_field_visit(request.user, visit_notes, property_verified, property_notes)
+            messages.success(request, f"La visite sur le terrain pour {verification.owner.get_full_name()} a été enregistrée comme effectuée.")
+            
+            # Send notification to owner
+            Notification.objects.create(
+                user=verification.owner,
+                title="Visite sur le terrain effectuée",
+                message="La visite de vérification sur le terrain a été effectuée. Votre dossier est en cours de validation finale par notre équipe.",
                 notification_type="systeme",
                 link="/dashboard/proprietaire/verification-identite/"
             )

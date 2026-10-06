@@ -2,66 +2,43 @@
 DOMIORA AI Assistant
 ====================
 
-Intelligent assistant using the new services/ai_assistant.py module
-with complete DOMIORA business context and role-aware responses.
+Pont entre le widget de chat (core.views.assistant_chat) et l'Assistant
+DOMIORA conversationnel de services/ai_assistant.py.
 """
 import logging
-from django.conf import settings
-from properties.models import Property
 
 logger = logging.getLogger(__name__)
 
+FAILURE_REPLY = (
+    "Désolé, je rencontre un problème momentané. Vous pouvez réessayer dans un instant, "
+    "ou parcourir directement les annonces DOMIORA."
+)
 
-def get_assistant_reply(message, conversation_history=None, user=None):
+
+def get_assistant_reply(message, conversation_history=None, user=None, state=None):
     """
-    Main entry point used by the chat widget view.
-    
-    Uses the new intelligent assistant service from services/ai_assistant.py
-    which includes complete DOMIORA business context and role-aware responses.
-    
-    Args:
-        message: User message
-        conversation_history: List of previous messages
-        user: User object (optional, for role detection)
-    
+    Point d'entrée utilisé par le widget.
+
+    `conversation_history` (envoyé par le navigateur) est conservé pour compatibilité
+    mais n'est plus utilisé : l'historique fiable est stocké côté serveur dans `state`.
+
     Returns:
         dict: {
             'reply': str,
-            'matches': list of Property objects,
-            'source': str
+            'matches': list de cartes de biens (dict publics),
+            'source': str,
+            'state': nouvel état de conversation à stocker en session,
+            + 'cards', 'actions', 'comparison', 'criteria_summary', 'quick_replies', 'intent'
         }
     """
-    from services.ai_assistant import get_assistant_response
-    
-    # Detect user role
-    user_role = None
-    if user and user.is_authenticated:
-        if hasattr(user, 'role'):
-            if user.role == 'owner':
-                user_role = 'owner'
-            elif user.role == 'admin':
-                user_role = 'admin'
-    else:
-        user_role = 'visitor'
-    
-    # Call the new intelligent assistant service
-    result = get_assistant_response(
-        message, 
-        conversation_history=conversation_history,
-        user_role=user_role
-    )
-    
-    # Extract properties from the result
-    properties = []
-    if result.get('properties'):
-        # Convert property dicts back to Property objects for compatibility
-        from properties.models import Property
-        property_ids = [p.get('id') for p in result['properties'] if p.get('id')]
-        if property_ids:
-            properties = list(Property.objects.filter(id__in=property_ids))
-    
-    return {
-        'reply': result.get('response'),
-        'matches': properties,
-        'source': 'gemini_intelligent'
-    }
+    from services.ai_assistant import handle_assistant_message
+
+    try:
+        new_state, result = handle_assistant_message(message, user=user, state=state)
+    except Exception:
+        logger.exception("Assistant DOMIORA failure")
+        return {"reply": FAILURE_REPLY, "matches": [], "source": "error", "state": state, "intent": "error"}
+
+    result["matches"] = result.get("cards", [])
+    result["state"] = new_state
+    return result

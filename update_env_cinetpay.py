@@ -5,12 +5,12 @@ import os
 
 env_path = os.path.join(os.path.dirname(__file__), '.env')
 
-# CinetPay credentials
+# CinetPay credentials are supplied by the operator, never embedded in code.
 cinetpay_config = """
 # --- CinetPay Payment Gateway ---
-CINETPAY_API_KEY=143459870067b2ecff946dd7.59047762
-CINETPAY_SITE_ID=105888043
-CINETPAY_SECRET_KEY=112414020867b2ef474bb320.19729040
+CINETPAY_API_KEY=
+CINETPAY_SITE_ID=
+CINETPAY_SECRET_KEY=
 """
 
 try:

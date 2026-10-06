@@ -1,6 +1,6 @@
 <div x-data="propertyBoostManager()" x-init="loadBoostPackages()" class="space-y-6" x-cloak>
   <!-- Current Boost Status -->
-  <div x-show="currentBoost" class="bg-gradient-to-r from-purple-500 to-blue-500 rounded-2xl p-6 text-white">
+  <div x-show="currentBoost" class="bg-gradient-to-r from-primary-600 to-primary-800 rounded-2xl p-6 text-white">
     <div class="flex items-center justify-between mb-4">
       <div class="flex items-center gap-3">
         <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
@@ -50,11 +50,11 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       <template x-for="pkg in boostPackages" :key="pkg.id">
         <div class="bg-white rounded-xl border-2 p-4 transition-all hover:shadow-lg cursor-pointer"
-             :class="selectedPackage?.id === pkg.id ? 'border-purple-500 shadow-lg' : 'border-gray-200'"
+             :class="selectedPackage?.id === pkg.id ? 'border-primary-600 shadow-lg' : 'border-gray-200'"
              @click="selectPackage(pkg)">
           <!-- Popular Badge -->
           <div x-show="pkg.boost_multiplier >= 3" class="absolute -top-3 left-1/2 -translate-x-1/2">
-            <span class="bg-gradient-to-r from-purple-500 to-blue-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+            <span class="bg-gradient-to-r from-primary-600 to-primary-800 text-white text-xs font-bold px-3 py-1 rounded-full">
               Populaire
             </span>
           </div>
@@ -111,10 +111,10 @@
       <div>
         <span class="text-sm text-gray-500">Package sélectionné:</span>
         <span class="font-semibold text-gray-900 ml-2" x-text="selectedPackage.name"></span>
-        <span class="font-bold text-purple-600 ml-2" x-text="formatPrice(selectedPackage.price) + ' ' + selectedPackage.currency"></span>
+        <span class="font-bold text-primary-600 ml-2" x-text="formatPrice(selectedPackage.price) + ' ' + selectedPackage.currency"></span>
       </div>
-      <button @click="purchaseBoost()" 
-              class="bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold px-6 py-3 rounded-full hover:opacity-90 transition">
+      <button @click="purchaseBoost()"
+              class="bg-gradient-to-r from-primary-600 to-primary-800 text-white font-semibold px-6 py-3 rounded-full hover:opacity-90 transition">
         Activer le boost
       </button>
     </div>
@@ -302,10 +302,10 @@ function propertyBoostManager() {
     
     getBoostStatusClass(status) {
       switch(status) {
-        case 'active': return 'bg-green-100 text-green-700';
+        case 'active': return 'bg-accent-100 text-accent-800';
         case 'completed': return 'bg-gray-100 text-gray-700';
-        case 'expired': return 'bg-red-100 text-red-700';
-        default: return 'bg-yellow-100 text-yellow-700';
+        case 'expired': return 'bg-primary-100 text-primary-800';
+        default: return 'bg-primary-100 text-primary-800';
       }
     },
     

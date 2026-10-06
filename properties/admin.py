@@ -1,10 +1,16 @@
 from django.contrib import admin
-from .models import Property, PropertyImage, Amenity
+from .models import Property, PropertyImage, PropertyDocument, Amenity
 
 
 class PropertyImageInline(admin.TabularInline):
     model = PropertyImage
     extra = 1
+
+
+class PropertyDocumentInline(admin.TabularInline):
+    model = PropertyDocument
+    extra = 1
+    fields = ("title", "document_type", "file", "description", "order")
 
 
 @admin.register(Amenity)
@@ -19,7 +25,7 @@ class PropertyAdmin(admin.ModelAdmin):
     list_filter = ("transaction_type", "property_type", "status", "is_published", "is_featured", "country")
     search_fields = ("title", "city", "address", "description")
     prepopulated_fields = {"slug": ("title",)}
-    inlines = [PropertyImageInline]
+    inlines = [PropertyImageInline, PropertyDocumentInline]
     filter_horizontal = ("amenities",)
     list_editable = ("is_published", "is_featured", "status")
     autocomplete_fields = ("owner",)

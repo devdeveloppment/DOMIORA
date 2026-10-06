@@ -4,7 +4,8 @@ from . import views, views_client, views_owner, views_admin
 app_name = "dashboard"
 
 urlpatterns = [
-    path("", views.dashboard_redirect, name="redirect"),
+    path("", views.dashboard_admission, name="admission"),
+    path("redirect/", views.dashboard_redirect, name="redirect"),
 
     # Client
     path("client/", views_client.client_overview, name="client_overview"),
@@ -27,8 +28,10 @@ urlpatterns = [
     path("proprietaire/biens/<int:pk>/supprimer/", views_owner.owner_property_delete, name="owner_property_delete"),
     path("proprietaire/biens/<int:pk>/publier/", views_owner.owner_property_toggle_publish, name="owner_property_toggle_publish"),
     path("proprietaire/biens/<int:pk>/images/<int:image_id>/supprimer/", views_owner.owner_property_image_delete, name="owner_property_image_delete"),
-    path("proprietaire/demandes/", views_owner.owner_requests, name="owner_requests"),
-    path("proprietaire/demandes/<int:pk>/<str:status>/", views_owner.owner_request_update_status, name="owner_request_update_status"),
+    path("proprietaire/biens/<int:pk>/images/<int:image_id>/deplacer/", views_owner.owner_property_image_move, name="owner_property_image_move"),
+    path("proprietaire/biens/<int:pk>/visite-virtuelle/generer/", views_owner.owner_property_video_generate, name="owner_property_video_generate"),
+    path("proprietaire/biens/<int:pk>/visite-virtuelle/statut/", views_owner.owner_property_video_status, name="owner_property_video_status"),
+    # REMOVED: owner_requests and owner_request_update_status - visit requests not shown to owners
     path("proprietaire/statistiques/", views_owner.owner_stats, name="owner_stats"),
     path("proprietaire/verification-identite/", views_owner.owner_verify_identity, name="owner_verify_identity"),
     path("proprietaire/profil/", views_owner.owner_profile, name="owner_profile"),
@@ -47,6 +50,7 @@ urlpatterns = [
     path("admin-panel/proprietes/ajouter/", views_admin.admin_property_create, name="admin_property_create"),
     path("admin-panel/proprietes/<int:pk>/modifier/", views_admin.admin_property_edit, name="admin_property_edit"),
     path("admin-panel/proprietes/<int:pk>/valider/", views_admin.admin_property_validate, name="admin_property_validate"),
+    path("admin-panel/proprietes/<int:pk>/visite-virtuelle/generer/", views_admin.admin_property_video_generate, name="admin_property_video_generate"),
     path("admin-panel/proprietes/<int:pk>/rejeter/", views_admin.admin_property_reject, name="admin_property_reject"),
     path("admin-panel/proprietes/<int:pk>/supprimer/", views_admin.admin_property_delete, name="admin_property_delete"),
     path("admin-panel/transactions/", views_admin.admin_transactions, name="admin_transactions"),

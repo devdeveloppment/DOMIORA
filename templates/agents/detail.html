@@ -2,7 +2,7 @@
 {% block title %}{{ agent.user.get_full_name }} - {{ site_settings.site_name }}{% endblock %}
 
 {% block content %}
-<section class="bg-[#71212d] relative pt-12 pb-24 overflow-hidden">
+<section class="bg-primary-600 relative pt-12 pb-24 overflow-hidden">
   <div class="absolute inset-0 opacity-10">
     <img src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80" alt="Background" class="w-full h-full object-cover">
   </div>
@@ -10,7 +10,7 @@
     <p class="text-white/60 text-xs mb-8 uppercase tracking-widest font-bold">
       <a href="{% url 'core:home' %}" class="hover:text-white transition">Accueil</a> / 
       <a href="{% url 'agents:list' %}" class="hover:text-white transition">Propriétaires</a> / 
-      <span class="text-[#d4af37]">{{ agent.user.get_full_name }}</span>
+      <span class="text-accent">{{ agent.user.get_full_name }}</span>
     </p>
 
     <div class="flex flex-col md:flex-row items-center md:items-start gap-8">
@@ -52,7 +52,7 @@
         <div>
           <p class="text-xs uppercase text-gray-500 font-bold mb-1">Évaluation</p>
           <div class="flex items-center justify-center gap-2">
-            <span class="text-[#d4af37]">★</span>
+            <span class="text-accent">★</span>
             <span class="text-3xl font-extrabold text-gray-900">{{ agent.rating|floatformat:1|default:"0.0" }}</span>
           </div>
         </div>
@@ -66,7 +66,7 @@
       {% if agent.bio %}
       <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
         <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-          <svg class="w-6 h-6 text-[#71212d]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
           À propos
         </h2>
         <p class="text-gray-600 leading-relaxed text-lg">{{ agent.bio|linebreaksbr }}</p>
@@ -76,7 +76,7 @@
       <!-- Annonces -->
       <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
         <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-          <svg class="w-6 h-6 text-[#71212d]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+          <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
           Ses annonces
         </h2>
         
@@ -91,7 +91,7 @@
               </div>
               <div class="p-4">
                 <p class="font-bold text-gray-900 truncate">{{ prop.title }}</p>
-                <p class="text-[#71212d] font-extrabold mt-1">{{ prop.price_display }}</p>
+                <p class="text-primary-600 font-extrabold mt-1">{{ prop.price_display }}</p>
               </div>
             </a>
           {% empty %}
@@ -116,7 +116,7 @@
         
         <div class="space-y-3">
           {% if agent.user.phone %}
-          <a href="tel:{{ agent.user.phone }}" class="flex items-center justify-center gap-3 w-full border-2 border-[#71212d] text-[#71212d] hover:bg-[#71212d] hover:text-white transition font-bold rounded-xl px-4 py-4 shadow-sm">
+          <a href="tel:{{ agent.user.phone }}" class="flex items-center justify-center gap-3 w-full border-2 border-primary-600 text-primary-600 hover:bg-primary-600 hover:text-white transition font-bold rounded-xl px-4 py-4 shadow-sm">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
             Appeler
           </a>

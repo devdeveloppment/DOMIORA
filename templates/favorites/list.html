@@ -1,0 +1,55 @@
+{% extends "dashboard/dashboard_base.html" %}
+{% block title %}Mes favoris — {{ site_settings.site_name }}{% endblock %}
+{% block dashboard_content %}
+<section class="max-w-7xl mx-auto pb-12">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-extrabold font-display">Mes biens favoris</h1>
+    <span class="text-sm text-gray-500">{{ favorites|length }} bien{{ favorites|pluralize:"s" }}</span>
+  </div>
+
+  {% if favorites %}
+  <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    {% for fav in favorites %}
+    {% with fav.property as property %}
+    <div class="group bg-white rounded-2xl shadow-card border border-gray-100 overflow-hidden hover:shadow-xl transition duration-300">
+      <a href="{{ property.get_absolute_url }}" class="block relative w-full aspect-[4/3] overflow-hidden shrink-0 bg-gray-100">
+        <img src="{{ property.primary_image }}" loading="lazy" alt="{{ property.title }}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
+        <div class="absolute top-3 right-3">
+          <form method="post" action="{% url 'favorites:list' %}" class="inline-block">
+            {% csrf_token %}
+            <input type="hidden" name="remove_id" value="{{ fav.pk }}">
+            <button type="submit" class="w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-sm hover:shadow-md text-rose-500 transition">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+          </form>
+        </div>
+      </a>
+      <div class="p-4 flex-1 flex flex-col">
+        <a href="{{ property.get_absolute_url }}" class="text-[15px] font-bold text-gray-900 line-clamp-1 group-hover:text-primary-600 transition leading-snug">{{ property.title }}</a>
+        <p class="text-sm text-gray-500 flex items-center gap-1 mt-1.5 truncate">
+          <svg class="w-3.5 h-3.5 text-gray-400 shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+          {{ property.city }}{% if property.neighborhood %}, {{ property.neighborhood }}{% endif %}
+        </p>
+        <p class="text-lg font-extrabold text-primary-600 mt-2 mb-3 price">{{ property.price_display }}</p>
+        <div class="flex gap-2 mt-auto">
+          {% if fav.property.is_published %}
+          <a href="{{ property.get_absolute_url }}" class="flex-1 btn-premium text-center text-xs font-bold px-3 py-2 rounded-xl bg-primary-600 text-white transition">Voir le bien</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endwith %}
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="text-center py-20">
+    <div class="w-24 h-24 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-6">
+      <svg class="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+    </div>
+    <h2 class="text-xl font-bold text-gray-900 mb-2">Aucun bien en favori</h2>
+    <p class="text-gray-500 mb-6">Vous n'avez pas encore de biens en favori. Parcourez notre catalogue pour en ajouter.</p>
+    <a href="{% url 'properties:list' %}" class="inline-flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white font-bold px-6 py-3 rounded-xl transition">Parcourir les biens</a>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

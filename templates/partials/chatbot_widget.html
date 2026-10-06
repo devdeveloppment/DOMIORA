@@ -1,129 +1,175 @@
-<!-- AI Chatbot Widget -->
-<div x-data="chatbotWidget()" x-init="initChatbot()" class="fixed bottom-6 right-6 z-50">
-  <!-- Chat Button -->
-  <button @click="isOpen = !isOpen" 
-          class="w-16 h-16 rounded-full bg-[#71212d] hover:bg-[#8a2a3d] text-white shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-110"
-          :class="isOpen ? 'hidden' : 'flex'">
+<!-- Assistant DOMIORA (widget de chat) -->
+<div x-data="chatbotWidget()" x-init="initChatbot()" class="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50">
+  <!-- Bouton d'ouverture -->
+  <button @click="toggle()" x-show="!isOpen"
+          class="w-16 h-16 rounded-full bg-primary-600 hover:bg-primary-700 text-white shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-110"
+          aria-label="Ouvrir l'Assistant DOMIORA">
     <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
     </svg>
   </button>
 
-  <!-- Chat Window -->
-  <div x-show="isOpen" 
+  <!-- Fenêtre de conversation -->
+  <div x-show="isOpen" x-cloak
        x-transition:enter="transition ease-out duration-300"
        x-transition:enter-start="opacity-0 translate-y-4 scale-95"
        x-transition:enter-end="opacity-100 translate-y-0 scale-100"
        x-transition:leave="transition ease-in duration-200"
        x-transition:leave-start="opacity-100 translate-y-0 scale-100"
        x-transition:leave-end="opacity-0 translate-y-4 scale-95"
-       class="absolute bottom-20 right-0 w-96 bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-200">
-    
-    <!-- Header -->
-    <div class="bg-[#71212d] text-white px-5 py-4 flex items-center justify-between">
+       class="fixed inset-0 sm:inset-auto sm:absolute sm:bottom-0 sm:right-0 sm:w-[400px] sm:h-[620px] sm:max-h-[calc(100vh-3rem)] bg-white sm:rounded-2xl shadow-2xl overflow-hidden border border-gray-200 flex flex-col"
+       role="dialog" aria-label="Assistant DOMIORA">
+
+    <!-- En-tête -->
+    <div class="bg-primary-600 text-white px-4 py-3 flex items-center justify-between shrink-0">
       <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-          </svg>
-        </div>
+        <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center font-bold">D</div>
         <div>
-          <h3 class="font-bold">Assistant DOMIORA</h3>
-          <p class="text-xs text-white/80" x-text="isLoading ? 'En train de réfléchir...' : 'En ligne'"></p>
+          <h3 class="font-bold leading-tight">Assistant DOMIORA</h3>
+          <p class="text-xs text-white/80" x-text="isLoading ? 'En train d’écrire…' : 'Assistant IA · réponses basées sur les annonces DOMIORA'"></p>
         </div>
       </div>
-      <button @click="isOpen = false" class="text-white/80 hover:text-white transition">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-        </svg>
-      </button>
+      <div class="flex items-center gap-1">
+        <button @click="resetConversation()" x-show="messages.length" title="Nouvelle conversation" aria-label="Nouvelle conversation"
+                class="p-2 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+        </button>
+        <button @click="isOpen = false" class="p-2 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition" aria-label="Fermer">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
     </div>
 
-    <!-- Messages Container -->
-    <div class="h-80 overflow-y-auto p-4 space-y-4 bg-gray-50" id="chat-messages">
-      <!-- Welcome Message -->
-      <div x-show="messages.length === 0" class="text-center py-8">
-        <div class="w-16 h-16 rounded-full bg-[#71212d]/10 flex items-center justify-center mx-auto mb-4">
-          <svg class="w-8 h-8 text-[#71212d]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
-          </svg>
-        </div>
-        <h4 class="font-bold text-gray-900 mb-2">Bonjour ! 👋</h4>
-        <p class="text-sm text-gray-600">Je suis l'assistant DOMIORA. Comment puis-je vous aider aujourd'hui ?</p>
+    <!-- Messages -->
+    <div x-ref="thread" class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+      <!-- Accueil -->
+      <div x-show="messages.length === 0" class="text-center py-6">
+        <div class="w-14 h-14 rounded-full bg-primary-600/10 flex items-center justify-center mx-auto mb-3 text-primary-600 font-bold text-xl">D</div>
+        <h4 class="font-bold text-gray-900 mb-1">Bonjour !</h4>
+        <p class="text-sm text-gray-600 px-2">Je suis l'Assistant DOMIORA, un assistant IA. Décrivez le bien que vous recherchez, ou posez-moi une question sur la plateforme.</p>
         <div class="mt-4 space-y-2">
-          <button @click="sendQuickMessage('Je cherche un appartement à louer')" 
-                  class="w-full text-left px-4 py-2 bg-white rounded-lg border border-gray-200 hover:border-[#71212d] hover:text-[#71212d] transition text-sm">
-            🏠 Je cherche un appartement à louer
-          </button>
-          <button @click="sendQuickMessage('Quels sont les biens disponibles ?')" 
-                  class="w-full text-left px-4 py-2 bg-white rounded-lg border border-gray-200 hover:border-[#71212d] hover:text-[#71212d] transition text-sm">
-            🔍 Quels sont les biens disponibles ?
-          </button>
-          <button @click="sendQuickMessage('Comment fonctionne la visite ?')" 
-                  class="w-full text-left px-4 py-2 bg-white rounded-lg border border-gray-200 hover:border-[#71212d] hover:text-[#71212d] transition text-sm">
-            📅 Comment fonctionne la visite ?
-          </button>
+          <template x-for="suggestion in welcomeSuggestions" :key="suggestion">
+            <button @click="send(suggestion)" class="w-full text-left px-4 py-2.5 bg-white rounded-xl border border-gray-200 hover:border-primary-600 hover:text-primary-600 transition text-sm" x-text="suggestion"></button>
+          </template>
         </div>
       </div>
 
-      <!-- Messages -->
       <template x-for="(msg, index) in messages" :key="index">
-        <div :class="msg.role === 'user' ? 'flex justify-end' : 'flex justify-start'">
-          <div :class="msg.role === 'user' 
-                ? 'bg-[#71212d] text-white rounded-2xl rounded-br-sm' 
-                : 'bg-white text-gray-800 rounded-2xl rounded-bl-sm border border-gray-200'" 
-               class="max-w-[80%] px-4 py-3 shadow-sm">
-            <p class="text-sm whitespace-pre-wrap" x-text="msg.content"></p>
-            <p class="text-[10px] mt-1 opacity-70" x-text="msg.time"></p>
-          </div>
-        </div>
-      </template>
-
-      <!-- Property Matches -->
-      <template x-if="propertyMatches.length > 0">
-        <div class="space-y-2">
-          <p class="text-xs font-semibold text-gray-500">Biens correspondants :</p>
-          <template x-for="prop in propertyMatches" :key="prop.url">
-            <a :href="prop.url" target="_blank" 
-               class="block bg-white rounded-lg border border-gray-200 p-3 hover:border-[#71212d] transition">
-              <div class="flex gap-3">
-                <img :src="prop.image" class="w-16 h-16 rounded-lg object-cover" :alt="prop.title">
-                <div class="flex-1">
-                  <p class="font-semibold text-sm text-gray-900" x-text="prop.title"></p>
-                  <p class="text-xs text-[#71212d] font-bold" x-text="prop.price"></p>
+        <div>
+          <!-- Bulle -->
+          <div :class="msg.role === 'user' ? 'flex justify-end' : 'flex justify-start'">
+            <div :class="msg.role === 'user'
+                    ? 'bg-primary-600 text-white rounded-2xl rounded-br-sm'
+                    : 'bg-white text-gray-800 rounded-2xl rounded-bl-sm border border-gray-200'"
+                 class="max-w-[85%] px-4 py-2.5 shadow-sm">
+              <p class="text-sm whitespace-pre-line leading-relaxed" x-text="msg.content"></p>
+              <template x-if="msg.criteria && msg.criteria.length">
+                <div class="mt-2 flex flex-wrap gap-1">
+                  <template x-for="item in msg.criteria" :key="item">
+                    <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary-50 text-primary-700" x-text="item"></span>
+                  </template>
                 </div>
-              </div>
-            </a>
+              </template>
+              <p class="text-[10px] mt-1 opacity-60" x-text="msg.time"></p>
+            </div>
+          </div>
+
+          <!-- Cartes de biens (données réelles) -->
+          <template x-if="msg.cards && msg.cards.length">
+            <div class="mt-2 space-y-2">
+              <template x-for="card in msg.cards" :key="card.id || card.url">
+                <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                  <div class="flex gap-3 p-3">
+                    <a :href="card.url" class="relative shrink-0">
+                      <img :src="card.image" :alt="card.title" loading="lazy" class="w-20 h-20 rounded-lg object-cover bg-gray-100">
+                      <span x-show="card.index" class="absolute -top-1.5 -left-1.5 w-6 h-6 rounded-full bg-primary-600 text-white text-[11px] font-bold flex items-center justify-center shadow" x-text="card.index"></span>
+                    </a>
+                    <div class="min-w-0 flex-1">
+                      <span x-show="card.match_label" class="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full mb-1" :class="levelClass(card.match_level)" x-text="card.match_label"></span>
+                      <a :href="card.url" class="block font-semibold text-sm text-gray-900 hover:text-primary-600 line-clamp-1" x-text="card.title"></a>
+                      <p class="text-xs text-gray-500 truncate">
+                        <span x-text="card.city"></span><span x-show="card.neighborhood" x-text="', ' + card.neighborhood"></span><span x-show="card.property_type" x-text="' · ' + card.property_type"></span>
+                      </p>
+                      <p class="text-sm font-bold text-primary-600" x-text="card.price"></p>
+                      <p class="text-[11px] text-gray-500">
+                        <span x-show="card.bedrooms" x-text="card.bedrooms + ' ch.'"></span>
+                        <span x-show="card.surface" x-text="' · ' + card.surface + ' m²'"></span>
+                      </p>
+                    </div>
+                  </div>
+                  <template x-if="card.reasons && card.reasons.length">
+                    <ul class="px-3 pb-2 space-y-0.5 text-[11px]">
+                      <template x-for="reason in card.reasons.slice(0, 4)" :key="reason.text">
+                        <li class="flex gap-1.5"><span class="font-bold" :class="reasonClass(reason.status)" x-text="reason.symbol"></span><span class="text-gray-600" x-text="reason.text"></span></li>
+                      </template>
+                    </ul>
+                  </template>
+                  <div class="flex border-t border-gray-100 text-xs font-semibold">
+                    <a :href="card.url" class="flex-1 text-center py-2 text-primary-600 hover:bg-primary-50 transition">Voir le bien</a>
+                    <button type="button" x-show="card.index" @click="send('Je veux visiter le bien n°' + card.index)" class="flex-1 py-2 text-gray-600 hover:bg-gray-50 border-l border-gray-100 transition">Demander une visite</button>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </template>
+
+          <!-- Comparaison -->
+          <template x-if="msg.comparison">
+            <div class="mt-2 grid gap-2" :class="msg.comparison.properties.length > 2 ? 'grid-cols-1' : 'grid-cols-2'">
+              <template x-for="item in msg.comparison.properties" :key="item.id">
+                <div class="bg-white rounded-xl border border-gray-200 p-2.5 text-[11px]">
+                  <a :href="item.url" class="font-semibold text-gray-900 hover:text-primary-600 line-clamp-2" x-text="(item.index ? 'n°' + item.index + ' · ' : '') + item.title"></a>
+                  <ul class="mt-1 space-y-0.5">
+                    <template x-for="pro in item.pros" :key="pro"><li class="flex gap-1"><span class="text-emerald-600 font-bold">+</span><span class="text-gray-700" x-text="pro"></span></li></template>
+                    <template x-for="con in item.cons" :key="con"><li class="flex gap-1"><span class="text-amber-600 font-bold">−</span><span class="text-gray-700" x-text="con"></span></li></template>
+                  </ul>
+                </div>
+              </template>
+            </div>
+          </template>
+
+          <!-- Actions (liens vers les vraies fonctionnalités DOMIORA) -->
+          <template x-if="msg.actions && msg.actions.length">
+            <div class="mt-2 flex flex-wrap gap-2">
+              <template x-for="action in msg.actions" :key="action.url + action.label">
+                <a :href="action.url"
+                   :class="action.kind === 'primary' ? 'bg-primary-600 hover:bg-primary-700 text-white border-primary-600' : 'bg-white text-gray-700 border-gray-200 hover:border-primary-600 hover:text-primary-600'"
+                   class="text-xs font-semibold rounded-full px-3.5 py-2 border transition" x-text="action.label"></a>
+              </template>
+            </div>
           </template>
         </div>
       </template>
 
-      <!-- Loading Indicator -->
+      <!-- Indicateur d'écriture -->
       <div x-show="isLoading" class="flex justify-start">
-        <div class="bg-white rounded-2xl rounded-bl-sm border border-gray-200 px-4 py-3 shadow-sm">
-          <div class="flex gap-1">
-            <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-            <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
-            <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
-          </div>
+        <div class="bg-white rounded-2xl rounded-bl-sm border border-gray-200 px-4 py-3 shadow-sm flex items-center gap-2">
+          <span class="flex gap-1">
+            <span class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></span>
+            <span class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: .1s"></span>
+            <span class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: .2s"></span>
+          </span>
+          <span class="text-xs text-gray-500">L'Assistant DOMIORA est en train d'écrire…</span>
         </div>
       </div>
     </div>
 
-    <!-- Input Area -->
-    <div class="p-4 bg-white border-t border-gray-200">
-      <form @submit.prevent="sendMessage" class="flex gap-2">
-        <input type="text" 
-               x-model="inputMessage" 
-               placeholder="Écrivez votre message..." 
-               :disabled="isLoading"
-               class="flex-1 px-4 py-3 rounded-xl border border-gray-200 focus:border-[#71212d] focus:ring-2 focus:ring-[#71212d]/20 outline-none transition text-sm">
-        <button type="submit" 
-                :disabled="isLoading || !inputMessage.trim()"
-                class="px-4 py-3 bg-[#71212d] hover:bg-[#8a2a3d] disabled:bg-gray-300 text-white rounded-xl transition">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
-          </svg>
+    <!-- Suggestions -->
+    <div x-show="quickReplies.length && !isLoading" class="px-3 pt-2 bg-white border-t border-gray-100 flex gap-2 overflow-x-auto shrink-0">
+      <template x-for="reply in quickReplies" :key="reply">
+        <button @click="send(reply)" class="shrink-0 text-xs px-3 py-1.5 rounded-full border border-primary-200 text-primary-700 bg-primary-50 hover:bg-primary-100 transition" x-text="reply"></button>
+      </template>
+    </div>
+
+    <!-- Saisie -->
+    <div class="p-3 bg-white shrink-0" :class="quickReplies.length && !isLoading ? '' : 'border-t border-gray-200'">
+      <form @submit.prevent="send()" class="flex gap-2">
+        <input type="text" x-ref="input" x-model="inputMessage" maxlength="1000"
+               placeholder="Écrivez votre message…" :disabled="isLoading"
+               class="flex-1 min-w-0 px-4 py-3 rounded-xl border border-gray-200 focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20 outline-none transition text-sm">
+        <button type="submit" :disabled="isLoading || !inputMessage.trim()" aria-label="Envoyer"
+                class="px-4 py-3 bg-primary-600 hover:bg-primary-700 disabled:bg-gray-300 text-white rounded-xl transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
         </button>
       </form>
     </div>
@@ -132,122 +178,116 @@
 
 <script>
 function chatbotWidget() {
+  const STORAGE_KEY = 'domiora_chat_v2';
   return {
     isOpen: false,
     isLoading: false,
     inputMessage: '',
     messages: [],
-    propertyMatches: [],
-    conversationHistory: [],
+    quickReplies: [],
+    welcomeSuggestions: [
+      'Je cherche un appartement à Lomé, 2 chambres, 150 000 FCFA maximum',
+      'Comment contacter un propriétaire ?',
+      'Comment publier mon bien ?',
+    ],
 
     initChatbot() {
-      // Load conversation from localStorage if available
-      const saved = localStorage.getItem('domiora_chat_history');
-      if (saved) {
-        try {
-          this.conversationHistory = JSON.parse(saved);
-          this.messages = this.conversationHistory.slice(-10);
-        } catch (e) {
-          console.error('Error loading chat history:', e);
-        }
-      }
+      // Affichage local uniquement ; l'état fiable de la conversation est conservé par le serveur.
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+        if (Array.isArray(saved)) this.messages = saved.slice(-30);
+      } catch (e) { this.messages = []; }
     },
 
-    async sendMessage() {
-      const message = this.inputMessage.trim();
-      if (!message || this.isLoading) return;
+    toggle() {
+      this.isOpen = !this.isOpen;
+      if (this.isOpen) this.scrollToBottom();
+    },
 
-      // Add user message
-      const userMsg = {
-        role: 'user',
-        content: message,
-        time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-      };
-      this.messages.push(userMsg);
-      this.conversationHistory.push(userMsg);
-      this.inputMessage = '';
-      this.isLoading = true;
-      this.propertyMatches = [];
+    persist() {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(this.messages.slice(-30))); } catch (e) {}
+    },
 
-      // Save to localStorage
-      localStorage.setItem('domiora_chat_history', JSON.stringify(this.conversationHistory));
+    now() {
+      return new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    },
 
-      // Scroll to bottom
-      this.$nextTick(() => {
-        const container = document.getElementById('chat-messages');
-        container.scrollTop = container.scrollHeight;
+    async post(body) {
+      const response = await fetch('{% url "core:assistant_chat" %}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': this.getCsrfToken() },
+        body: JSON.stringify(body),
       });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Désolé, une erreur s’est produite. Veuillez réessayer.');
+      return data;
+    },
 
+    async send(text) {
+      const message = (text ?? this.inputMessage).trim();
+      if (!message || this.isLoading) return;
+      this.messages.push({ role: 'user', content: message, time: this.now() });
+      this.inputMessage = '';
+      this.quickReplies = [];
+      this.isLoading = true;
+      this.persist();
+      this.scrollToBottom();
       try {
-        const response = await fetch('/api/chat/', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': this.getCsrfToken()
-          },
-          body: JSON.stringify({
-            message: message,
-            history: this.conversationHistory
-          })
+        const data = await this.post({ message });
+        this.messages.push({
+          role: 'assistant',
+          content: data.reply,
+          time: this.now(),
+          cards: data.cards || data.matches || [],
+          actions: data.actions || [],
+          comparison: data.comparison || null,
+          criteria: data.intent === 'search' ? (data.criteria_summary || []) : [],
         });
-
-        const data = await response.json();
-
-        if (data.error) {
-          throw new Error(data.error);
-        }
-
-        // Add assistant response
-        const assistantMsg = {
-          role: 'assistant',
-          content: data.response,
-          time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-        };
-        this.messages.push(assistantMsg);
-        this.conversationHistory.push(assistantMsg);
-
-        // Add property matches if available
-        if (data.properties && data.properties.length > 0) {
-          this.propertyMatches = data.properties;
-        }
-
-        // Save to localStorage
-        localStorage.setItem('domiora_chat_history', JSON.stringify(this.conversationHistory));
-
+        this.quickReplies = data.quick_replies || [];
       } catch (error) {
-        console.error('Error sending message:', error);
-        const errorMsg = {
-          role: 'assistant',
-          content: 'Désolé, une erreur s\'est produite. Veuillez réessayer.',
-          time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-        };
-        this.messages.push(errorMsg);
+        this.messages.push({ role: 'assistant', content: error.message, time: this.now() });
       } finally {
         this.isLoading = false;
-
-        // Scroll to bottom
-        this.$nextTick(() => {
-          const container = document.getElementById('chat-messages');
-          container.scrollTop = container.scrollHeight;
-        });
+        this.persist();
+        this.scrollToBottom();
+        this.$nextTick(() => this.$refs.input && this.$refs.input.focus());
       }
     },
 
-    sendQuickMessage(message) {
-      this.inputMessage = message;
-      this.sendMessage();
+    async resetConversation() {
+      this.messages = [];
+      this.quickReplies = [];
+      this.persist();
+      try { await this.post({ reset: true }); } catch (e) {}
+    },
+
+    // Compatibilité avec les anciens appels.
+    sendMessage() { return this.send(); },
+    sendQuickMessage(message) { return this.send(message); },
+
+    scrollToBottom() {
+      this.$nextTick(() => { const t = this.$refs.thread; if (t) t.scrollTop = t.scrollHeight; });
+    },
+
+    levelClass(level) {
+      return {
+        excellent: 'bg-emerald-100 text-emerald-700',
+        good: 'bg-sky-100 text-sky-700',
+        partial: 'bg-amber-100 text-amber-700',
+      }[level] || 'bg-gray-100 text-gray-700';
+    },
+
+    reasonClass(status) {
+      return { ok: 'text-emerald-600', near: 'text-amber-600', fail: 'text-red-600', unknown: 'text-gray-400' }[status] || 'text-gray-500';
     },
 
     getCsrfToken() {
-      const cookies = document.cookie.split(';');
-      for (let cookie of cookies) {
+      for (const cookie of document.cookie.split(';')) {
         const [name, value] = cookie.trim().split('=');
-        if (name === 'csrftoken') {
-          return decodeURIComponent(value);
-        }
+        if (name === 'csrftoken') return decodeURIComponent(value);
       }
-      return '';
-    }
+      return '{{ csrf_token }}';
+    },
   };
 }
 </script>

@@ -1,9 +1,15 @@
 services:
+  # Mode gratuit Render : le worker Celery (génération des visites virtuelles) tourne dans
+  # le même conteneur que le site (voir start.sh). Les Background Workers Render n'ont pas
+  # d'offre gratuite. Pour passer en mode dédié plus tard : service "worker" séparé
+  # (startCommand: celery -A config worker --loglevel=info --concurrency=1) et startCommand
+  # web = gunicorn seul.
   - type: web
     name: domiora
     env: python
-    buildCommand: ./build.sh
-    startCommand: gunicorn config.wsgi:application --bind 0.0.0.0:$PORT
+    plan: free
+    buildCommand: bash build.sh
+    startCommand: bash start.sh
     envVars:
       - key: PYTHON_VERSION
         value: 3.11
@@ -11,7 +17,58 @@ services:
         value: config.settings
       - key: SECRET_KEY
         generateValue: true
+      - key: DEBUG
+        value: "False"
       - key: DATABASE_URL
         fromDatabase:
           name: domiora-db
           property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: domiora-redis
+          property: connectionString
+      - key: CLOUDINARY_URL
+        sync: false
+      # Instance gratuite (512 Mo, CPU partagé) : rendu plus léger que le 720p par défaut.
+      - key: VIRTUAL_TOUR_RESOLUTION
+        value: 854x480
+      - key: VIRTUAL_TOUR_FPS
+        value: "20"
+
+  # Broker Celery (Render Key Value / Redis), offre gratuite, accès interne uniquement.
+  - type: keyvalue
+    name: domiora-redis
+    plan: free
+    ipAllowList: []
+    maxmemoryPolicy: noeviction
+
+  - type: web
+    name: domiora-mcp
+    env: python
+    buildCommand: pip install -r mcp_server/requirements.txt
+    startCommand: uvicorn mcp_server.server:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips='*'
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: MCP_ACCESS_TOKEN
+        sync: false
+      - key: MCP_PUBLIC_URL
+        value: https://domiora-mcp.onrender.com/mcp
+      - key: MCP_ISSUER_URL
+        sync: false
+      - key: CLAUDE_MODEL
+        value: claude-sonnet-4-20250514
+      - key: MCP_MAX_PROMPT_CHARS
+        value: 12000
+      - key: MCP_MAX_CONTEXT_CHARS
+        value: 30000
+      - key: MCP_MAX_TOKENS
+        value: 4096
+      - key: MCP_RATE_LIMIT
+        value: 30
+      - key: MCP_RATE_WINDOW_SECONDS
+        value: 60

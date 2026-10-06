@@ -2,6 +2,9 @@ __pycache__/
 *.pyc
 *.pyo
 .env
+.claude/settings.local.json
+.pytest_cache/
+node_modules/
 db.sqlite3
 /staticfiles/
 /media/*
@@ -12,3 +15,6 @@ venv/
 env/
 .vscode/
 .idea/
+
+# File locale du broker Celery (développement)
+.celery/

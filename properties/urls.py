@@ -1,10 +1,13 @@
 from django.urls import path
-from . import views
+from . import views, views_ai
 
 app_name = "properties"
 
 urlpatterns = [
     path("", views.property_list, name="list"),
+    path("recherche-ia/", views_ai.ai_search, name="ai_search"),
+    path("recherche-ia/api/", views_ai.ai_search_api, name="ai_search_api"),
+    path("comparer/analyse/", views_ai.compare_analysis, name="compare_analysis"),
     path("alertes/enregistrer/", views.save_search_alert, name="save_search_alert"),
     path("alertes/mes/", views.my_alerts, name="my_alerts"),
     path("comparer/", views.compare_properties, name="compare"),

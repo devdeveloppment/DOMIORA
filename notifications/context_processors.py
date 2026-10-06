@@ -1,15 +1,23 @@
+from django.db.models import Q
+
+
 def unread_notifications(request):
-    if request.user.is_authenticated:
-        qs = request.user.notifications.filter(is_read=False)
-        
-        # Determine current dash_role to exclude admin notifications from client/owner dashboards
-        dash_role = request.session.get("dash_role")
-        
-        # If the user is currently browsing the client or owner dashboard,
-        # hide admin-specific notifications from the counter to prevent confusion.
-        if dash_role in ["client", "owner"]:
-            qs = qs.exclude(link__startswith="/dashboard/admin-panel/")
-            
-        count = qs.count()
-        return {"unread_notifications_count": count}
-    return {"unread_notifications_count": 0}
+    if not request.user.is_authenticated:
+        return {"unread_notifications_count": 0}
+
+    dash_role = request.session.get("dash_role")
+    qs = request.user.notifications.filter(is_read=False)
+
+    if dash_role == "client":
+        qs = qs.filter(
+            Q(link__startswith="/dashboard/client/") | Q(link="")
+        ).exclude(link__startswith="/dashboard/admin-panel/")
+    elif dash_role == "owner":
+        qs = qs.filter(
+            Q(link__startswith="/dashboard/proprietaire/") | Q(link="")
+        ).exclude(link__startswith="/dashboard/admin-panel/")
+    else:
+        # admin or no role: exclude nothing extra
+        pass
+
+    return {"unread_notifications_count": qs.count()}

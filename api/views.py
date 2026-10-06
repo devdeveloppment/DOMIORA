@@ -25,7 +25,12 @@ from services.ai_assistant import get_assistant_response
 
 
 class PropertyViewSet(viewsets.ModelViewSet):
-    queryset = Property.objects.filter(is_published=True).prefetch_related("images", "amenities").select_related("owner")
+    queryset = (
+        Property.objects
+        .filter(is_published=True, is_validated=True, owner__isnull=False, owner__role=User.Role.OWNER, owner__is_active=True)
+        .prefetch_related("images", "amenities")
+        .select_related("owner")
+    )
     serializer_class = PropertySerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsAgentOwnerOrReadOnly]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
@@ -73,10 +78,10 @@ class PropertyRequestViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_superuser or user.role == "admin":
+        if user.is_superuser or user.role == User.Role.ADMIN:
             return PropertyRequest.objects.all()
-        if user.role == "agent":
-            return PropertyRequest.objects.filter(agent__user=user)
+        if user.role == User.Role.OWNER:
+            return PropertyRequest.objects.filter(property__owner=user)
         return PropertyRequest.objects.filter(user=user)
 
     def perform_create(self, serializer):
@@ -93,10 +98,11 @@ class TransactionViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_superuser or user.role == "admin":
+        if user.is_superuser or user.role == User.Role.ADMIN:
             return Transaction.objects.all()
-        if user.role == "agent":
-            return Transaction.objects.filter(agent__user=user)
+        if user.role == User.Role.OWNER:
+            # For owners, show transactions where they are the property owner
+            return Transaction.objects.filter(property__owner=user)
         return Transaction.objects.filter(client=user)
 
 
@@ -196,7 +202,7 @@ def verification_submit(request):
     )
     
     # Update owner status
-    request.user.verification_status = User.VerificationStatus.PENDING
+    request.user.verification_status = User.VerificationStatus.PENDING_DOCUMENTS
     request.user.save(update_fields=['verification_status'])
     
     # Send to n8n

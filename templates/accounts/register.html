@@ -8,7 +8,7 @@
     <!-- Left side: Image -->
     <div class="md:w-5/12 bg-gray-100 hidden md:block relative">
       <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Immobilier Premium" class="absolute inset-0 w-full h-full object-cover">
-      <div class="absolute inset-0 bg-gradient-to-t from-[#3e0b14]/80 via-[#71212d]/40 to-transparent"></div>
+      <div class="absolute inset-0 bg-gradient-to-t from-primary-800/80 via-primary-600/40 to-transparent"></div>
       <div class="absolute bottom-12 left-10 right-10">
         <h2 class="text-3xl font-extrabold text-white mb-4 drop-shadow-md">Rejoignez DOMIORA</h2>
         <p class="text-white/90 font-medium">La plateforme immobilière de référence pour vendre, louer et acheter en toute confiance.</p>
@@ -25,8 +25,8 @@
 
       <!-- Role Selection Toggle -->
       <div class="flex bg-gray-100 rounded-xl p-1 mb-8 max-w-sm mx-auto">
-        <button type="button" @click="role = 'client'" :class="role === 'client' ? 'bg-white shadow-sm text-[#71212d]' : 'text-gray-500 hover:text-gray-700'" class="flex-1 py-3 text-sm font-bold rounded-lg transition-all">Je suis client</button>
-        <button type="button" @click="role = 'owner'" :class="role === 'owner' ? 'bg-white shadow-sm text-[#71212d]' : 'text-gray-500 hover:text-gray-700'" class="flex-1 py-3 text-sm font-bold rounded-lg transition-all">Je suis propriétaire</button>
+        <button type="button" @click="role = 'client'" :class="role === 'client' ? 'bg-white shadow-sm text-primary-600' : 'text-gray-500 hover:text-gray-700'" class="flex-1 py-3 text-sm font-bold rounded-lg transition-all">Je suis client</button>
+        <button type="button" @click="role = 'owner'" :class="role === 'owner' ? 'bg-white shadow-sm text-primary-600' : 'text-gray-500 hover:text-gray-700'" class="flex-1 py-3 text-sm font-bold rounded-lg transition-all">Je suis propriétaire</button>
       </div>
 
       <form method="post" action="{% url 'accounts:register' %}" class="space-y-5 max-w-lg mx-auto">
@@ -73,7 +73,7 @@
             {% if form.phone.errors %}<p class="text-xs text-rose-500 mt-1">{{ form.phone.errors.0 }}</p>{% endif %}
           </div>
           <div x-show="role === 'owner'" x-transition>
-            <label class="block text-xs font-bold text-[#71212d] mb-1">WhatsApp (Obligatoire) *</label>
+            <label class="block text-xs font-bold text-primary-600 mb-1">WhatsApp (Obligatoire) *</label>
             {{ form.whatsapp_number }}
             {% if form.whatsapp_number.errors %}<p class="text-xs text-rose-500 mt-1">{{ form.whatsapp_number.errors.0 }}</p>{% endif %}
           </div>
@@ -93,7 +93,7 @@
         </div>
 
         <div class="pt-4">
-          <button type="submit" class="w-full flex justify-center items-center py-4 px-4 border border-transparent rounded-xl shadow-md text-sm font-bold text-white bg-[#71212d] hover:bg-[#5a1a24] transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#71212d]">
+          <button type="submit" class="w-full flex justify-center items-center py-4 px-4 border border-transparent rounded-xl shadow-md text-sm font-bold text-white bg-primary-600 hover:bg-primary-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-600">
             Créer mon compte
           </button>
         </div>
@@ -101,7 +101,7 @@
         <div class="text-center mt-6">
           <p class="text-sm text-gray-600">
             Vous avez déjà un compte ?
-            <a href="{% url 'accounts:login' %}" class="font-bold text-[#71212d] hover:underline">Connectez-vous</a>
+            <a href="{% url 'accounts:login' %}" class="font-bold text-primary-600 hover:underline">Connectez-vous</a>
           </p>
         </div>
       </form>

@@ -1,24 +1,39 @@
+# Modèles pour la gestion des propriétés immobilières dans DOMIORA
+# Ce fichier définit la structure complète pour les annonces, images, documents et fonctionnalités associées
+
 from django.db import models
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.text import slugify
 from django.conf import settings
 
+from properties.video.storage import video_storage
+
 
 class Amenity(models.Model):
-    name = models.CharField(max_length=80, unique=True)
-    icon = models.CharField(max_length=40, blank=True, help_text="Nom d'icône Heroicons (ex: wifi, fire, sparkles)")
+    """
+    Modèle représentant les équipements et services disponibles sur une propriété.
+    Exemples : WiFi, piscine, parking, climatisation, etc.
+    """
+    name = models.CharField(max_length=80, unique=True)  # Nom unique de l'équipement.
+    icon = models.CharField(max_length=40, blank=True, help_text="Nom d'icône Heroicons (ex: wifi, fire, sparkles)")  # Icône utilisée dans les templates.
 
     class Meta:
-        verbose_name_plural = "Amenities"
-        ordering = ["name"]
+        verbose_name_plural = "Amenities"  # Nom pluriel pour l'interface d'administration.
+        ordering = ["name"]  # Tri alphabétique.
 
     def __str__(self):
         return self.name
 
 
 class Property(models.Model):
+    """
+    Modèle principal représentant une propriété immobilière.
+    Il contient les informations de base, les caractéristiques, la localisation,
+    les données de publication et de validation de l'annonce.
+    """
     class PropertyType(models.TextChoices):
+        """Types de propriétés disponibles"""
         APPARTEMENT = "appartement", "Appartement"
         VILLA = "villa", "Villa"
         STUDIO = "studio", "Studio"
@@ -38,63 +53,95 @@ class Property(models.Model):
         CHATEAU = "chateau", "Château"
 
     class TransactionType(models.TextChoices):
+        """Types de transactions possibles"""
         VENTE = "vente", "À vendre"
         LOCATION = "location", "À louer"
 
     class Status(models.TextChoices):
+        """Statuts de disponibilité de la propriété"""
         DISPONIBLE = "disponible", "Disponible"
         VENDU = "vendu", "Vendu"
         LOUE = "loue", "Loué"
         BROUILLON = "brouillon", "Brouillon"
 
-    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="properties")
-    title = models.CharField(max_length=200)
-    slug = models.SlugField(max_length=220, unique=True, blank=True)
-    description = models.TextField(blank=True)
-    property_type = models.CharField(max_length=30, choices=PropertyType.choices, default=PropertyType.APPARTEMENT)
-    transaction_type = models.CharField(max_length=10, choices=TransactionType.choices, default=TransactionType.VENTE)
-    price = models.DecimalField(max_digits=14, decimal_places=2)
-    currency = models.CharField(max_length=5, default="USD")
-    country = models.CharField(max_length=80, default="US")
-    city = models.CharField(max_length=120)
-    neighborhood = models.CharField(max_length=120, blank=True)
-    address = models.CharField(max_length=255, blank=True)
-    latitude = models.DecimalField(max_digits=10, decimal_places=6, null=True, blank=True)
-    longitude = models.DecimalField(max_digits=10, decimal_places=6, null=True, blank=True)
-    bedrooms = models.PositiveSmallIntegerField(default=0, verbose_name="Chambres")
-    bathrooms = models.PositiveSmallIntegerField(default=0, verbose_name="Salles de bain")
-    surface_area = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="m²")
-    floors = models.PositiveSmallIntegerField(default=1)
-    year_built = models.PositiveSmallIntegerField(null=True, blank=True)
-    status = models.CharField(max_length=12, choices=Status.choices, default=Status.DISPONIBLE)
-    is_featured = models.BooleanField(default=False)
-    is_exclusive = models.BooleanField(default=False, help_text="Mandat exclusif DOMIORA")
-    is_published = models.BooleanField(default=False)
+    # Relation avec le propriétaire
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="properties")  # Propriétaire du bien
     
+    # Informations de base
+    title = models.CharField(max_length=200)  # Titre de l'annonce
+    slug = models.SlugField(max_length=220, unique=True, blank=True)  # URL slug unique
+    description = models.TextField(blank=True)  # Description détaillée
+    
+    # Type et transaction
+    property_type = models.CharField(max_length=30, choices=PropertyType.choices, default=PropertyType.APPARTEMENT)  # Type de bien
+    transaction_type = models.CharField(max_length=10, choices=TransactionType.choices, default=TransactionType.VENTE)  # Type de transaction
+    
+    # Prix et devise
+    price = models.DecimalField(max_digits=14, decimal_places=2)  # Prix du bien
+    currency = models.CharField(max_length=5, default="USD")  # Devise
+    
+    # Localisation
+    country = models.CharField(max_length=80, default="US")  # Pays
+    city = models.CharField(max_length=120)  # Ville
+    neighborhood = models.CharField(max_length=120, blank=True)  # Quartier
+    address = models.CharField(max_length=255, blank=True)  # Adresse complète
+    latitude = models.DecimalField(max_digits=10, decimal_places=6, null=True, blank=True)  # Coordonnée GPS latitude
+    longitude = models.DecimalField(max_digits=10, decimal_places=6, null=True, blank=True)  # Coordonnée GPS longitude
+    
+    # Caractéristiques
+    bedrooms = models.PositiveSmallIntegerField(default=0, verbose_name="Chambres")  # Nombre de chambres
+    bathrooms = models.PositiveSmallIntegerField(default=0, verbose_name="Salles de bain")  # Nombre de salles de bain
+    surface_area = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="m²")  # Surface en m²
+    floors = models.PositiveSmallIntegerField(default=1)  # Nombre d'étages
+    year_built = models.PositiveSmallIntegerField(null=True, blank=True)  # Année de construction
+    
+    # Statuts et flags
+    status = models.CharField(max_length=12, choices=Status.choices, default=Status.DISPONIBLE)  # Statut de disponibilité
+    is_featured = models.BooleanField(default=False)  # Bien en vedette
+    is_exclusive = models.BooleanField(default=False, help_text="Mandat exclusif DOMIORA")  # Mandat exclusif
+    is_published = models.BooleanField(default=False)  # Annonce publiée
+    
+    # Validation admin
     class ValidationStatus(models.TextChoices):
+        """Statuts de validation par l'administrateur"""
         PENDING = "pending", "En attente"
         APPROVED = "approved", "Validée"
         REJECTED = "rejected", "Refusée"
         
-    validation_status = models.CharField(max_length=20, choices=ValidationStatus.choices, default=ValidationStatus.PENDING)
-    is_validated = models.BooleanField(default=False, help_text="Annonce validée par un administrateur")
-    views_count = models.PositiveIntegerField(default=0)
+    validation_status = models.CharField(max_length=20, choices=ValidationStatus.choices, default=ValidationStatus.PENDING)  # Statut de validation
+    is_validated = models.BooleanField(default=False, help_text="Annonce validée par un administrateur")  # Validation admin
+    views_count = models.PositiveIntegerField(default=0)  # Compteur de vues
+    
+    # Visite virtuelle et vidéo
     class VideoStatus(models.TextChoices):
+        """Statuts de génération de la visite virtuelle (cf. properties/video/)."""
         PENDING = "pending", "En attente"
-        PROCESSING = "processing", "En cours de création"
+        PREPARING = "preparing", "Préparation"
+        GENERATING = "generating", "Génération en cours"
+        ASSEMBLING = "assembling", "Assemblage"
         DONE = "done", "Terminé"
-        FAILED = "failed", "Échoué"
-        
-    virtual_tour_video = models.FileField(upload_to="properties/generated_tours/", null=True, blank=True, help_text="Vidéo générée automatiquement à partir des images")
-    video_status = models.CharField(max_length=20, choices=VideoStatus.choices, default=VideoStatus.PENDING)
+        FAILED = "failed", "Erreur"
 
-    virtual_tour_url = models.URLField(blank=True, help_text="Lien d'une visite virtuelle (Matterport, vidéo 360°, YouTube...)")
-    uploaded_tour_video = models.FileField(upload_to="properties/uploaded_tours/", blank=True, null=True, verbose_name="Vidéo de visite filmée", help_text="Vidéo MP4 filmée par le propriétaire montrant la propriété")
-    stock_image_urls = models.JSONField(default=list, blank=True, help_text="Images de démonstration (URLs) utilisées tant qu'aucune photo n'est uploadée")
-    nearby_services = models.JSONField(default=list, blank=True, help_text="Services de quartier avec distances estimées")
-    amenities = models.ManyToManyField(Amenity, blank=True, related_name="properties")
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    # Stockage vidéo : Cloudinary (resource_type "video") si CLOUDINARY_URL est défini, sinon disque local.
+    virtual_tour_video = models.FileField(upload_to="properties/generated_tours/", storage=video_storage, null=True, blank=True, help_text="Vidéo générée automatiquement à partir des images")  # Vidéo générée automatiquement
+    video_status = models.CharField(max_length=20, choices=VideoStatus.choices, default=VideoStatus.PENDING)  # Statut de génération vidéo
+    video_progress = models.PositiveSmallIntegerField(default=0, help_text="Progression de la génération (0-100)")
+    video_error = models.CharField(max_length=255, blank=True, help_text="Message affiché au propriétaire en cas d'échec")
+    video_job_id = models.CharField(max_length=36, blank=True, help_text="Génération en cours : une tâche plus ancienne ne peut pas écraser le résultat")
+
+    virtual_tour_url = models.URLField(blank=True, help_text="Lien d'une visite virtuelle (Matterport, vidéo 360°, YouTube...)")  # Lien visite virtuelle externe
+    uploaded_tour_video = models.FileField(upload_to="properties/uploaded_tours/", storage=video_storage, blank=True, null=True, verbose_name="Vidéo de visite filmée", help_text="Vidéo MP4 filmée par le propriétaire montrant la propriété")  # Vidéo uploadée
+    
+    # Données JSON flexibles
+    stock_image_urls = models.JSONField(default=list, blank=True, help_text="Images de démonstration (URLs) utilisées tant qu'aucune photo n'est uploadée")  # Images de démonstration
+    nearby_services = models.JSONField(default=list, blank=True, help_text="Services de quartier avec distances estimées")  # Services de proximité
+    
+    # Relations
+    amenities = models.ManyToManyField(Amenity, blank=True, related_name="properties")  # Équipements disponibles
+    
+    # Horodatage
+    created_at = models.DateTimeField(auto_now_add=True)  # Date de création
+    updated_at = models.DateTimeField(auto_now=True)  # Date de dernière modification
 
     class Meta:
         verbose_name_plural = "Properties"
@@ -104,12 +151,17 @@ class Property(models.Model):
             models.Index(fields=["transaction_type", "property_type"]),
             models.Index(fields=["city"]),
             models.Index(fields=["-created_at"]),
+            models.Index(fields=["slug"]),
+            models.Index(fields=["owner", "-created_at"]),
+            models.Index(fields=["validation_status"]),
+            models.Index(fields=["price"]),
         ]
 
     def __str__(self):
         return self.title
 
     def save(self, *args, **kwargs):
+        """Génère un slug unique et vérifie s'il faut notifier les alertes de recherche."""
         if not self.slug:
             base_slug = slugify(self.title)[:200]
             slug = base_slug
@@ -122,6 +174,7 @@ class Property(models.Model):
         self._notify_matching_search_alerts()
 
     def _matches_search_alert(self, alert):
+        """Vérifie si une propriété correspond à une alerte sauvegardée par un utilisateur."""
         if not alert.is_active:
             return False
         if alert.city and self.city.lower() != alert.city.lower():
@@ -139,6 +192,7 @@ class Property(models.Model):
         return True
 
     def _notify_matching_search_alerts(self):
+        """Envoie une notification aux utilisateurs dont l'alerte correspond à cette propriété."""
         if not (self.is_published and self.is_validated):
             return
         if not self.city:
@@ -168,11 +222,12 @@ class Property(models.Model):
 
     @property
     def primary_image(self):
+        """Retourne l'image principale de la propriété, ou une image par défaut si aucune n'existe."""
         gallery = self.gallery()
         return gallery[0] if gallery else "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=800"
 
     def gallery(self):
-        """Returns the list of image URLs to display: real uploads first, else demo stock photos."""
+        """Retourne la liste des URLs d'images à afficher : uploads réels en priorité, sinon images de démonstration."""
         uploaded = [img.image.url for img in self.images.all()]
         if uploaded:
             return uploaded
@@ -180,12 +235,19 @@ class Property(models.Model):
 
     @property
     def is_new(self):
+        """Indique si la propriété est récente (ajoutée dans les 10 derniers jours)."""
         from django.utils import timezone
         from datetime import timedelta
         return self.created_at >= timezone.now() - timedelta(days=10)
 
     @property
+    def is_promo(self):
+        """Indique si la propriété est mise en avant comme annonce promo."""
+        return self.is_featured
+
+    @property
     def badge_label(self):
+        """Retourne le libellé affiché pour la badge de statut de bien."""
         if self.status == self.Status.VENDU:
             return "VENDU"
         if self.status == self.Status.LOUE:
@@ -196,6 +258,7 @@ class Property(models.Model):
 
     @property
     def price_display(self):
+        """Formate le prix pour l'affichage utilisateur dans l'interface."""
         suffix = "/mois" if self.transaction_type == self.TransactionType.LOCATION else ""
         return f"{self.price:,.0f} FCFA{suffix}".replace(",", " ")
 
@@ -209,7 +272,9 @@ class Property(models.Model):
             return ""
         if self.owner.is_verified_owner:
             return "✅ Propriétaire vérifié"
-        if self.owner.verification_status == self.owner.VerificationStatus.PENDING:
+        if self.owner.verification_status in [self.owner.VerificationStatus.PENDING_DOCUMENTS, 
+                                            self.owner.VerificationStatus.PENDING_FIELD_VISIT,
+                                            self.owner.VerificationStatus.FIELD_VISIT_COMPLETED]:
             return "⚪ Vérification en cours"
         return ""
 
@@ -225,6 +290,8 @@ class Property(models.Model):
     @property
     def favorites_count(self):
         """Count of favorites for this property"""
+        if hasattr(self, '_fav_count'):
+            return self._fav_count
         return self.favorited_by.count()
 
     @property
@@ -241,27 +308,27 @@ class Property(models.Model):
 
     @property
     def quality_score(self):
-        """Calculate property quality score (0-100)"""
+        """Calcule un score de qualité du bien sur 100, basé sur sa complétude et sa vérification."""
         score = 0
-        # Owner verification (20 points)
+        # Vérification du propriétaire : 20 points.
         if self.owner and self.owner.is_verified_owner:
             score += 20
-        # Property validation (20 points)
+        # Validation administrative : 20 points.
         if self.is_validated:
             score += 20
-        # Images (25 points)
+        # Photos : 25 points.
         if self.images.count() >= 5:
             score += 25
         elif self.images.count() >= 3:
             score += 15
         elif self.images.count() >= 1:
             score += 5
-        # Description (20 points)
+        # Description : 20 points.
         if len(self.description) > 200:
             score += 20
         elif len(self.description) > 100:
             score += 10
-        # Location (15 points)
+        # Localisation : 15 points.
         if self.latitude and self.longitude:
             score += 15
         elif self.city:
@@ -272,6 +339,7 @@ class Property(models.Model):
 
 
 class PropertyImage(models.Model):
+    """Image associée à une propriété dans la galerie publique."""
     property = models.ForeignKey(Property, on_delete=models.CASCADE, related_name="images")
     image = models.ImageField(upload_to="properties/%Y/%m/")
     is_primary = models.BooleanField(default=False)
@@ -282,8 +350,85 @@ class PropertyImage(models.Model):
 
     def __str__(self):
         return f"Image #{self.pk} - {self.property.title}"
+    
+    def save(self, *args, **kwargs):
+        """Convertit les images téléchargées au format WebP pour optimiser le stockage et le rendu."""
+        if self.image:
+            from PIL import Image
+            import io
+            from django.core.files.base import ContentFile
+            
+            # Read the image
+            img = Image.open(self.image)
+            
+            # Convert to RGB if necessary
+            if img.mode in ('RGBA', 'LA', 'P'):
+                # Create white background for transparency
+                background = Image.new('RGB', img.size, (255, 255, 255))
+                if img.mode == 'P':
+                    img = img.convert('RGBA')
+                background.paste(img, mask=img.split()[-1] if img.mode == 'RGBA' else None)
+                img = background
+            elif img.mode != 'RGB':
+                img = img.convert('RGB')
+            
+            # Save as WebP with good quality
+            webp_io = io.BytesIO()
+            img.save(webp_io, format='WebP', quality=85, method=6)
+            webp_io.seek(0)
+            
+            # Change extension to .webp
+            import os
+            base_name = os.path.basename(self.image.name)
+            webp_name = base_name.rsplit('.', 1)[0] + '.webp'
+            
+            # Replace the image with WebP version
+            self.image.save(webp_name, ContentFile(webp_io.read()), save=False)
+        
+        super().save(*args, **kwargs)
+
+
+class PropertyDocument(models.Model):
+    """Document joint lié à une propriété (titre, plan, diagnostic, certificat, etc.)."""
+    
+    class DocumentType(models.TextChoices):
+        TITRE_PROPRIETE = "titre_propriete", "Titre de propriété"
+        PLAN = "plan", "Plan/Schéma"
+        CERTIFICAT_CONSTRUCTION = "certificat_construction", "Certificat de construction"
+        FACTURE_SERVICES = "facture_services", "Factures services (eau, électricité)"
+        DIAGNOSTIQUE = "diagnostique", "Diagnostique/Inspection"
+        CONTRAT_LOCATION = "contrat_location", "Contrat de location"
+        AUTRE = "autre", "Autre document"
+    
+    related_property = models.ForeignKey(Property, on_delete=models.CASCADE, related_name="documents")
+    file = models.FileField(upload_to="properties/documents/%Y/%m/", help_text="PDF, JPG, PNG, DOC autorisés")
+    document_type = models.CharField(max_length=30, choices=DocumentType.choices, default=DocumentType.AUTRE)
+    title = models.CharField(max_length=200, help_text="Titre du document")
+    description = models.TextField(blank=True, help_text="Description optionnelle")
+    order = models.PositiveSmallIntegerField(default=0, help_text="Ordre d'affichage")
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    
+    class Meta:
+        ordering = ["order", "-uploaded_at"]
+        verbose_name_plural = "Property Documents"
+    
+    def __str__(self):
+        return f"{self.title} - {self.related_property.title}"
+    
+    @property
+    def file_extension(self):
+        """Retourne l'extension du document, en majuscules."""
+        return self.file.name.split('.')[-1].upper()
+
+    @property
+    def file_size_mb(self):
+        """Retourne la taille du fichier en mégaoctets."""
+        return round(self.file.size / (1024 * 1024), 2)
+
 
 class PropertyUnlock(models.Model):
+    """Enregistrement d'un accès débloqué pour un client sur une propriété donnée."""
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="unlocked_properties")
     property = models.ForeignKey(Property, on_delete=models.CASCADE, related_name="unlocks")
     unlocked_at = models.DateTimeField(auto_now_add=True)
@@ -296,7 +441,7 @@ class PropertyUnlock(models.Model):
 
 
 class PropertyView(models.Model):
-    """Track when a user views a property"""
+    """Enregistre une consultation d'une propriété par un utilisateur."""
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="viewed_properties")
     property = models.ForeignKey(Property, on_delete=models.CASCADE, related_name="property_views")
     viewed_at = models.DateTimeField(auto_now_add=True)
@@ -316,7 +461,7 @@ class PropertyView(models.Model):
 
 
 class PropertyComparison(models.Model):
-    """Track properties selected for comparison by a user"""
+    """Trace les biens sélectionnés pour une comparaison côté utilisateur."""
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="property_comparisons")
     property = models.ForeignKey(Property, on_delete=models.CASCADE, related_name="comparisons")
     added_at = models.DateTimeField(auto_now_add=True)
@@ -330,7 +475,7 @@ class PropertyComparison(models.Model):
 
 
 class SearchAlert(models.Model):
-    """User's saved search alerts"""
+    """Alerte de recherche sauvegardée par un utilisateur."""
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="search_alerts")
     name = models.CharField(max_length=100, help_text="Name for this alert (e.g., 'Villa à Lomé')")
     city = models.CharField(max_length=120, blank=True)

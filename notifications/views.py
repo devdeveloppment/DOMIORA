@@ -17,7 +17,16 @@ def mark_read(request, pk):
     notif.save(update_fields=["is_read"])
     # Redirect to dashboard if link is missing or invalid
     if notif.link:
-        return redirect(notif.link)
+        # Sync session dash_role based on the notification link target
+        # so the user lands in the correct dashboard context
+        link = notif.link
+        if "/dashboard/client/" in link:
+            request.session["dash_role"] = "client"
+        elif "/dashboard/proprietaire/" in link:
+            request.session["dash_role"] = "owner"
+        elif "/dashboard/admin-panel/" in link:
+            request.session["dash_role"] = "admin"
+        return redirect(link)
     return redirect("notifications:list")
 
 

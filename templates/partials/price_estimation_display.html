@@ -1,7 +1,7 @@
-<div x-data="priceEstimationDisplay()" x-init="loadEstimation()" class="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl p-6 border border-blue-100" x-cloak>
+<div x-data="priceEstimationDisplay()" x-init="loadEstimation()" class="bg-gradient-to-br from-primary-50 to-primary-100 rounded-2xl p-6 border border-primary-100" x-cloak>
   <div class="flex items-center justify-between mb-4">
     <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
-      <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
       </svg>
       Estimation de valeur
@@ -11,7 +11,7 @@
 
   <!-- Loading State -->
   <div x-show="loading" class="text-center py-8">
-    <div class="inline-block w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+    <div class="inline-block w-8 h-8 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin"></div>
     <p class="text-gray-500 mt-2">Analyse en cours...</p>
   </div>
 
@@ -70,7 +70,7 @@
       <!-- Price Comparison Bar -->
       <div class="mt-4">
         <div class="relative h-4 bg-gray-200 rounded-full overflow-hidden">
-          <div class="absolute left-0 top-0 h-full bg-blue-500 transition-all"
+          <div class="absolute left-0 top-0 h-full bg-primary-600 transition-all"
                :style="{ width: getListingPositionPercent(estimation) + '%' }">
           </div>
           <div class="absolute top-0 bottom-0 w-0.5 bg-gray-900"
@@ -215,9 +215,9 @@ function priceEstimationDisplay() {
     },
     
     getConfidenceClass(score) {
-      if (score >= 80) return 'bg-green-100 text-green-700';
-      if (score >= 60) return 'bg-yellow-100 text-yellow-700';
-      return 'bg-red-100 text-red-700';
+      if (score >= 80) return 'bg-accent-100 text-accent-800';
+      if (score >= 60) return 'bg-primary-100 text-primary-800';
+      return 'bg-gray-100 text-gray-800';
     },
     
     getConfidenceLabel(score) {
@@ -228,9 +228,9 @@ function priceEstimationDisplay() {
     
     getMarketPositionClass(position) {
       switch(position) {
-        case 'below_market': return 'text-green-600';
-        case 'above_market': return 'text-red-600';
-        default: return 'text-blue-600';
+        case 'below_market': return 'text-accent-700';
+        case 'above_market': return 'text-primary-700';
+        default: return 'text-primary-600';
       }
     },
     
@@ -259,8 +259,8 @@ function priceEstimationDisplay() {
     
     getTrendClass(trend) {
       switch(trend) {
-        case 'rising': return 'bg-green-100 text-green-700';
-        case 'falling': return 'bg-red-100 text-red-700';
+        case 'rising': return 'bg-accent-100 text-accent-800';
+        case 'falling': return 'bg-primary-100 text-primary-800';
         default: return 'bg-gray-100 text-gray-700';
       }
     },

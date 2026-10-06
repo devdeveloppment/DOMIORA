@@ -2,7 +2,7 @@
 {% block title %}{{ action }} une propriété - DOMIORA Admin{% endblock %}
 
 {% block dashboard_content %}
-<div class="max-w-4xl mx-auto pb-12">
+<div class="max-w-7xl mx-auto pb-12 w-full">
     <div class="flex items-center justify-between mb-8">
         <h1 class="text-2xl font-bold text-gray-900">{{ action }} une propriété</h1>
         <a href="{% url 'dashboard:admin_properties' %}" class="text-sm font-semibold text-gray-500 hover:text-gray-800">← Retour à la liste</a>
@@ -137,7 +137,7 @@
                     </label>
                     <label class="flex items-center gap-2 cursor-pointer">
                         {{ form.is_validated }}
-                        <span class="text-sm font-medium text-primary-600">Validée par l'admin</span>
+                        <span class="text-sm font-medium text-primary-700">Validée par l'admin</span>
                     </label>
                 </div>
             </div>

@@ -4,9 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{% block title %}Dashboard — {{ site_settings.site_name }}{% endblock %}</title>
+{% load static %}
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <script>
   tailwind.config = {
     darkMode: 'class',
@@ -16,90 +18,157 @@
         colors: {
           primary: {
             50: '#fdf3f4', 100: '#f9e3e7', 200: '#f2cbd3', 300: '#e7a5b3',
-            400: '#c24962', 500: '#8c263b', 600: '#71212d', 700: '#5a1a24',
-            800: '#43131b', 900: '#2d0c12', 950: '#170609'
+            400: '#c24962', 500: '#71212d', 600: '#5a1a24',
+            700: '#43131b', 800: '#371116', 900: '#2d0c12', 950: '#170609'
           },
-          ink: '#0f0a1f'
-        }
+          accent: {
+            50: '#fff8e6', 100: '#fff1cc', 200: '#ffe39a', 300: '#ffd568',
+            400: '#eec735', 500: '#d4af37', 600: '#b8860b', 700: '#9c6a09'
+          },
+          ink: '#0f172a'
+        },
+        boxShadow: {
+          card: '0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.06)',
+          glow: '0 0 0 1px rgba(113,33,45,.15), 0 8px 24px -4px rgba(113,33,45,.25)'
+        },
+        borderRadius: { DEFAULT: '0.75rem', lg: '1rem', xl: '1.5rem' }
       }
     }
   }
 </script>
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 <script src="https://unpkg.com/htmx.org@1.9.10" integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC" crossorigin="anonymous"></script>
-{% block extra_head %}{% endblock %}
+<link rel="stylesheet" href="{% static 'css/design-system.css' %}">
 <style>
   body { font-family: 'Inter', sans-serif; }
-  h1, h2, h3, .font-display { font-family: 'Montserrat', sans-serif; }
+  h1, h2, h3, h4, h5, h6, .font-display { font-family: 'Montserrat', sans-serif; }
   /* Custom scrollbar for a clean UI */
   ::-webkit-scrollbar { width: 6px; height: 6px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
   ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  [x-cloak] { display:none !important; }
+  
+  /* Dashboard animations */
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  @keyframes fadeInScale {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  
+  @keyframes slideInLeft {
+    from {
+      opacity: 0;
+      transform: translateX(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.7;
+    }
+  }
+  
+  .animate-fade-in-up {
+    animation: fadeInUp 0.5s ease-out forwards;
+  }
+  
+  .animate-fade-in-scale {
+    animation: fadeInScale 0.4s ease-out forwards;
+  }
+  
+  .animate-slide-in-left {
+    animation: slideInLeft 0.5s ease-out forwards;
+  }
+  
+  .animate-pulse {
+    animation: pulse 2s ease-in-out infinite;
+  }
+  
+  .stagger-1 { animation-delay: 0.1s; }
+  .stagger-2 { animation-delay: 0.2s; }
+  .stagger-3 { animation-delay: 0.3s; }
+  .stagger-4 { animation-delay: 0.4s; }
+  .stagger-5 { animation-delay: 0.5s; }
+  
+  /* Card hover effects */
+  .card-hover {
+    transition: all 0.3s ease;
+  }
+  .card-hover:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.15);
+  }
+  
+  /* Smooth transitions for all interactive elements */
+  a, button, input, select, textarea {
+    transition: all 0.2s ease;
+  }
 </style>
 </head>
-<body class="text-ink h-screen bg-gray-50 flex overflow-hidden font-sans antialiased" x-data="{ sidebarOpen: false }">
+<body class="text-gray-900 bg-gray-50 h-screen w-full flex overflow-hidden font-sans antialiased" x-data="{ sidebarOpen: false }">
   <!-- Mobile Header & Overlay (AlpineJS) -->
-  <div class="md:hidden fixed top-0 inset-x-0 h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 z-40">
+  <div class="md:hidden fixed top-0 inset-x-0 h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 z-50">
     <div class="flex items-center gap-2">
-      <div class="w-8 h-8 rounded-lg bg-primary-600 flex items-center justify-center text-white font-display font-bold">D</div>
+      <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center text-white font-display font-bold">D</div>
+      <span class="font-display font-extrabold text-xl text-primary-600">{{ site_settings.site_name|default:"DOMIORA" }}</span>
     </div>
-    <button @click="sidebarOpen = true" class="text-gray-500 hover:text-gray-900 p-2">
+    <button @click="sidebarOpen = true" class="text-gray-500 hover:text-primary-600 p-2">
       <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
     </button>
   </div>
-  
+
   <!-- Mobile Sidebar Backdrop -->
   <div x-show="sidebarOpen" x-transition.opacity class="fixed inset-0 z-40 bg-gray-900/50 backdrop-blur-sm md:hidden" @click="sidebarOpen = false" x-cloak></div>
-  
+
   <!-- Mobile Sidebar Content -->
-  <aside x-show="sidebarOpen" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="-translate-x-full" x-transition:enter-end="translate-x-0" x-transition:leave="transition ease-in duration-300" x-transition:leave-start="translate-x-0" x-transition:leave-end="-translate-x-full" class="fixed inset-y-0 left-0 z-50 w-64 bg-[#071023] shadow-2xl flex flex-col md:hidden text-white" x-cloak>
-    <div class="h-16 flex items-center justify-between px-6 border-b border-white/10">
-      <span class="font-display font-extrabold text-xl text-white">{{ site_settings.site_name|default:"DOMIORA" }}</span>
-      <button @click="sidebarOpen = false" class="text-white/50 hover:text-white">
+  <aside x-show="sidebarOpen" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="-translate-x-full" x-transition:enter-end="translate-x-0" x-transition:leave="transition ease-in duration-300" x-transition:leave-start="translate-x-0" x-transition:leave-end="-translate-x-full" class="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-2xl flex flex-col md:hidden border-r border-gray-100 text-gray-900" x-cloak>
+    <div class="h-16 flex items-center justify-between px-6 border-b border-gray-100">
+      <span class="font-display font-extrabold text-xl text-primary-600">{{ site_settings.site_name|default:"DOMIORA" }}</span>
+      <button @click="sidebarOpen = false" class="text-gray-400 hover:text-gray-900">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
       </button>
     </div>
     <div class="flex-1 overflow-y-auto px-4 py-6 space-y-1">
       {% include "partials/dashboard_nav_links.html" %}
     </div>
-  </aside>
-
-  <!-- Desktop Sidebar -->
-  <aside class="hidden md:flex flex-col w-64 shrink-0 border-r border-white/5 bg-[#071023] text-white z-20">
-    <!-- Brand / Header -->
-    <div class="h-16 flex items-center px-6 border-b border-white/5 shrink-0">
-      <div class="flex items-center gap-2">
-        {% if site_settings.logo %}
-        <img src="{{ site_settings.logo.url }}" alt="Logo" class="h-8 w-auto object-contain" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-        <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center text-white font-display font-bold text-lg hidden">D</div>
-        <span class="font-display font-extrabold text-xl tracking-tight text-white">{{ site_settings.site_name|default:"DOMIORA" }}</span>
-        {% else %}
-        <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center text-white font-display font-bold text-lg">D</div>
-        <span class="font-display font-extrabold text-xl tracking-tight text-white">{{ site_settings.site_name|default:"DOMIORA" }}</span>
-        {% endif %}
-      </div>
-    </div>
-
-    <!-- Navigation Area -->
-    <div class="flex-1 overflow-y-auto px-4 py-6 space-y-1 custom-nav">
-      {% include "partials/dashboard_nav_links.html" %}
-    </div>
-
     <!-- User Area (Bottom) -->
-    <div class="p-4 border-t border-white/5">
-      <div class="flex items-center gap-3 px-2 py-2 mb-2 rounded-xl hover:bg-white/5 transition cursor-pointer">
-        <img src="{{ user.get_avatar_url }}" class="w-10 h-10 rounded-full object-cover shadow-sm bg-gray-800">
+    <div class="p-4 border-t border-gray-100">
+      <div class="flex items-center gap-3 px-2 py-2 mb-2 rounded-xl hover:bg-gray-50 transition cursor-pointer">
+        <img src="{{ user.get_avatar_url }}" class="w-10 h-10 rounded-full object-cover shadow-sm bg-gray-100">
         <div class="min-w-0 flex-1">
-          <p class="font-semibold text-sm text-white truncate">{{ user.get_full_name|default:user.username }}</p>
-          <p class="text-[10px] uppercase text-white/50 tracking-wider">
+          <p class="font-semibold text-sm text-gray-900 truncate">{{ user.get_full_name|default:user.username }}</p>
+          <p class="text-[10px] uppercase text-gray-400 tracking-wider">
             {% if dash_role == 'admin' %}Administrateur{% elif dash_role == 'owner' %}Propriétaire{% else %}Client{% endif %}
           </p>
         </div>
       </div>
       <form method="post" action="{% url 'accounts:logout' %}">
         {% csrf_token %}
-        <button class="w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-white/60 hover:bg-white/5 hover:text-rose-400 transition">
+        <button class="w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-rose-500 transition">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
           Déconnexion
         </button>
@@ -107,26 +176,77 @@
     </div>
   </aside>
 
+  <!-- Desktop Sidebar -->
+  <aside class="hidden md:flex flex-col w-64 shrink-0 z-20 h-screen">
+    {% if dash_role == 'client' %}
+      <div class="h-full bg-gradient-to-b from-blue-600 to-blue-800 text-white flex flex-col">
+    {% elif dash_role == 'owner' %}
+      <div class="h-full bg-gradient-to-b from-emerald-600 to-emerald-800 text-white flex flex-col">
+    {% elif dash_role == 'admin' %}
+      <div class="h-full bg-gradient-to-b from-purple-600 to-purple-800 text-white flex flex-col">
+    {% else %}
+      <div class="h-full bg-white text-gray-900 flex flex-col border-r border-gray-100">
+    {% endif %}
+      <!-- Brand / Header -->
+      <div class="h-16 flex items-center px-6 border-b border-white/20 shrink-0">
+        <div class="flex items-center gap-2">
+          {% if site_settings.logo %}
+          <img src="{{ site_settings.logo_url }}" alt="Logo" class="h-10 w-auto object-contain" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
+          ><span class="font-display font-extrabold text-xl tracking-tight text-white hidden">{{ site_settings.site_name|default:"DOMIORA" }}</span>
+          {% else %}
+          <div class="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center text-white font-display font-bold text-lg">D</div>
+          <span class="font-display font-extrabold text-xl tracking-tight text-white">{{ site_settings.site_name|default:"DOMIORA" }}</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Navigation Area -->
+      <div class="flex-1 overflow-y-auto px-4 py-6 space-y-1 custom-nav">
+        {% include "partials/dashboard_nav_links.html" %}
+      </div>
+      
+      <!-- User Info Footer -->
+      <div class="p-4 border-t border-white/20 shrink-0">
+        <div class="flex items-center gap-3 px-2 py-2">
+          <img src="{{ user.get_avatar_url }}" class="w-10 h-10 rounded-full object-cover ring-2 ring-white/30">
+          <div class="min-w-0">
+            <p class="font-semibold text-sm truncate text-white">{{ user.get_full_name|default:user.username }}</p>
+            <p class="text-xs text-white/70">
+              {% if dash_role == 'admin' %}Administrateur{% elif dash_role == 'owner' %}Propriétaire{% else %}Client{% endif %}
+            </p>
+          </div>
+        </div>
+        <form method="post" action="{% url 'accounts:logout' %}" class="mt-3">
+          {% csrf_token %}
+          <button class="w-full text-left flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-white/80 hover:bg-white/10 transition">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+            Déconnexion
+          </button>
+        </form>
+      </div>
+    </div>
+  </aside>
+
   <!-- Main Content -->
-  <main class="flex-1 overflow-y-auto bg-gray-50 relative pt-16 md:pt-0">
-    <div class="w-full p-4 sm:p-6 lg:p-8">
+  <main class="flex-1 min-h-0 overflow-y-auto bg-gray-50 relative pt-16 md:pt-0">
+    <div class="w-full p-4 sm:p-6 lg:p-8 pb-24 lg:pb-24">
       {% if messages %}
         <div class="mb-8 space-y-2">
           {% for message in messages %}
-            <div class="rounded-xl px-4 py-3 text-sm font-medium {% if message.tags == 'success' %}bg-emerald-50 text-emerald-800 border border-emerald-200{% elif message.tags == 'error' %}bg-rose-50 text-rose-800 border border-rose-200{% else %}bg-blue-50 text-blue-800 border border-blue-200{% endif %}">
+            <div class="rounded-xl px-4 py-3 text-sm font-medium {% if message.tags == 'success' %}bg-emerald-50 text-emerald-800 border border-emerald-200{% elif message.tags == 'error' %}bg-rose-50 text-rose-800 border border-rose-200{% else %}bg-primary-50 text-primary-800 border border-primary-200{% endif %}">
               {{ message }}
             </div>
           {% endfor %}
         </div>
       {% endif %}
-      
+
       <!-- Content Block -->
       <div class="w-full">
         {% block dashboard_content %}{% endblock %}
       </div>
     </div>
   </main>
-  
+
   {% block extra_scripts %}{% endblock %}
   {% include "partials/ai_assistant.html" %}
 </body>

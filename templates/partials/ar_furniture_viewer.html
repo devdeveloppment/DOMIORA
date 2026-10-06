@@ -2,8 +2,8 @@
   <!-- AR Status -->
   <div class="absolute top-4 left-4 z-20">
     <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold"
-          :class="arStatus === 'active' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'">
-      <span class="w-2 h-2 rounded-full" :class="arStatus === 'active' ? 'bg-green-400 animate-pulse' : 'bg-yellow-400'"></span>
+          :class="arStatus === 'active' ? 'bg-accent-500/20 text-accent-700' : 'bg-primary-500/20 text-primary-700'">
+      <span class="w-2 h-2 rounded-full" :class="arStatus === 'active' ? 'bg-accent-500 animate-pulse' : 'bg-primary-500'"></span>
       <span x-text="arStatus === 'active' ? 'AR Actif' : 'Initialisation...'"></span>
     </span>
   </div>
@@ -28,8 +28,8 @@
       <div class="grid grid-cols-4 gap-2 max-h-40 overflow-y-auto">
         <template x-for="furniture in furnitureList" :key="furniture.id">
           <button @click="selectFurniture(furniture)"
-                  class="relative rounded-lg overflow-hidden transition-all hover:ring-2 hover:ring-blue-500"
-                  :class="selectedFurniture?.id === furniture.id ? 'ring-2 ring-blue-500' : ''">
+                  class="relative rounded-lg overflow-hidden transition-all hover:ring-2 hover:ring-primary-500"
+                  :class="selectedFurniture?.id === furniture.id ? 'ring-2 ring-primary-500' : ''">
             <img :src="furniture.thumbnail" :alt="furniture.name" class="w-full h-16 object-cover">
             <div class="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs p-1 truncate">
               <span x-text="furniture.name"></span>
@@ -99,7 +99,7 @@
     <!-- Error State -->
     <div x-show="arStatus === 'error'" class="absolute inset-0 flex items-center justify-center bg-gray-900/90">
       <div class="text-center text-white p-6">
-        <svg class="w-16 h-16 mx-auto mb-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="w-16 h-16 mx-auto mb-4 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
         </svg>
         <p class="text-lg font-semibold mb-2">Erreur d'accès caméra</p>

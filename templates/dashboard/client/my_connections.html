@@ -7,7 +7,7 @@
     <h1 class="text-2xl font-extrabold font-display">Mes mises en relation</h1>
     <p class="text-sm text-gray-400 mt-1">Propriétaires avec lesquels vous avez effectué une mise en relation</p>
   </div>
-  <a href="{% url 'properties:list' %}" class="text-sm font-semibold text-[#71212d] hover:underline">Trouver un bien →</a>
+  <a href="{% url 'properties:list' %}" class="text-sm font-semibold text-primary-600 hover:underline">Trouver un bien →</a>
 </div>
 
 {% if page_obj.object_list %}
@@ -27,11 +27,11 @@
       {% endif %}
       <!-- Active connection badge -->
       <span class="absolute top-3 left-3 bg-emerald-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
-        🔓 Accès actif
+        <i class="fa-solid fa-lock-open"></i> Accès actif
       </span>
       {% if has_unread %}
-      <span class="absolute top-3 right-3 bg-[#71212d] text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
-        📬 Nouveau message
+      <span class="absolute top-3 right-3 bg-primary-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
+        <i class="fa-solid fa-envelope-open"></i> Nouveau message
       </span>
       {% endif %}
     </div>
@@ -50,7 +50,7 @@
         <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Propriétaire</p>
         <p class="text-sm font-semibold text-gray-800">{{ p.owner.get_full_name|default:p.owner.username }}</p>
         {% if p.owner.phone %}
-        <p class="text-xs text-gray-600">📞 {{ p.owner.phone }}</p>
+        <p class="text-xs text-gray-600"><i class="fa-solid fa-phone"></i> {{ p.owner.phone }}</p>
         {% endif %}
         {% if p.owner.whatsapp_number %}
         <p class="text-xs text-gray-600">WhatsApp : {{ p.owner.whatsapp_number }}</p>
@@ -62,18 +62,18 @@
 
       <!-- Action buttons -->
       <div class="flex gap-2">
-        <a href="{{ p.get_absolute_url }}" class="flex-1 text-center bg-[#71212d] hover:bg-[#5a1a24] text-white text-xs font-bold rounded-lg py-2 transition">
+        <a href="{{ p.get_absolute_url }}" class="flex-1 text-center bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold rounded-lg py-2 transition">
           Voir le bien
         </a>
         {% if conversation %}
         <a href="{% url 'dashboard:client_conversation_detail' conversation.pk %}"
            class="flex-1 text-center border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-bold rounded-lg py-2 transition">
-          💬 Messagerie
+          <i class="fa-solid fa-comment"></i> Messagerie
         </a>
         {% elif p.owner %}
         <a href="{% url 'messaging:start_conversation' p.owner.pk %}?property={{ p.pk }}"
            class="flex-1 text-center border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-bold rounded-lg py-2 transition">
-          💬 Contacter
+          <i class="fa-solid fa-comment"></i> Contacter
         </a>
         {% endif %}
       </div>
@@ -102,7 +102,7 @@
   </div>
   <h2 class="text-xl font-extrabold text-gray-700 mb-2">Aucune mise en relation</h2>
   <p class="text-gray-400 text-sm mb-6 max-w-sm mx-auto">Parcourez nos annonces et effectuez les frais de mise en relation (500 FCFA) pour contacter un propriétaire.</p>
-  <a href="{% url 'properties:list' %}" class="inline-flex items-center gap-2 bg-[#71212d] text-white font-bold px-6 py-3 rounded-xl text-sm hover:bg-[#5a1a24] transition shadow-md">
+  <a href="{% url 'properties:list' %}" class="inline-flex items-center gap-2 bg-primary-600 text-white font-bold px-6 py-3 rounded-xl text-sm hover:bg-primary-700 transition shadow-md">
     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
     Parcourir les annonces
   </a>

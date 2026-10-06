@@ -8,10 +8,14 @@ dj-database-url>=2.2
 whitenoise>=6.7
 gunicorn>=22.0
 requests>=2.31
+mistralai>=2.10.0,<3.0
 
 cloudinary>=1.36.0
 django-cloudinary-storage>=0.3.0
 celery==5.4.0
 billiard==4.2.0
 redis==5.0.1
-pywin32
+# Windows uniquement (dev local) : ne doit pas bloquer l'installation sur Linux/Render
+pywin32; sys_platform == "win32"
+# Binaire FFmpeg embarqué pour la génération des visites virtuelles (Render n'installe pas ffmpeg)
+imageio-ffmpeg>=0.5

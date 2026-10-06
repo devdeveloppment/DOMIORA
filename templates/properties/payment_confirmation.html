@@ -20,7 +20,7 @@
       {% if request.user.is_authenticated and request.user.role == 'client' %}
       <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 mb-6 max-w-lg mx-auto">
         <p class="text-emerald-800 text-sm font-medium">
-          🎉 <strong>Votre espace client a été créé avec succès !</strong><br>
+          <i class="fa-solid fa-champagne-glasses"></i> <strong>Votre espace client a été créé avec succès !</strong><br>
           Vous pouvez maintenant accéder à vos demandes de visite, vos conversations, vos notifications et vos mises en relation.
         </p>
       </div>
@@ -32,7 +32,7 @@
         <div class="flex items-center gap-5 mb-6">
           <img src="{{ owner.get_avatar_url }}" class="w-20 h-20 rounded-full object-cover shadow-md border-2 border-white" alt="{{ owner.get_full_name|default:owner.username }}">
           <div>
-            <p class="text-xs font-bold text-[#71212d] uppercase tracking-widest mb-1">Propriétaire</p>
+            <p class="text-xs font-bold text-primary-600 uppercase tracking-widest mb-1">Propriétaire</p>
             <h2 class="text-2xl font-bold text-gray-900">{{ owner.get_full_name|default:owner.username }}</h2>
           </div>
         </div>
@@ -60,7 +60,7 @@
 
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center shrink-0">
-              <svg class="w-5 h-5 text-[#71212d]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+              <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
             </div>
             <div>
               <p class="text-xs text-gray-500 font-bold uppercase">Adresse du bien</p>
@@ -86,7 +86,7 @@
             {% csrf_token %}
             <input type="hidden" name="property_id" value="{{ property.pk }}">
             <input type="hidden" name="message" value="Bonjour, suite à mon paiement sur DOMIORA pour votre bien « {{ property.title }} », je vous contacte.">
-            <button type="submit" class="w-full bg-[#71212d] hover:bg-[#5a1a24] text-white font-bold rounded-xl px-4 py-3 flex items-center justify-center gap-2 transition shadow-md">
+            <button type="submit" class="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-xl px-4 py-3 flex items-center justify-center gap-2 transition shadow-md">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
               Envoyer un message interne
             </button>
@@ -102,10 +102,10 @@
       </div>
       
       <div class="mt-8">
-        <a href="{% url 'dashboard:client_messaging' %}" class="bg-[#71212d] hover:bg-[#5a1a24] text-white font-bold rounded-xl px-6 py-3 transition shadow-md mr-3">
+        <a href="{% url 'dashboard:client_messaging' %}" class="bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-xl px-6 py-3 transition shadow-md mr-3">
           Accéder à mon espace client
         </a>
-        <a href="{{ property.get_absolute_url }}" class="text-[#71212d] font-bold hover:underline">Retour à la page du bien</a>
+        <a href="{{ property.get_absolute_url }}" class="text-primary-600 font-bold hover:underline">Retour à la page du bien</a>
       </div>
     </div>
   </div>

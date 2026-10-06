@@ -24,7 +24,7 @@ from django.conf import settings
 
 from properties.models import Property, PropertyUnlock, PropertyView
 from rental_requests.models import PropertyRequest
-from properties.cinetpay import verify_cinetpay_signature
+from properties.paydunya import verify_paydunya_signature
 from notifications.models import Notification
 
 User = get_user_model()

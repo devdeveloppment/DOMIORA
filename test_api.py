@@ -1,40 +1,35 @@
-import requests
+from mistralai.client import Mistral
+import os
+import django
 
-API_KEY = "your_gemini_api_key_here"
-GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent"
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
+django.setup()
 
-print("=== Testing Gemini API ===")
-print(f"API Key: {API_KEY[:20]}...")
-print(f"Endpoint: {GEMINI_API_URL}")
+from django.conf import settings
+
+API_KEY = settings.MISTRAL_API_KEY
+MODEL = settings.MISTRAL_MODEL
+
+print("=== Testing Mistral API ===")
+print(f"API Key configured: {bool(API_KEY)}")
+print(f"Model: {MODEL}")
+
+if not API_KEY:
+    raise SystemExit("MISTRAL_API_KEY is not configured")
 
 try:
-    response = requests.post(
-        f"{GEMINI_API_URL}?key={API_KEY}",
-        headers={"Content-Type": "application/json"},
-        json={
-            "contents": [{"role": "user", "parts": [{"text": "Bonjour, réponds simplement 'OK'"}]}],
-            "generationConfig": {
-                "temperature": 0.7,
-                "maxOutputTokens": 50,
-            }
-        },
-        timeout=15,
+    client = Mistral(api_key=API_KEY)
+    response = client.chat.complete(
+        model=MODEL,
+        messages=[{"role": "user", "content": "Bonjour, réponds simplement 'OK'"}],
+        temperature=0.7,
+        max_tokens=50,
+        timeout_ms=15000,
     )
-    
-    print(f"\nStatus Code: {response.status_code}")
-    print(f"Response Headers: {dict(response.headers)}")
-    print(f"\nResponse Body:\n{response.text}")
-    
-    if response.status_code == 200:
-        data = response.json()
-        if "candidates" in data and len(data["candidates"]) > 0:
-            reply = data["candidates"][0]["content"]["parts"][0]["text"].strip()
-            print(f"\n✅ Success! Reply: {reply}")
-        else:
-            print(f"\n❌ No candidates in response")
-    else:
-        print(f"\n❌ API Error: {response.status_code}")
+
+    reply = response.choices[0].message.content.strip()
+    print(f"\nSuccess! Reply: {reply}")
         
 except Exception as e:
-    print(f"\n❌ Exception: {str(e)}")
+    print(f"\nException: {e}")
     print(f"Error type: {type(e).__name__}")

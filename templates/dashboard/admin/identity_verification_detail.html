@@ -16,6 +16,21 @@
         <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
         En attente
       </span>
+      {% elif verification.status == 'documents_under_review' %}
+      <span class="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full bg-primary-100 text-primary-700">
+        <span class="w-1.5 h-1.5 rounded-full bg-primary-500"></span>
+        Documents en cours
+      </span>
+      {% elif verification.status == 'field_visit_scheduled' %}
+      <span class="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full bg-blue-100 text-blue-700">
+        <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+        Visite programmée
+      </span>
+      {% elif verification.status == 'field_visit_completed' %}
+      <span class="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full bg-purple-100 text-purple-700">
+        <span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
+        Visite effectuée
+      </span>
       {% elif verification.status == 'approved' %}
       <span class="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-700">
         <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
@@ -27,144 +42,251 @@
         Refusé
       </span>
       {% elif verification.status == 'resubmission_requested' %}
-      <span class="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full bg-blue-100 text-blue-700">
-        <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+      <span class="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full bg-primary-100 text-primary-700">
+        <span class="w-1.5 h-1.5 rounded-full bg-primary-500"></span>
         Nouvelle soumission demandée
       </span>
       {% endif %}
     </div>
   </div>
 
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    <!-- Left Column: Documents -->
-    <div class="lg:col-span-2 space-y-6">
-      <!-- Recto -->
-      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-        <h2 class="text-lg font-bold text-gray-900 mb-4">Recto de la pièce d'identité</h2>
-        <div class="bg-gray-50 rounded-xl p-4 flex items-center justify-center">
-          <img src="{{ verification.id_document_front.url }}" class="max-h-96 rounded-lg shadow-sm" alt="Recto">
+  <!-- Documents: Recto & Verso side by side -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-6">
+    <!-- Recto -->
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-5">
+      <h2 class="text-sm sm:text-base font-bold text-gray-900 mb-3">Recto de la pièce d'identité</h2>
+      <div class="bg-gray-50 rounded-xl p-3 flex items-center justify-center">
+        <a href="{{ verification.id_document_front.url }}" target="_blank" title="Ouvrir en plein écran">
+          <img src="{{ verification.id_document_front.url }}" class="max-h-48 sm:max-h-72 w-auto rounded-lg shadow-sm hover:shadow-md transition cursor-zoom-in" alt="Recto">
+        </a>
+      </div>
+    </div>
+
+    <!-- Verso -->
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-5">
+      <h2 class="text-sm sm:text-base font-bold text-gray-900 mb-3">Verso de la pièce d'identité</h2>
+      <div class="bg-gray-50 rounded-xl p-3 flex items-center justify-center">
+        <a href="{{ verification.id_document_back.url }}" target="_blank" title="Ouvrir en plein écran">
+          <img src="{{ verification.id_document_back.url }}" class="max-h-48 sm:max-h-72 w-auto rounded-lg shadow-sm hover:shadow-md transition cursor-zoom-in" alt="Verso">
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Info + Actions row -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+    <!-- Owner Info -->
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
+      <h2 class="text-sm sm:text-base font-bold text-gray-900 mb-4">Informations du propriétaire</h2>
+      <div class="flex items-center gap-3 mb-4">
+        <img src="{{ verification.owner.get_avatar_url }}" class="w-12 h-12 sm:w-14 sm:h-14 rounded-full object-cover">
+        <div class="min-w-0 flex-1">
+          <p class="font-bold text-gray-900 truncate">{{ verification.owner.get_full_name|default:verification.owner.username }}</p>
+          <p class="text-xs sm:text-sm text-gray-500 truncate">{{ verification.owner.email }}</p>
         </div>
       </div>
-
-      <!-- Verso -->
-      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-        <h2 class="text-lg font-bold text-gray-900 mb-4">Verso de la pièce d'identité</h2>
-        <div class="bg-gray-50 rounded-xl p-4 flex items-center justify-center">
-          <img src="{{ verification.id_document_back.url }}" class="max-h-96 rounded-lg shadow-sm" alt="Verso">
+      <div class="space-y-2 sm:space-y-2.5 text-xs sm:text-sm">
+        <div class="flex justify-between">
+          <span class="text-gray-500">Téléphone</span>
+          <span class="font-semibold text-gray-900 truncate">{{ verification.owner.phone|default:"—" }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-500">Date d'inscription</span>
+          <span class="font-semibold text-gray-900">{{ verification.owner.date_joined|date:"d/m/Y" }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-500">Nombre d'annonces</span>
+          <span class="font-semibold text-gray-900">{{ owner_properties.count }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-500">État du compte</span>
+          <span class="font-semibold {% if verification.owner.is_suspended %}text-rose-600{% else %}text-emerald-600{% endif %}">
+            {% if verification.owner.is_suspended %}Suspendu{% else %}Actif{% endif %}
+          </span>
         </div>
       </div>
     </div>
 
-    <!-- Right Column: Info & Actions -->
-    <div class="space-y-6">
-      <!-- Owner Info -->
-      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-        <h2 class="text-lg font-bold text-gray-900 mb-4">Informations du propriétaire</h2>
-        <div class="flex items-center gap-3 mb-4">
-          <img src="{{ verification.owner.get_avatar_url }}" class="w-16 h-16 rounded-full object-cover">
-          <div>
-            <p class="font-bold text-gray-900">{{ verification.owner.get_full_name|default:verification.owner.username }}</p>
-            <p class="text-sm text-gray-500">{{ verification.owner.email }}</p>
-          </div>
+    <!-- Document Info -->
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
+      <h2 class="text-sm sm:text-base font-bold text-gray-900 mb-4">Informations du document</h2>
+      <div class="space-y-2 sm:space-y-2.5 text-xs sm:text-sm">
+        <div class="flex justify-between">
+          <span class="text-gray-500">Type de document</span>
+          <span class="font-semibold text-gray-900 truncate">{{ verification.get_id_document_type_display|default:verification.id_document_type|default:"—" }}</span>
         </div>
-        <div class="space-y-3 text-sm">
-          <div class="flex justify-between">
-            <span class="text-gray-500">Téléphone</span>
-            <span class="font-semibold text-gray-900">{{ verification.owner.phone|default:"—" }}</span>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-gray-500">Date de création du compte</span>
-            <span class="font-semibold text-gray-900">{{ verification.owner.date_joined|date:"d/m/Y" }}</span>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-gray-500">Nombre d'annonces</span>
-            <span class="font-semibold text-gray-900">{{ owner_properties.count }}</span>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-gray-500">État du compte</span>
-            <span class="font-semibold {% if verification.owner.is_suspended %}text-rose-600{% else %}text-emerald-600{% endif %}">
-              {% if verification.owner.is_suspended %}Suspendu{% else %}Actif{% endif %}
-            </span>
-          </div>
+        <div class="flex justify-between">
+          <span class="text-gray-500">Numéro</span>
+          <span class="font-semibold text-gray-900 truncate">{{ verification.id_document_number|default:"—" }}</span>
         </div>
+        <div class="flex justify-between">
+          <span class="text-gray-500">Date de soumission</span>
+          <span class="font-semibold text-gray-900">{{ verification.submitted_at|date:"d/m/Y à H:i" }}</span>
+        </div>
+        {% if verification.reviewed_at %}
+        <div class="flex justify-between">
+          <span class="text-gray-500">Date de révision</span>
+          <span class="font-semibold text-gray-900">{{ verification.reviewed_at|date:"d/m/Y à H:i" }}</span>
+        </div>
+        {% endif %}
+        {% if verification.reviewed_by %}
+        <div class="flex justify-between">
+          <span class="text-gray-500">Révisé par</span>
+          <span class="font-semibold text-gray-900 truncate">{{ verification.reviewed_by.get_full_name|default:verification.reviewed_by.username }}</span>
+        </div>
+        {% endif %}
       </div>
+    </div>
 
-      <!-- Document Info -->
-      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-        <h2 class="text-lg font-bold text-gray-900 mb-4">Informations du document</h2>
-        <div class="space-y-3 text-sm">
-          <div class="flex justify-between">
-            <span class="text-gray-500">Type de document</span>
-            <span class="font-semibold text-gray-900">{{ verification.get_id_document_type_display|default:verification.id_document_type|default:"—" }}</span>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-gray-500">Numéro</span>
-            <span class="font-semibold text-gray-900">{{ verification.id_document_number|default:"—" }}</span>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-gray-500">Date de soumission</span>
-            <span class="font-semibold text-gray-900">{{ verification.submitted_at|date:"d/m/Y à H:i" }}</span>
-          </div>
-          {% if verification.reviewed_at %}
-          <div class="flex justify-between">
-            <span class="text-gray-500">Date de révision</span>
-            <span class="font-semibold text-gray-900">{{ verification.reviewed_at|date:"d/m/Y à H:i" }}</span>
-          </div>
-          {% endif %}
-          {% if verification.reviewed_by %}
-          <div class="flex justify-between">
-            <span class="text-gray-500">Révisé par</span>
-            <span class="font-semibold text-gray-900">{{ verification.reviewed_by.get_full_name|default:verification.reviewed_by.username }}</span>
-          </div>
-          {% endif %}
+    <!-- Actions -->
+    {% if verification.status == 'pending' or verification.status == 'documents_under_review' %}
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
+      <h2 class="text-sm sm:text-base font-bold text-gray-900 mb-4">Actions</h2>
+
+      <!-- Schedule Field Visit -->
+      <form method="post" action="{% url 'dashboard:admin_identity_verification_action' verification.pk %}" class="mb-4">
+        {% csrf_token %}
+        <label class="text-xs sm:text-sm font-semibold text-gray-700 block mb-2">Programmer une visite sur le terrain</label>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+          <input type="datetime-local" name="visit_date" class="w-full border border-gray-200 rounded-xl px-3 sm:px-4 py-2.5 text-xs sm:text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition" required>
+          <input type="text" name="agent_name" class="w-full border border-gray-200 rounded-xl px-3 sm:px-4 py-2.5 text-xs sm:text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition" placeholder="Nom de l'agent" required>
         </div>
-      </div>
+        <button type="submit" name="action" value="schedule_visit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl px-4 sm:px-6 py-2.5 transition shadow-md flex items-center justify-center gap-2 text-xs sm:text-sm">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+          Programmer la visite
+        </button>
+      </form>
 
-      <!-- Actions -->
-      {% if verification.status == 'pending' %}
-      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-        <h2 class="text-lg font-bold text-gray-900 mb-4">Actions</h2>
-        <form method="post" action="{% url 'dashboard:admin_identity_verification_action' verification.pk %}" class="space-y-3">
+      <div class="border-t border-gray-100 pt-4 mb-4">
+        <p class="text-xs text-gray-500 mb-3">Ou valider directement sans visite terrain :</p>
+        
+        <!-- Approve (standalone form) -->
+        <form method="post" action="{% url 'dashboard:admin_identity_verification_action' verification.pk %}" class="mb-3">
           {% csrf_token %}
-          
-          <!-- Approve -->
-          <button type="submit" name="action" value="approve" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl px-6 py-3 transition shadow-md flex items-center justify-center gap-2">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+          <button type="submit" name="action" value="approve" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl px-4 sm:px-6 py-3 transition shadow-md flex items-center justify-center gap-2 text-xs sm:text-sm">
+            <svg class="w-4 sm:w-5 h-4 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
             Valider la vérification
           </button>
-          
-          <!-- Reject -->
-          <div class="border-t border-gray-100 pt-3">
-            <label class="text-sm font-semibold text-gray-700 block mb-2">Motif du refus (obligatoire)</label>
-            <textarea name="reason" rows="3" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition" placeholder="Expliquez pourquoi cette demande est refusée..."></textarea>
-            <button type="submit" name="action" value="reject" class="w-full mt-3 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl px-6 py-3 transition shadow-md flex items-center justify-center gap-2">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-              Refuser la demande
-            </button>
-          </div>
-          
-          <!-- Request Resubmission -->
-          <div class="border-t border-gray-100 pt-3">
-            <label class="text-sm font-semibold text-gray-700 block mb-2">Motif de la demande (obligatoire)</label>
-            <textarea name="reason" rows="3" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition" placeholder="Expliquez pourquoi une nouvelle soumission est nécessaire..."></textarea>
-            <button type="submit" name="action" value="request_resubmission" class="w-full mt-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl px-6 py-3 transition shadow-md flex items-center justify-center gap-2">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-              Demander une nouvelle soumission
-            </button>
-          </div>
+        </form>
+
+        <!-- Reject (separate form) -->
+        <form method="post" action="{% url 'dashboard:admin_identity_verification_action' verification.pk %}" class="border-t border-gray-100 pt-3 mb-3">
+          {% csrf_token %}
+          <label class="text-xs sm:text-sm font-semibold text-gray-700 block mb-2">Motif du refus (obligatoire)</label>
+          <textarea name="reason" rows="2" class="w-full border border-gray-200 rounded-xl px-3 sm:px-4 py-2.5 text-xs sm:text-sm focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition" placeholder="Expliquez pourquoi cette demande est refusée..."></textarea>
+          <button type="submit" name="action" value="reject" class="w-full mt-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl px-4 sm:px-6 py-2.5 transition shadow-md flex items-center justify-center gap-2 text-xs sm:text-sm">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            Refuser la demande
+          </button>
+        </form>
+
+        <!-- Request Resubmission (separate form) -->
+        <form method="post" action="{% url 'dashboard:admin_identity_verification_action' verification.pk %}" class="border-t border-gray-100 pt-3">
+          {% csrf_token %}
+          <label class="text-xs sm:text-sm font-semibold text-gray-700 block mb-2">Motif de la demande (obligatoire)</label>
+          <textarea name="reason" rows="2" class="w-full border border-gray-200 rounded-xl px-3 sm:px-4 py-2.5 text-xs sm:text-sm focus:ring-2 focus:ring-primary-600/20 focus:border-primary-600 transition" placeholder="Expliquez pourquoi une nouvelle soumission est nécessaire..."></textarea>
+          <button type="submit" name="action" value="request_resubmission" class="w-full mt-2 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-xl px-4 sm:px-6 py-2.5 transition shadow-md flex items-center justify-center gap-2 text-xs sm:text-sm">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+            Demander une nouvelle soumission
+          </button>
         </form>
       </div>
-      {% endif %}
-      
-      {% if verification.status == 'rejected' or verification.status == 'resubmission_requested' %}
-      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-        <h2 class="text-lg font-bold text-gray-900 mb-4">Motif</h2>
-        <div class="bg-gray-50 rounded-xl p-4">
-          <p class="text-sm text-gray-700">{{ verification.rejection_reason|default:"Aucun motif spécifié" }}</p>
+    </div>
+    {% endif %}
+
+    {% if verification.status == 'field_visit_scheduled' %}
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
+      <h2 class="text-sm sm:text-base font-bold text-gray-900 mb-4">Gestion de la visite</h2>
+
+      <!-- Field Visit Info -->
+      <div class="bg-blue-50 rounded-xl p-4 mb-4">
+        <p class="text-xs text-blue-600 font-semibold">Visite programmée le</p>
+        <p class="text-sm text-blue-900 font-bold">{{ verification.field_visit_scheduled|date:"d F Y à H:i" }}</p>
+        {% if verification.field_visit_agent %}
+        <p class="text-xs text-blue-600 font-semibold mt-2">Agent assigné</p>
+        <p class="text-sm text-blue-900">{{ verification.field_visit_agent }}</p>
+        {% endif %}
+      </div>
+
+      <!-- Complete Field Visit -->
+      <form method="post" action="{% url 'dashboard:admin_identity_verification_action' verification.pk %}" class="mb-4">
+        {% csrf_token %}
+        <label class="text-xs sm:text-sm font-semibold text-gray-700 block mb-2">Compléter la visite sur le terrain</label>
+        <textarea name="visit_notes" rows="3" class="w-full border border-gray-200 rounded-xl px-3 sm:px-4 py-2.5 text-xs sm:text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition mb-3" placeholder="Notes de la visite (identité vérifiée, bien existant, etc.)..."></textarea>
+        
+        <div class="flex items-center gap-2 mb-3">
+          <input type="checkbox" name="property_verified" id="property_verified" class="w-4 h-4 text-purple-600 rounded">
+          <label for="property_verified" class="text-xs sm:text-sm text-gray-700">Bien immobilier vérifié sur place</label>
+        </div>
+        
+        <input type="text" name="property_notes" class="w-full border border-gray-200 rounded-xl px-3 sm:px-4 py-2.5 text-xs sm:text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition mb-3" placeholder="Notes sur le bien (adresse, caractéristiques, etc.)...">
+        
+        <button type="submit" name="action" value="complete_visit" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl px-4 sm:px-6 py-2.5 transition shadow-md flex items-center justify-center gap-2 text-xs sm:text-sm">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          Valider la visite effectuée
+        </button>
+      </form>
+    </div>
+    {% endif %}
+
+    {% if verification.status == 'field_visit_completed' %}
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
+      <h2 class="text-sm sm:text-base font-bold text-gray-900 mb-4">Résultat de la visite</h2>
+
+      <!-- Visit Results -->
+      <div class="bg-purple-50 rounded-xl p-4 mb-4">
+        <p class="text-xs text-purple-600 font-semibold">Visite effectuée le</p>
+        <p class="text-sm text-purple-900 font-bold">{{ verification.field_visit_completed|date:"d F Y à H:i" }}</p>
+        {% if verification.field_visit_agent %}
+        <p class="text-xs text-purple-600 font-semibold mt-2">Agent</p>
+        <p class="text-sm text-purple-900">{{ verification.field_visit_agent }}</p>
+        {% endif %}
+        {% if verification.field_visit_notes %}
+        <p class="text-xs text-purple-600 font-semibold mt-2">Notes de visite</p>
+        <p class="text-sm text-purple-900">{{ verification.field_visit_notes }}</p>
+        {% endif %}
+        <div class="mt-3 pt-3 border-t border-purple-200">
+          <p class="text-xs text-purple-600 font-semibold">Bien vérifié</p>
+          <p class="text-sm {% if verification.property_verified %}text-emerald-600 font-bold{% else %}text-rose-600 font-bold{% endif %}">
+            {% if verification.property_verified %}✓ Oui{% else %}✗ Non{% endif %}
+          </p>
+          {% if verification.property_verification_notes %}
+          <p class="text-xs text-purple-600 font-semibold mt-2">Notes sur le bien</p>
+          <p class="text-sm text-purple-900">{{ verification.property_verification_notes }}</p>
+          {% endif %}
         </div>
       </div>
-      {% endif %}
+
+      <!-- Final Approval -->
+      <form method="post" action="{% url 'dashboard:admin_identity_verification_action' verification.pk %}" class="mb-4">
+        {% csrf_token %}
+        <button type="submit" name="action" value="approve" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl px-4 sm:px-6 py-3 transition shadow-md flex items-center justify-center gap-2 text-xs sm:text-sm">
+          <svg class="w-4 sm:w-5 h-4 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+          Valider définitivement l'identité
+        </button>
+      </form>
+
+      <!-- Reject if needed -->
+      <form method="post" action="{% url 'dashboard:admin_identity_verification_action' verification.pk %}" class="border-t border-gray-100 pt-4">
+        {% csrf_token %}
+        <label class="text-xs sm:text-sm font-semibold text-gray-700 block mb-2">Motif du refus (obligatoire)</label>
+        <textarea name="reason" rows="2" class="w-full border border-gray-200 rounded-xl px-3 sm:px-4 py-2.5 text-xs sm:text-sm focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition" placeholder="Expliquez pourquoi cette demande est refusée..."></textarea>
+        <button type="submit" name="action" value="reject" class="w-full mt-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl px-4 sm:px-6 py-2.5 transition shadow-md flex items-center justify-center gap-2 text-xs sm:text-sm">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          Refuser la demande
+        </button>
+      </form>
     </div>
+    {% endif %}
+
+    {% if verification.status == 'rejected' or verification.status == 'resubmission_requested' %}
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
+      <h2 class="text-sm sm:text-base font-bold text-gray-900 mb-4">Motif</h2>
+      <div class="bg-gray-50 rounded-xl p-4">
+        <p class="text-xs sm:text-sm text-gray-700">{{ verification.rejection_reason|default:"Aucun motif spécifié" }}</p>
+      </div>
+    </div>
+    {% endif %}
   </div>
 </div>
 {% endblock %}

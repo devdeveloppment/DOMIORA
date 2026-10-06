@@ -18,7 +18,7 @@
       <tr class="hover:bg-gray-50">
         <td class="px-5 py-4">
           {% if r.property %}
-            <a href="{{ r.property.get_absolute_url }}" class="font-semibold hover:text-[#71212d]">{{ r.property.title }}</a>
+            <a href="{{ r.property.get_absolute_url }}" class="font-semibold hover:text-primary-600">{{ r.property.title }}</a>
           {% else %}
             <span class="text-gray-400">Bien inconnu</span>
           {% endif %}
@@ -27,9 +27,9 @@
           {% if r.type == 'property' %}
             <span class="text-xs font-bold px-2.5 py-1 rounded-full bg-gray-100 text-gray-700">Demande d'information</span>
           {% elif r.type == 'visit' %}
-            <span class="text-xs font-bold px-2.5 py-1 rounded-full bg-blue-50 text-blue-700">📅 Visite</span>
+            <span class="text-xs font-bold px-2.5 py-1 rounded-full bg-primary-50 text-primary-700"><i class="fa-regular fa-calendar"></i> Visite</span>
           {% elif r.type == 'rendezvous' %}
-            <span class="text-xs font-bold px-2.5 py-1 rounded-full bg-purple-50 text-purple-700">🤝 Rendez-vous</span>
+            <span class="text-xs font-bold px-2.5 py-1 rounded-full bg-primary-50 text-accent-700"><i class="fa-solid fa-handshake"></i> Rendez-vous</span>
           {% endif %}
         </td>
         <td class="px-5 py-4">
@@ -44,9 +44,9 @@
           {% if r.type == 'property' %}
             <span class="text-xs font-bold px-2.5 py-1 rounded-full {% if r.status == 'acceptee' %}bg-emerald-50 text-emerald-700{% elif r.status == 'rejetee' %}bg-rose-50 text-rose-700{% else %}bg-amber-50 text-amber-700{% endif %}">{{ r.object.get_status_display }}</span>
           {% elif r.type == 'visit' %}
-            <span class="text-xs font-bold px-2.5 py-1 rounded-full {% if r.status == 'accepted' %}bg-emerald-50 text-emerald-700{% elif r.status == 'refused' %}bg-rose-50 text-rose-700{% elif r.status == 'proposed' %}bg-amber-50 text-amber-700{% else %}bg-blue-50 text-blue-700{% endif %}">{{ r.object.get_status_display }}</span>
+            <span class="text-xs font-bold px-2.5 py-1 rounded-full {% if r.status == 'accepted' %}bg-emerald-50 text-emerald-700{% elif r.status == 'refused' %}bg-rose-50 text-rose-700{% elif r.status == 'proposed' %}bg-amber-50 text-amber-700{% else %}bg-primary-50 text-primary-700{% endif %}">{{ r.object.get_status_display }}</span>
           {% elif r.type == 'rendezvous' %}
-            <span class="text-xs font-bold px-2.5 py-1 rounded-full {% if r.status == 'accepted' %}bg-emerald-50 text-emerald-700{% elif r.status == 'refused' %}bg-rose-50 text-rose-700{% elif r.status == 'proposed' %}bg-amber-50 text-amber-700{% else %}bg-purple-50 text-purple-700{% endif %}">{{ r.object.get_status_display }}</span>
+            <span class="text-xs font-bold px-2.5 py-1 rounded-full {% if r.status == 'accepted' %}bg-emerald-50 text-emerald-700{% elif r.status == 'refused' %}bg-rose-50 text-rose-700{% elif r.status == 'proposed' %}bg-amber-50 text-amber-700{% else %}bg-primary-50 text-accent-700{% endif %}">{{ r.object.get_status_display }}</span>
           {% endif %}
         </td>
       </tr>

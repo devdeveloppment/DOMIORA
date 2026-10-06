@@ -249,9 +249,9 @@ class Command(BaseCommand):
         settings_obj = SiteSettings.load()
         settings_obj.site_name = "DOMIORA"
         settings_obj.tagline = "Find. Rent. Own. Effortlessly."
-        settings_obj.contact_email = "contact@domiora.com"
-        settings_obj.contact_phone = "+1 (212) 000-0001"
-        settings_obj.address = "157 West 57th Street, New York, NY 10019"
+        settings_obj.contact_email = "denistchil@gmail.com"
+        settings_obj.contact_phone = "+228 90 56 78 48 / +228 73 06 01 18"
+        settings_obj.address = "Lomé, Togo"
         settings_obj.opening_hours_weekdays = "Lun - Ven: 9h - 18h"
         settings_obj.opening_hours_weekend = "Sam: 10h - 16h"
         settings_obj.save()
@@ -276,7 +276,7 @@ class Command(BaseCommand):
                 username=username,
                 defaults={
                     "email": f"{username}@domiora.com", "first_name": first, "last_name": last,
-                    "role": User.Role.AGENT, "phone": f"+1-212-000-{1000+i}",
+                    "role": User.Role.OWNER, "phone": f"+1-212-000-{1000+i}",
                 },
             )
             if created:
@@ -306,7 +306,7 @@ class Command(BaseCommand):
                 username=username,
                 defaults={
                     "email": f"{username}@example.com", "first_name": first, "last_name": last,
-                    "role": User.Role.BUYER, "phone": f"+1-212-000-{2000+i}",
+                    "role": User.Role.CLIENT, "phone": f"+1-212-000-{2000+i}",
                 },
             )
             if created:
@@ -328,7 +328,7 @@ class Command(BaseCommand):
                     "role": User.Role.OWNER,
                     "phone": f"+1-212-100-{1000+i}",
                     "whatsapp_number": f"+1-212-100-{1000+i}",
-                    "verification_status": User.VerificationStatus.APPROVED if i % 2 == 0 else User.VerificationStatus.PENDING,
+                    "verification_status": User.VerificationStatus.APPROVED if i % 2 == 0 else User.VerificationStatus.PENDING_DOCUMENTS,
                 },
             )
             if created:
@@ -442,23 +442,8 @@ class Command(BaseCommand):
                 },
             )
 
-        sold_or_rented = [p for p in properties if p.status in ("vendu", "loue")]
-        for prop in sold_or_rented:
-            amount = prop.price
-            agent = random.choice(agents)
-            commission_rate = agent.commission_rate if agent else 5
-            Transaction.objects.get_or_create(
-                property=prop,
-                defaults={
-                    "agent": agent,
-                    "client": random.choice(buyers),
-                    "transaction_type": "location" if prop.status == "loue" else "vente",
-                    "amount": amount,
-                    "commission_amount": round(float(amount) * float(commission_rate) / 100, 2),
-                    "status": "terminee",
-                    "transaction_date": timezone.now().date() - timedelta(days=random.randint(1, 300)),
-                },
-            )
+        # Transactions are now created only for real transactions, not demo data
+        # This section has been removed to keep only real transaction data
 
         for agent in agents:
             reviewers = random.sample(buyers, min(random.randint(2, 8), len(buyers)))
@@ -481,11 +466,13 @@ class Command(BaseCommand):
         for _ in range(25):
             buyer = random.choice(buyers)
             prop = random.choice(properties)
-            conversation, _ = Conversation.objects.get_or_create(buyer=buyer, agent=random.choice(agents), property=prop)
+            # Use owner instead of agent for Conversation model
+            owner = prop.owner if prop.owner else random.choice(owners)
+            conversation, _ = Conversation.objects.get_or_create(buyer=buyer, owner=owner, property=prop)
             if not conversation.messages.exists():
                 Message.objects.create(conversation=conversation, sender=buyer, body=f"Bonjour, je suis intéressé(e) par « {prop.title} ». Est-il encore disponible ?")
                 if random.random() > 0.3:
-                    Message.objects.create(conversation=conversation, sender=conversation.agent.user, body="Bonjour ! Oui, le bien est toujours disponible. Souhaitez-vous organiser une visite ?")
+                    Message.objects.create(conversation=conversation, sender=owner, body="Bonjour ! Oui, le bien est toujours disponible. Souhaitez-vous organiser une visite ?")
                 if random.random() > 0.6:
                     Message.objects.create(conversation=conversation, sender=buyer, body="Avec plaisir, quelles sont vos disponibilités cette semaine ?")
 

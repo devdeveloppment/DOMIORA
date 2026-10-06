@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+{% block title %}Recherche avec l'IA — {{ site_settings.site_name }}{% endblock %}
+{% block description %}Décrivez simplement le bien que vous recherchez : DOMIORA trouve les annonces réellement disponibles qui vous correspondent.{% endblock %}
+{% block content %}
+<section class="bg-primary-700 py-12">
+  <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+    <p class="text-white/50 text-sm"><a href="{% url 'core:home' %}" class="hover:text-white underline transition">Accueil</a> / <a href="{% url 'properties:list' %}" class="hover:text-white underline transition">Propriétés</a> / Recherche avec l'IA</p>
+    <h1 class="text-3xl sm:text-4xl font-extrabold font-display text-white mt-2">✨ Recherche avec l'IA</h1>
+    <p class="text-white/70 mt-2 max-w-2xl">Décrivez le bien que vous recherchez avec vos propres mots. DOMIORA comprend vos critères et vous propose uniquement des annonces réellement disponibles sur la plateforme.</p>
+  </div>
+</section>
+
+<section class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10" x-data="aiSearch()" x-init="init()">
+  <!-- Conversation -->
+  <div class="bg-white rounded-2xl shadow-card border border-gray-100 overflow-hidden">
+    <div x-ref="thread" class="max-h-[420px] overflow-y-auto p-5 space-y-4 bg-gray-50">
+      <template x-if="turns.length === 0">
+        <div class="text-center py-6">
+          <p class="font-bold text-gray-900">Que recherchez-vous ?</p>
+          <p class="text-sm text-gray-500 mt-1">Exemples :</p>
+          <div class="mt-4 flex flex-wrap justify-center gap-2">
+            <template x-for="example in examples" :key="example">
+              <button type="button" @click="send(example)" class="text-left text-sm px-4 py-2 bg-white rounded-full border border-gray-200 hover:border-primary-600 hover:text-primary-600 transition" x-text="example"></button>
+            </template>
+          </div>
+        </div>
+      </template>
+
+      <template x-for="(turn, index) in turns" :key="index">
+        <div :class="turn.role === 'user' ? 'flex justify-end' : 'flex justify-start'">
+          <div :class="turn.role === 'user' ? 'bg-primary-600 text-white rounded-2xl rounded-br-sm' : 'bg-white text-gray-800 rounded-2xl rounded-bl-sm border border-gray-200'"
+               class="max-w-[85%] px-4 py-3 shadow-sm">
+            <p class="text-sm whitespace-pre-line" x-text="turn.text"></p>
+            <template x-if="turn.summary && turn.summary.length">
+              <div class="mt-2 flex flex-wrap gap-1.5">
+                <template x-for="item in turn.summary" :key="item">
+                  <span class="text-[11px] font-semibold px-2 py-1 rounded-full bg-primary-50 text-primary-700" x-text="item"></span>
+                </template>
+              </div>
+            </template>
+          </div>
+        </div>
+      </template>
+
+      <div x-show="loading" x-cloak class="flex justify-start">
+        <div class="bg-white rounded-2xl rounded-bl-sm border border-gray-200 px-4 py-3 shadow-sm flex items-center gap-2 text-sm text-gray-500">
+          <span class="flex gap-1">
+            <span class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></span>
+            <span class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay:.1s"></span>
+            <span class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay:.2s"></span>
+          </span>
+          Je recherche parmi les biens disponibles…
+        </div>
+      </div>
+    </div>
+
+    <form @submit.prevent="send()" class="p-4 border-t border-gray-100 bg-white">
+      <div class="flex gap-2 items-end">
+        <textarea x-ref="input" x-model="input" rows="2" maxlength="1000"
+                  @keydown.enter="if (!$event.shiftKey) { $event.preventDefault(); send(); }"
+                  :disabled="loading"
+                  placeholder="Décrivez le bien que vous recherchez… (ex : appartement à Lomé, 2 chambres, 150 000 FCFA par mois maximum)"
+                  class="flex-1 resize-none px-4 py-3 rounded-xl border border-gray-200 focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20 outline-none transition text-sm"></textarea>
+        <button type="submit" :disabled="loading || !input.trim()"
+                class="px-5 py-3 bg-primary-600 hover:bg-primary-700 disabled:bg-gray-300 text-white font-semibold rounded-xl transition text-sm">Rechercher</button>
+      </div>
+      <div class="flex flex-wrap items-center gap-3 mt-3 text-xs">
+        <button type="button" x-show="pendingQuestion" x-cloak @click="send('Affiche les résultats')" class="font-semibold text-primary-600 hover:underline">Voir les résultats sans préciser</button>
+        <button type="button" x-show="turns.length" x-cloak @click="reset()" class="text-gray-500 hover:text-primary-600">↺ Nouvelle recherche</button>
+        <span class="text-gray-400 ml-auto">Les résultats proviennent exclusivement des annonces DOMIORA.</span>
+      </div>
+    </form>
+  </div>
+
+  <p x-show="error" x-cloak x-text="error" class="mt-4 text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-3"></p>
+
+  <template x-if="notes.length">
+    <div class="mt-4 space-y-1">
+      <template x-for="note in notes" :key="note">
+        <p class="text-xs text-gray-500">ℹ <span x-text="note"></span></p>
+      </template>
+    </div>
+  </template>
+
+  <!-- Résultats exacts -->
+  <template x-if="results.length">
+    <div class="mt-8">
+      <h2 class="text-lg font-bold text-gray-900 mb-4">Biens correspondant à votre recherche</h2>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <template x-for="p in results" :key="'r' + p.id">
+          {% include "properties/partials/ai_result_card.html" %}
+        </template>
+      </div>
+    </div>
+  </template>
+
+  <!-- Alternatives -->
+  <template x-if="alternatives.length">
+    <div class="mt-10">
+      <h2 class="text-lg font-bold text-gray-900">Biens proches de votre recherche</h2>
+      <p class="text-sm text-gray-500 mb-4">Ces biens ne correspondent pas exactement à tous vos critères : les différences sont indiquées par △.</p>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <template x-for="p in alternatives" :key="'a' + p.id">
+          {% include "properties/partials/ai_result_card.html" %}
+        </template>
+      </div>
+    </div>
+  </template>
+
+  <template x-if="status === 'none'">
+    <div class="mt-8 text-center bg-white rounded-2xl border border-gray-100 shadow-card p-8">
+      <p class="font-semibold text-gray-900">Aucun bien ne correspond exactement à votre recherche actuellement.</p>
+      <p class="text-sm text-gray-500 mt-1">Élargissez un critère (budget, zone, chambres) ou parcourez toutes les annonces.</p>
+      <a href="{% url 'properties:list' %}" class="inline-block mt-4 bg-primary-600 hover:bg-primary-700 text-white text-sm font-semibold rounded-full px-5 py-2.5 transition">Parcourir les annonces</a>
+    </div>
+  </template>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function aiSearch() {
+  return {
+    input: '',
+    turns: [],
+    results: [],
+    alternatives: [],
+    notes: [],
+    status: null,
+    pendingQuestion: false,
+    loading: false,
+    error: '',
+    examples: [
+      "Je cherche un appartement à Lomé, 2 chambres, 150 000 FCFA par mois maximum",
+      "Une maison à Lomé avec 3 chambres et parking, budget 250 000 FCFA",
+      "Terrain à vendre à Kara",
+    ],
+    init() {
+      const initial = "{{ initial_query|escapejs }}";
+      this.reset(true).then(() => { if (initial) this.send(initial); });
+    },
+    async post(body) {
+      const response = await fetch("{% url 'properties:ai_search_api' %}", {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+        body: JSON.stringify(body),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Une erreur est survenue. Merci de réessayer.');
+      return data;
+    },
+    async reset(silent = false) {
+      this.turns = []; this.results = []; this.alternatives = []; this.notes = [];
+      this.status = null; this.pendingQuestion = false; this.error = '';
+      try { await this.post({ reset: true }); } catch (e) { if (!silent) this.error = e.message; }
+    },
+    async send(text) {
+      const message = (text ?? this.input).trim();
+      if (!message || this.loading) return;
+      this.input = '';
+      this.error = '';
+      this.turns.push({ role: 'user', text: message });
+      this.loading = true;
+      this.scroll();
+      try {
+        const data = await this.post({ message });
+        this.status = data.status;
+        this.pendingQuestion = data.status === 'question';
+        this.notes = data.notes || [];
+        this.turns.push({ role: 'assistant', text: data.message, summary: data.status === 'question' ? [] : (data.criteria_summary || []) });
+        if (data.status !== 'question') {
+          this.results = data.results || [];
+          this.alternatives = data.alternatives || [];
+        }
+      } catch (e) {
+        this.error = e.message;
+      } finally {
+        this.loading = false;
+        this.scroll();
+        this.$nextTick(() => this.$refs.input && this.$refs.input.focus());
+      }
+    },
+    scroll() { this.$nextTick(() => { const t = this.$refs.thread; if (t) t.scrollTop = t.scrollHeight; }); },
+    levelClass(level) {
+      return {
+        excellent: 'bg-emerald-100 text-emerald-700',
+        good: 'bg-sky-100 text-sky-700',
+        partial: 'bg-amber-100 text-amber-700',
+        available: 'bg-gray-100 text-gray-700',
+      }[level] || 'bg-gray-100 text-gray-700';
+    },
+    reasonClass(status) {
+      return { ok: 'text-emerald-600', near: 'text-amber-600', fail: 'text-red-600', unknown: 'text-gray-400' }[status] || 'text-gray-500';
+    },
+  };
+}
+</script>
+{% endblock %}

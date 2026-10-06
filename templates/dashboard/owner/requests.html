@@ -17,7 +17,7 @@
     <tbody class="divide-y divide-gray-50">
       {% for r in page_obj %}
       <tr class="hover:bg-gray-50">
-        <td class="px-5 py-4"><a href="{{ r.property.get_absolute_url }}" class="font-semibold hover:text-[#71212d]">{{ r.property.title }}</a></td>
+        <td class="px-5 py-4"><a href="{{ r.property.get_absolute_url }}" class="font-semibold hover:text-primary-600">{{ r.property.title }}</a></td>
         <td class="px-5 py-4">{{ r.user.get_full_name|default:r.user.username }}</td>
         <td class="px-5 py-4">{{ r.get_request_type_display }}</td>
         <td class="px-5 py-4 text-gray-400">{{ r.created_at|date:"d M Y" }}</td>

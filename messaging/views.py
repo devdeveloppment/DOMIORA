@@ -11,13 +11,22 @@ from notifications.models import Notification
 
 
 def _has_paid_for_property(user, property_obj):
-    """Return True if user has unlocked this property (paid or is owner/admin)."""
+    """Retourne True si l'utilisateur a bien débloqué ce bien ou est autorisé à y accéder."""
     if not user.is_authenticated:
         return False
-    if user.role in [User.Role.OWNER, User.Role.ADMIN] or user.is_superuser:
+
+    # Les rôles autres que client ont toujours accès à la communication.
+    if user.role != User.Role.CLIENT:
         return True
+
+    # Le propriétaire du bien et les administrateurs sont autorisés sans paiement.
     if property_obj and property_obj.owner == user:
         return True
+
+    # Si l'utilisateur a déjà payé pour un bien du même propriétaire,
+    # on lui accorde automatiquement l'accès aux autres biens du même promoteur.
+    if property_obj and property_obj.owner:
+        return PropertyUnlock.objects.filter(user=user, property__owner=property_obj.owner).exists()
     if property_obj:
         return PropertyUnlock.objects.filter(user=user, property=property_obj).exists()
     return False
@@ -25,24 +34,35 @@ def _has_paid_for_property(user, property_obj):
 
 @login_required
 def start_conversation(request, owner_id):
-    """
-    Start or retrieve a conversation with a property owner.
-    Requires a valid PropertyUnlock for the target property.
-    """
+    """Démarre ou récupère une conversation avec un propriétaire de bien immobilier."""
     owner = get_object_or_404(User, pk=owner_id, role=User.Role.OWNER)
     property_id = request.POST.get("property_id") or request.GET.get("property")
-    property_obj = Property.objects.filter(pk=property_id).first() if property_id else None
+    property_obj = (
+        Property.objects.filter(
+            pk=property_id,
+            is_published=True,
+            is_validated=True,
+            owner__isnull=False,
+            owner__role=User.Role.OWNER,
+            owner__is_active=True,
+        ).first()
+        if property_id else None
+    )
 
-    # ── Security: Verify owner matches property owner ───────────────────────
+    # Seuls les comptes client peuvent initier une discussion avec un propriétaire.
+    if request.user.role != User.Role.CLIENT:
+        django_messages.error(request, "Veuillez utiliser un compte client pour contacter un propriétaire.")
+        return redirect("properties:detail", slug=property_obj.slug) if property_obj else redirect("properties:list")
+
+    # Vérification de sécurité : le propriétaire doit bien correspondre au bien concerné.
     if property_obj and property_obj.owner != owner:
         django_messages.error(
             request,
             "Erreur : Le propriétaire spécifié ne correspond pas à ce bien.",
         )
         return redirect("properties:detail", slug=property_obj.slug)
-    # ────────────────────────────────────────────────────────────────────────
 
-    # ── Payment gate ────────────────────────────────────────────────────────
+    # Vérification de paiement avant de permettre la communication.
     if not _has_paid_for_property(request.user, property_obj):
         slug = property_obj.slug if property_obj else ""
         django_messages.error(
@@ -52,7 +72,6 @@ def start_conversation(request, owner_id):
         if slug:
             return redirect("properties:payment_redirect", slug=slug)
         return redirect("properties:list")
-    # ────────────────────────────────────────────────────────────────────────
 
     initial_message = request.POST.get("message", "").strip()
 
@@ -66,9 +85,9 @@ def start_conversation(request, owner_id):
             title="💬 Nouveau message",
             message=f"{request.user.get_full_name() or request.user.username} vous a envoyé un message pour « {property_obj.title if property_obj else 'un bien'} ».",
             notification_type="systeme",
-            link=f"/messagerie/{conversation.pk}/",
+            link=f"/dashboard/proprietaire/messagerie/{conversation.pk}/",
         )
-    return redirect("messaging:conversation_detail", pk=conversation.pk)
+    return redirect("dashboard:client_conversation_detail", pk=conversation.pk)
 
 
 @login_required
@@ -157,12 +176,18 @@ def conversation_detail(request, pk):
 @login_required
 def request_visit(request, pk):
     """Client requests a visit for the property in this conversation"""
-    conversation = get_object_or_404(Conversation, pk=pk)
+    conversation = get_object_or_404(Conversation.objects.select_related("property"), pk=pk, buyer=request.user)
     
     # Security: only buyer can request visit
     if request.user != conversation.buyer:
         django_messages.error(request, "Seul le client peut demander une visite.")
         return redirect("messaging:conversation_detail", pk=pk)
+
+    if not conversation.property or not _has_paid_for_property(request.user, conversation.property):
+        django_messages.error(request, "Vous devez régler les frais de mise en relation avant de demander une visite.")
+        if conversation.property:
+            return redirect("properties:payment_redirect", slug=conversation.property.slug)
+        return redirect("properties:list")
     
     if request.method == "POST":
         form = VisitRequestForm(request.POST)
@@ -188,7 +213,7 @@ def request_visit(request, pk):
                 title="📅 Nouvelle demande de visite",
                 message=f"{request.user.get_full_name() or request.user.username} souhaite visiter « {conversation.property.title if conversation.property else 'votre bien'} » le {visit_request.proposed_date.strftime('%d/%m/%Y à %H:%M')}.",
                 notification_type="systeme",
-                link=f"/messagerie/{pk}/",
+                link=f"/dashboard/proprietaire/messagerie/{pk}/",
             )
             
             django_messages.success(request, "Votre demande de visite a été envoyée au propriétaire.")
@@ -232,7 +257,7 @@ def accept_visit(request, pk, visit_id):
         title="✅ Demande de visite acceptée",
         message=f"Le propriétaire a accepté votre visite pour « {conversation.property.title if conversation.property else 'le bien'} » le {visit_request.proposed_date.strftime('%d/%m/%Y à %H:%M')}.",
         notification_type="systeme",
-        link=f"/messagerie/{pk}/",
+        link=f"/dashboard/client/messagerie/{pk}/",
     )
     
     django_messages.success(request, "Vous avez accepté la demande de visite.")
@@ -268,7 +293,7 @@ def refuse_visit(request, pk, visit_id):
         title="❌ Demande de visite refusée",
         message=f"Le propriétaire a refusé votre demande de visite pour « {conversation.property.title if conversation.property else 'le bien'} ».",
         notification_type="systeme",
-        link=f"/messagerie/{pk}/",
+        link=f"/dashboard/client/messagerie/{pk}/",
     )
     
     django_messages.success(request, "Vous avez refusé la demande de visite.")
@@ -316,7 +341,7 @@ def propose_visit(request, pk, visit_id):
                     title="📅 Nouvelle date proposée",
                     message=f"Le propriétaire a proposé une nouvelle date pour la visite de « {conversation.property.title if conversation.property else 'le bien'} » : {new_date.strftime('%d/%m/%Y à %H:%M')}.",
                     notification_type="systeme",
-                    link=f"/messagerie/{pk}/",
+                    link=f"/dashboard/client/messagerie/{pk}/",
                 )
                 
                 django_messages.success(request, "Votre nouvelle proposition a été envoyée.")
@@ -337,12 +362,18 @@ def propose_visit(request, pk, visit_id):
 @login_required
 def request_rendezvous(request, pk):
     """Client requests a rendezvous with the owner"""
-    conversation = get_object_or_404(Conversation, pk=pk, buyer=request.user)
+    conversation = get_object_or_404(Conversation.objects.select_related("property"), pk=pk, buyer=request.user)
     
     # Security: only buyer can request rendezvous
     if request.user != conversation.buyer:
         django_messages.error(request, "Seul l'acheteur peut demander un rendez-vous.")
         return redirect("messaging:conversation_detail", pk=pk)
+
+    if not conversation.property or not _has_paid_for_property(request.user, conversation.property):
+        django_messages.error(request, "Vous devez régler les frais de mise en relation avant de demander un rendez-vous.")
+        if conversation.property:
+            return redirect("properties:payment_redirect", slug=conversation.property.slug)
+        return redirect("properties:list")
     
     if request.method == "POST":
         form = RendezvousRequestForm(request.POST)
@@ -368,7 +399,7 @@ def request_rendezvous(request, pk):
                 title="🤝 Nouvelle demande de rendez-vous",
                 message=f"{request.user.get_full_name() or request.user.username} souhaite prendre rendez-vous pour « {conversation.property.title if conversation.property else 'votre bien'} » le {rendezvous_request.proposed_date.strftime('%d/%m/%Y à %H:%M')}.",
                 notification_type="systeme",
-                link=f"/messagerie/{pk}/",
+                link=f"/dashboard/proprietaire/messagerie/{pk}/",
             )
             
             django_messages.success(request, "Votre demande de rendez-vous a été envoyée au propriétaire.")
@@ -412,7 +443,7 @@ def accept_rendezvous(request, pk, rendezvous_id):
         title="✅ Demande de rendez-vous acceptée",
         message=f"Le propriétaire a accepté votre rendez-vous pour « {conversation.property.title if conversation.property else 'le bien'} » le {rendezvous_request.proposed_date.strftime('%d/%m/%Y à %H:%M')}.",
         notification_type="systeme",
-        link=f"/messagerie/{pk}/",
+        link=f"/dashboard/client/messagerie/{pk}/",
     )
     
     django_messages.success(request, "Vous avez accepté la demande de rendez-vous.")
@@ -448,7 +479,7 @@ def refuse_rendezvous(request, pk, rendezvous_id):
         title="❌ Demande de rendez-vous refusée",
         message=f"Le propriétaire a refusé votre rendez-vous pour « {conversation.property.title if conversation.property else 'le bien'} ».",
         notification_type="systeme",
-        link=f"/messagerie/{pk}/",
+        link=f"/dashboard/client/messagerie/{pk}/",
     )
     
     django_messages.success(request, "Vous avez refusé la demande de rendez-vous.")
@@ -496,7 +527,7 @@ def propose_rendezvous(request, pk, rendezvous_id):
                     title="📅 Nouvelle date proposée",
                     message=f"Le propriétaire a proposé une nouvelle date pour le rendez-vous de « {conversation.property.title if conversation.property else 'le bien'} » : {new_date.strftime('%d/%m/%Y à %H:%M')}.",
                     notification_type="systeme",
-                    link=f"/messagerie/{pk}/",
+                    link=f"/dashboard/client/messagerie/{pk}/",
                 )
                 
                 django_messages.success(request, "Votre nouvelle proposition a été envoyée.")

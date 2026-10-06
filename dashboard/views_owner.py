@@ -3,7 +3,7 @@ from django.contrib import messages
 from django.core.paginator import Paginator
 from django.core.mail import send_mail
 from django.conf import settings
-from django.db.models import Sum, Count
+from django.db.models import Sum, Count, Q
 from django.utils import timezone
 from django.db.models.functions import TruncMonth
 from datetime import timedelta
@@ -12,7 +12,10 @@ import json
 from .decorators import role_required
 from accounts.models import User
 from properties.models import Property, PropertyImage
-from properties.forms import PropertyForm
+from properties.forms import PropertyForm, PropertyImageFormSet, PropertyDocumentFormSet
+from properties.video.service import has_ready_video, in_progress, request_virtual_tour, status_payload
+from django.http import JsonResponse
+from django.views.decorators.http import require_GET, require_POST
 from rental_requests.models import PropertyRequest
 from notifications.models import Notification
 from accounts.forms import ProfileForm
@@ -20,8 +23,10 @@ from accounts.forms import ProfileForm
 
 @role_required(User.Role.OWNER)
 def owner_overview(request):
+    """Vue d'accueil du propriétaire : synthèse de ses biens et statistiques."""
     properties = Property.objects.filter(owner=request.user).select_related("owner").prefetch_related("images")
-    requests_qs = PropertyRequest.objects.filter(property__owner=request.user).select_related("property", "user")
+    # Removed visit requests from owner dashboard as per user requirement
+    # Owners should only see paid connections through messaging, not visit requests
     from favorites.models import Favorite
     from messaging.models import Message
     from properties.models import PropertyUnlock, PropertyView
@@ -33,22 +38,31 @@ def owner_overview(request):
     total_favorites = Favorite.objects.filter(property__owner=request.user).count()
     total_messages = Message.objects.filter(conversation__owner=request.user).count()
     total_unlocks = PropertyUnlock.objects.filter(property__owner=request.user).count()
-    total_visits = requests_qs.filter(request_type="visite").count()
     paid_contacts = total_unlocks
     
     # Property status breakdown
-    validated_count = properties.filter(is_validated=True).count()
-    rejected_count = properties.filter(validation_status='rejected').count()
-    available_count = properties.filter(status='disponible').count()
-    sold_count = properties.filter(status='vendu').count()
-    rented_count = properties.filter(status='loue').count()
+    property_stats = properties.aggregate(
+        total=Count('id'),
+        validated_count=Count('id', filter=Q(is_validated=True)),
+        pending_validation_count=Count('id', filter=Q(validation_status='pending')),
+        rejected_count=Count('id', filter=Q(validation_status='rejected')),
+        available_count=Count('id', filter=Q(status='disponible')),
+        sold_count=Count('id', filter=Q(status='vendu')),
+        rented_count=Count('id', filter=Q(status='loue')),
+        published_count=Count('id', filter=Q(is_published=True)),
+    )
     
-    # Request statistics
-    accepted_requests = requests_qs.filter(status='acceptee').count()
-    rejected_requests = requests_qs.filter(status='rejetee').count()
+    validated_count = property_stats['validated_count']
+    pending_validation_count = property_stats['pending_validation_count']
+    rejected_count = property_stats['rejected_count']
+    available_count = property_stats['available_count']
+    sold_count = property_stats['sold_count']
+    rented_count = property_stats['rented_count']
+    published_count = property_stats['published_count']
 
     views_chart = (
         PropertyView.objects.filter(property__owner=request.user, viewed_at__gte=six_months_ago)
+        .select_related('property')
         .annotate(month=TruncMonth("viewed_at"))
         .values("month")
         .annotate(total=Count("id"))
@@ -60,14 +74,11 @@ def owner_overview(request):
     context = {
         "dash_role": "owner",
         "active": "overview",
-        "properties_count": properties.count(),
-        "published_count": properties.filter(is_published=True).count(),
+        "properties_count": property_stats['total'],
+        "published_count": published_count,
         "validated_count": validated_count,
-        "pending_validation_count": properties.filter(validation_status='pending').count(),
+        "pending_validation_count": pending_validation_count,
         "rejected_count": rejected_count,
-        "pending_requests_count": requests_qs.filter(status="en_attente").count(),
-        "total_requests": requests_qs.count(),
-        "total_visits": total_visits,
         "total_views": total_views,
         "total_favorites": total_favorites,
         "total_messages": total_messages,
@@ -78,10 +89,7 @@ def owner_overview(request):
         "available_count": available_count,
         "sold_count": sold_count,
         "rented_count": rented_count,
-        "accepted_requests": accepted_requests,
-        "rejected_requests": rejected_requests,
         "recent_properties": properties.order_by("-created_at")[:5],
-        "recent_requests": requests_qs.order_by("-created_at")[:5],
         "chart_labels": json.dumps(chart_labels),
         "chart_values": json.dumps(chart_values),
     }
@@ -90,6 +98,7 @@ def owner_overview(request):
 
 @role_required(User.Role.OWNER)
 def owner_properties(request):
+    """Affiche les biens du propriétaire avec pagination."""
     properties = Property.objects.filter(owner=request.user).order_by("-created_at")
     paginator = Paginator(properties, 10)
     page_obj = paginator.get_page(request.GET.get("page"))
@@ -98,12 +107,14 @@ def owner_properties(request):
 
 @role_required(User.Role.OWNER)
 def owner_property_create(request):
+    """Permet à un propriétaire d'ajouter une nouvelle annonce immobilière."""
     if request.user.verification_status != User.VerificationStatus.APPROVED:
         messages.error(request, f"Votre identité doit être vérifiée pour publier un bien. Statut actuel : {request.user.get_verification_status_display()}")
         return redirect("dashboard:owner_verify_identity")
 
     if request.method == "POST":
         form = PropertyForm(request.POST)
+        
         if form.is_valid():
             property = form.save(commit=False)
             property.owner = request.user
@@ -113,28 +124,38 @@ def owner_property_create(request):
             property.validation_status = Property.ValidationStatus.PENDING
             property.save()
             form.save_m2m()
+            
             for i, f in enumerate(request.FILES.getlist("images")):
                 PropertyImage.objects.create(property=property, image=f, is_primary=(i == 0), order=i)
                 
-            if property.images.count() >= 2:
-                from properties.tasks import generate_virtual_tour_task
-                # Execute directly instead of using Celery delay for development
-                generate_virtual_tour_task(property.id)
-                messages.success(request, "Le bien a été ajouté avec succès et est en attente de validation par l'administrateur.")
-            else:
-                messages.success(request, "Le bien a été ajouté avec succès et est en attente de validation par l'administrateur.")
+            messages.success(request, "Le bien a été ajouté avec succès et est en attente de validation par l'administrateur.")
+            # Visite virtuelle : génération asynchrone (ne publie ni ne valide le bien).
+            queued, video_message = request_virtual_tour(property)
+            (messages.info if queued else messages.warning)(request, video_message)
                 
             return redirect("dashboard:owner_properties")
     else:
         form = PropertyForm()
-    return render(request, "dashboard/owner/property_form.html", {"form": form, "is_edit": False, "dash_role": "owner", "active": "properties"})
+        formset = PropertyImageFormSet(prefix='images')
+        doc_formset = PropertyDocumentFormSet(prefix='documents')
+    
+    return render(request, "dashboard/owner/property_form.html", {
+        "form": form, 
+        "formset": formset,
+        "doc_formset": doc_formset,
+        "is_edit": False, 
+        "dash_role": "owner", 
+        "active": "properties"
+    })
 
 
 @role_required(User.Role.OWNER)
 def owner_property_edit(request, pk):
+    """Modifie un bien déjà enregistré par le propriétaire."""
     property = get_object_or_404(Property, pk=pk, owner=request.user)
     if request.method == "POST":
         form = PropertyForm(request.POST, instance=property)
+        
         if form.is_valid():
             updated_property = form.save(commit=False)
             # Si la propriété n'est pas encore validée, la remettre en attente de validation
@@ -143,22 +164,32 @@ def owner_property_edit(request, pk):
                 updated_property.validation_status = Property.ValidationStatus.PENDING
             updated_property.save()
             form.save_m2m()
+            
             files = request.FILES.getlist("images")
             for i, f in enumerate(files):
                 PropertyImage.objects.create(property=property, image=f, order=property.images.count() + i)
                 
-            if files and property.images.count() >= 2:
-                from properties.tasks import generate_virtual_tour_task
-                # Execute directly instead of using Celery delay for development
-                generate_virtual_tour_task(property.id)
-                messages.success(request, "Le bien a été mis à jour et la vidéo a été régénérée.")
-            else:
-                messages.success(request, "Le bien a été mis à jour.")
+            messages.success(request, "Le bien a été mis à jour.")
+            if files:
+                # De nouvelles photos : la visite virtuelle doit les inclure.
+                queued, video_message = request_virtual_tour(property)
+                (messages.info if queued else messages.warning)(request, video_message)
                 
             return redirect("dashboard:owner_properties")
     else:
         form = PropertyForm(instance=property)
-    return render(request, "dashboard/owner/property_form.html", {"form": form, "is_edit": True, "property": property, "dash_role": "owner", "active": "properties"})
+        formset = PropertyImageFormSet(instance=property, prefix='images')
+        doc_formset = PropertyDocumentFormSet(instance=property, prefix='documents')
+    
+    return render(request, "dashboard/owner/property_form.html", {
+        "form": form, 
+        "formset": formset,
+        "doc_formset": doc_formset,
+        "is_edit": True, 
+        "property": property, 
+        "dash_role": "owner", 
+        "active": "properties"
+    })
 
 
 @role_required(User.Role.OWNER)
@@ -172,6 +203,7 @@ def owner_property_delete(request, pk):
 
 @role_required(User.Role.OWNER)
 def owner_property_toggle_publish(request, pk):
+    """Publie ou retire une annonce du site public."""
     property = get_object_or_404(Property, pk=pk, owner=request.user)
     
     if request.user.verification_status != User.VerificationStatus.APPROVED:
@@ -185,51 +217,74 @@ def owner_property_toggle_publish(request, pk):
 
 @role_required(User.Role.OWNER)
 def owner_property_image_delete(request, pk, image_id):
+    """Supprime une image d'un bien du propriétaire."""
     property = get_object_or_404(Property, pk=pk, owner=request.user)
-    PropertyImage.objects.filter(pk=image_id, property=property).delete()
+    deleted, _ = PropertyImage.objects.filter(pk=image_id, property=property).delete()
+    if deleted:
+        _refresh_virtual_tour_after_photo_change(request, property)
+    return redirect("dashboard:owner_property_edit", pk=property.pk)
+
+
+# ---------------------------------------------------------------------------
+# Visite virtuelle (propriétaire, uniquement sur SES biens)
+# ---------------------------------------------------------------------------
+def _refresh_virtual_tour_after_photo_change(request, property):
+    """
+    Après suppression / réordonnancement d'une photo, une vidéo existante (ou en cours)
+    ne correspond plus aux photos : elle est masquée et régénérée.
+    Le délai regroupe plusieurs modifications rapides en une seule génération.
+    """
+    if has_ready_video(property) or in_progress(property) or property.virtual_tour_video:
+        queued, video_message = request_virtual_tour(property, countdown=10)
+        (messages.info if queued else messages.warning)(request, video_message)
+
+
+@role_required(User.Role.OWNER)
+@require_POST
+def owner_property_image_move(request, pk, image_id):
+    """Déplace une photo d'un cran (ordre utilisé par la galerie et la visite virtuelle)."""
+    property = get_object_or_404(Property, pk=pk, owner=request.user)
+    images = list(property.images.order_by("order", "id"))
+    index = next((i for i, image in enumerate(images) if image.pk == image_id), None)
+    if index is None:
+        return redirect("dashboard:owner_property_edit", pk=property.pk)
+    target = index - 1 if request.POST.get("direction") == "up" else index + 1
+    if 0 <= target < len(images):
+        images[index], images[target] = images[target], images[index]
+        for position, image in enumerate(images):
+            if image.order != position:
+                # update() : évite la reconversion WebP de PropertyImage.save()
+                PropertyImage.objects.filter(pk=image.pk).update(order=position)
+        _refresh_virtual_tour_after_photo_change(request, property)
     return redirect("dashboard:owner_property_edit", pk=property.pk)
 
 
 @role_required(User.Role.OWNER)
-def owner_requests(request):
-    requests_qs = PropertyRequest.objects.filter(property__owner=request.user).select_related("property", "user").order_by("-created_at")
-    status = request.GET.get("status")
-    if status:
-        requests_qs = requests_qs.filter(status=status)
-    paginator = Paginator(requests_qs, 10)
-    page_obj = paginator.get_page(request.GET.get("page"))
-    return render(request, "dashboard/owner/requests.html", {"page_obj": page_obj, "dash_role": "owner", "active": "requests"})
+@require_POST
+def owner_property_video_generate(request, pk):
+    """Demande la (re)génération de la visite virtuelle d'un bien du propriétaire connecté."""
+    property = get_object_or_404(Property, pk=pk, owner=request.user)
+    queued, video_message = request_virtual_tour(property)
+    (messages.success if queued else messages.warning)(request, video_message)
+    return redirect("dashboard:owner_property_edit", pk=property.pk)
 
 
 @role_required(User.Role.OWNER)
-def owner_request_update_status(request, pk, status):
-    property_request = get_object_or_404(PropertyRequest, pk=pk, property__owner=request.user)
-    if status in ("acceptee", "rejetee"):
-        property_request.status = status
-        property_request.save(update_fields=["status"])
-        Notification.objects.create(
-            user=property_request.user,
-            title=f"Votre demande a été {'acceptée' if status == 'acceptee' else 'rejetée'}",
-            message=f"Votre demande pour « {property_request.property.title} » a été {'acceptée' if status == 'acceptee' else 'rejetée'} par le propriétaire.",
-            notification_type="demande",
-            link=property_request.property.get_absolute_url(),
-        )
-        try:
-            send_mail(
-                subject=f"DOMIORA - Mise à jour de votre demande",
-                message=f"Bonjour {property_request.user.first_name},\n\nVotre demande pour « {property_request.property.title} » a été {'acceptée' if status == 'acceptee' else 'rejetée'}.\n\nL'équipe DOMIORA",
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[property_request.user.email],
-                fail_silently=True,
-            )
-        except Exception:
-            pass
-        messages.success(request, "Statut de la demande mis à jour.")
-    return redirect("dashboard:owner_requests")
+@require_GET
+def owner_property_video_status(request, pk):
+    """État et progression de la visite virtuelle (JSON), pour le propriétaire du bien uniquement."""
+    property = get_object_or_404(Property, pk=pk, owner=request.user)
+    return JsonResponse(status_payload(property))
+
+
+# REMOVED: owner_requests and owner_request_update_status functions
+# Visit requests should not be displayed on owner dashboard per user requirement
+# Owners only see paid connections through messaging system
 
 
 @role_required(User.Role.OWNER)
 def owner_verify_identity(request):
+    """Soumet et suit la vérification d'identité du propriétaire."""
     from accounts.models import IdentityVerificationRequest
     
     # Get the latest verification request for this owner
@@ -281,7 +336,7 @@ def owner_verify_identity(request):
             logger.info(f"✓ Back image: {verification_request.id_document_back.name}")
             
             # Update owner's verification status
-            request.user.verification_status = User.VerificationStatus.PENDING
+            request.user.verification_status = User.VerificationStatus.PENDING_DOCUMENTS
             request.user.save(update_fields=["verification_status"])
             logger.info(f"✓ Updated owner status to PENDING")
             
@@ -328,6 +383,7 @@ def owner_verify_identity(request):
 
 @role_required(User.Role.OWNER)
 def owner_profile(request):
+    """Permet à un propriétaire de modifier son profil."""
     if request.method == "POST":
         user_form = ProfileForm(request.POST, request.FILES, instance=request.user)
         if user_form.is_valid():
@@ -341,16 +397,26 @@ def owner_profile(request):
 
 @role_required(User.Role.OWNER)
 def owner_notifications(request):
-    notifications = Notification.objects.filter(user=request.user).exclude(link__startswith='/dashboard/admin-panel/')
+    """Affiche les notifications destinées au propriétaire uniquement."""
+    # Only show notifications intended for the OWNER role:
+    # - notifications with a link pointing to /dashboard/proprietaire/
+    # - notifications with no link (generic system notifications)
+    # Exclude client-specific and admin-specific notifications.
+    from django.db.models import Q
+    notifications = Notification.objects.filter(user=request.user).filter(
+        Q(link__startswith='/dashboard/proprietaire/') | Q(link='')
+    ).exclude(link__startswith='/dashboard/admin-panel/')
     context = {
         "dash_role": "owner",
         "active": "notifications",
         "notifications": notifications,
     }
+    request.session["dash_role"] = "owner"
     return render(request, "notifications/list.html", context)
 
 @role_required(User.Role.OWNER)
 def owner_pending_properties(request):
+    """Liste les biens encore en attente de validation."""
     properties = Property.objects.filter(owner=request.user, is_published=False).order_by("-created_at")
     paginator = Paginator(properties, 10)
     page_obj = paginator.get_page(request.GET.get("page"))
@@ -358,6 +424,7 @@ def owner_pending_properties(request):
 
 @role_required(User.Role.OWNER)
 def owner_published_properties(request):
+    """Liste les biens déjà publiés et visibles pour les clients."""
     properties = Property.objects.filter(owner=request.user, is_published=True).order_by("-created_at")
     paginator = Paginator(properties, 10)
     page_obj = paginator.get_page(request.GET.get("page"))
@@ -374,7 +441,7 @@ def owner_settings(request):
 
 @role_required(User.Role.OWNER)
 def owner_messaging(request):
-    """Owner messaging - redirects to most recent conversation or shows inbox if none"""
+    """Accède au centre de messagerie du propriétaire."""
     from messaging.models import Conversation
     
     # Ensure session has correct dash_role

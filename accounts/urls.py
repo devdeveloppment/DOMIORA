@@ -15,7 +15,7 @@ urlpatterns = [
 
     # ── Auth ─────────────────────────────────────────────────────────────────
     path("connexion/", views.CustomLoginView.as_view(), name="login"),
-    path("deconnexion/", auth_views.LogoutView.as_view(), name="logout"),
+    path("deconnexion/", views.custom_logout, name="logout"),
     path("admin-login/", views.admin_login, name="admin_login"),  # Admin-only login
     path("mon-espace/", views.client_login, name="client_login"),  # Client-only login
     path("profil/", views.profile, name="profile"),

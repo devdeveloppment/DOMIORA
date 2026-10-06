@@ -80,14 +80,14 @@
             <p>Une nouvelle demande de <strong>{{ request_type|lower }}</strong> a été reçue pour votre annonce!</p>
             
             <div class="property-info">
-                <h3>📍 Bien concerné</h3>
+                <h3><i class="fa-solid fa-location-dot"></i> Bien concerné</h3>
                 <p><strong>{{ property.title }}</strong></p>
                 <p>Type : {{ property.get_property_type_display }}</p>
                 <p>Prix : {{ property.price|floatformat:0 }} {{ property.currency }}</p>
             </div>
             
             <div class="user-info">
-                <h3>👤 Demandeur</h3>
+                <h3><i class="fa-solid fa-user"></i> Demandeur</h3>
                 <p><strong>Nom :</strong> {{ user.get_full_name|default:user.email }}</p>
                 <p><strong>Email :</strong> <a href="mailto:{{ user.email }}">{{ user.email }}</a></p>
                 <p><strong>Téléphone :</strong> {{ user.phone|default:"Non fourni" }}</p>
@@ -95,7 +95,7 @@
             
             {% if message %}
             <div class="request-message">
-                <h3>💬 Message du demandeur</h3>
+                <h3><i class="fa-solid fa-comment"></i> Message du demandeur</h3>
                 <p>{{ message }}</p>
             </div>
             {% endif %}
@@ -105,7 +105,7 @@
             <a href="{{ site_url }}/dashboard/proprietaire/demandes/" class="button">Voir les demandes</a>
             
             <p style="margin-top: 30px; color: #666; font-size: 14px;">
-                ℹ️ Cette demande a également généré une notification dans votre tableau de bord DOMIORA.
+                <i class="fa-solid fa-circle-info"></i> Cette demande a également généré une notification dans votre tableau de bord DOMIORA.
             </p>
         </div>
         

@@ -1,27 +1,33 @@
 {% load static %}
-<footer class="bg-ink text-white/70 mt-20">
-  <div class="bg-gradient-to-r from-primary-700 to-primary-500 py-14 px-4 text-center">
-    <h2 class="text-3xl font-extrabold text-white">Prêt à trouver votre propriété ?</h2>
-    <p class="mt-2 text-white/90">Rejoignez des milliers de clients satisfaits et concrétisez votre projet immobilier aujourd'hui.</p>
+<footer class="bg-primary-900 text-gray-300 mt-20">
+  <div class="border-b border-white/10 py-14 px-4 text-center">
+    <h2 class="text-3xl font-extrabold text-white text-center">Prêt à trouver votre propriété ?</h2>
+    <p class="mt-2 text-white/90 text-center no-justify">Rejoignez des milliers de clients satisfaits et concrétisez votre projet immobilier aujourd'hui.</p>
     <div class="mt-6 flex items-center justify-center gap-4 flex-wrap">
       <a href="{% url 'properties:list' %}" class="bg-white text-primary-700 font-semibold rounded-full px-6 py-3 hover:bg-primary-50 transition">Parcourir les biens</a>
       <a href="{% url 'core:contact' %}" class="border border-white/60 text-white font-semibold rounded-full px-6 py-3 hover:bg-white/10 transition">Nous contacter</a>
+      <!-- Soutenir DOMIORA (sauf sur page d'accueil) -->
+      {% if request.path != '/' %}
+      <a href="{% url 'core:donate' %}" class="bg-accent text-primary-900 font-bold rounded-full px-6 py-3 hover:scale-105 transition shadow-lg flex items-center justify-center gap-2">
+        <svg class="w-5 h-5 text-red-500" fill="currentColor" stroke="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg> Soutenir DOMIORA
+      </a>
+      {% endif %}
     </div>
   </div>
 
-  <div class="max-w-[1440px] 2xl:max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-14 grid grid-cols-1 md:grid-cols-4 gap-10">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
     <div>
       <div class="flex items-center gap-2.5 text-white font-extrabold text-lg mb-3">
         {% if site_settings.logo %}
-          <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.site_name }}" class="h-10 w-10 rounded-full object-cover ring-2 ring-primary-500/30 shadow-lg shadow-primary-500/20" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-          <span class="w-10 h-10 rounded-full bg-gradient-to-br from-primary-400 to-primary-700 grid place-items-center text-sm shadow-lg shadow-primary-500/20 hidden">🏠</span>
+          <img src="{{ site_settings.logo_url }}" alt="{{ site_settings.site_name }}" class="h-10 w-10 rounded-full object-cover ring-2 ring-primary-500/30 shadow-lg shadow-primary-500/20" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+          <span class="w-10 h-10 rounded-full bg-gradient-to-br from-primary-400 to-primary-700 grid place-items-center text-sm shadow-lg shadow-primary-500/20 hidden"><svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg></span>
           <span>{{ site_settings.site_name }}</span>
         {% else %}
-          <span class="w-10 h-10 rounded-full bg-gradient-to-br from-primary-400 to-primary-700 grid place-items-center text-sm shadow-lg shadow-primary-500/20">🏠</span>
+          <span class="w-10 h-10 rounded-full bg-gradient-to-br from-primary-400 to-primary-700 grid place-items-center text-sm shadow-lg shadow-primary-500/20"><svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg></span>
           <span>{{ site_settings.site_name }}</span>
         {% endif %}
       </div>
-      <p class="text-sm leading-relaxed">Votre partenaire de confiance pour trouver la propriété de vos rêves. Nous offrons des services immobiliers premium avec une expertise locale inégalée.</p>
+      <p class="text-sm leading-relaxed no-justify">Votre partenaire de confiance pour trouver la propriété de vos rêves. Nous offrons des services immobiliers premium avec une expertise locale inégalée.</p>
       <div class="flex gap-3 mt-4">
         {% if site_settings.facebook %}<a href="{{ site_settings.facebook }}" class="hover:scale-110 transition-transform" aria-label="Facebook">
           <svg class="w-6 h-6" fill="#1877F2" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
@@ -52,13 +58,14 @@
         <li><a href="{% url 'core:home' %}" class="hover:text-white">Accueil</a></li>
         <li><a href="{% url 'properties:list' %}" class="hover:text-white">Propriétés</a></li>
         <li><a href="{% url 'core:about' %}" class="hover:text-white">À propos</a></li>
-        <li><a href="{% url 'agents:list' %}" class="hover:text-white">Nos propriétaires</a></li>
+        <li><a href="{% url 'properties:list' %}?owner_verified=1" class="hover:text-white">Nos propriétaires</a></li>
         <li><a href="{% url 'core:contact' %}" class="hover:text-white">Contact</a></li>
       </ul>
     </div>
     <div>
       <h4 class="text-white font-semibold mb-3">Services</h4>
       <ul class="space-y-2 text-sm">
+        <li><a href="{% url 'core:services' %}" class="hover:text-white">Tous nos services</a></li>
         <li><a href="{% url 'properties:list' %}?transaction=vente" class="hover:text-white">Vente</a></li>
         <li><a href="{% url 'properties:list' %}?transaction=location" class="hover:text-white">Location</a></li>
         <li><a href="{% url 'properties:list' %}" class="hover:text-white">Propriétés vedettes</a></li>
@@ -68,16 +75,16 @@
     <div>
       <h4 class="text-white font-semibold mb-3">Contactez-nous</h4>
       <ul class="space-y-2 text-sm">
-        <li>📍 {{ site_settings.address }}</li>
-        <li>📞 {{ site_settings.contact_phone }}</li>
-        <li>✉️ {{ site_settings.contact_email }}</li>
-        <li>🕐 {{ site_settings.opening_hours_weekdays }}</li>
-        <li>🕐 {{ site_settings.opening_hours_weekend }}</li>
+        <li class="flex items-center gap-2"><svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg> {{ site_settings.address }}</li>
+        <li class="flex items-center gap-2"><svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg> {{ site_settings.contact_phone }}</li>
+        <li class="flex items-center gap-2"><svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg> {{ site_settings.contact_email }}</li>
+        <li class="flex items-center gap-2"><svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> {{ site_settings.opening_hours_weekdays }}</li>
+        <li class="flex items-center gap-2"><svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> {{ site_settings.opening_hours_weekend }}</li>
       </ul>
     </div>
   </div>
 
-  <div class="border-t border-white/10 py-6 px-4 text-center text-xs text-white/40">
+  <div class="border-t border-white/10 py-6 px-4 text-center text-xs text-white/60">
     &copy; {% now "Y" %} {{ site_settings.site_name }}. Tous droits réservés. &mdash; {{ site_settings.tagline }}
   </div>
 </footer>

@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Avis clients — {{ site_settings.site_name }}{% endblock %}
+{% block content %}
+<section class="py-20 bg-gray-50">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Header -->
+    <div class="flex items-center gap-4 mb-8">
+      <div class="w-16 h-16 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-bold text-2xl">
+        {{ owner.get_full_name|default:owner.username|first|upper }}
+      </div>
+      <div>
+        <h1 class="text-3xl font-extrabold font-display text-gray-900">
+          Avis de clients
+        </h1>
+        <p class="text-gray-600 mt-1">
+          {{ owner.get_full_name|default:owner.username }}
+        </p>
+      </div>
+    </div>
+
+    <!-- Rating Summary -->
+    {% if average_rating %}
+    <div class="bg-white rounded-2xl shadow-card border border-gray-100 p-6 mb-8">
+      <div class="flex items-center gap-6">
+        <div class="text-center">
+          <p class="text-4xl font-extrabold text-primary-600">{{ average_rating|floatformat:1 }}</p>
+          <div class="flex items-center gap-0.5 mt-1">
+            {% for i in "54321" %}
+            {% if i|length <= average_rating|floatformat:0|add:0 %}<span class="text-accent-500 text-lg">★</span>{% else %}<span class="text-gray-300 text-lg">☆</span>{% endif %}
+            {% endfor %}
+          </div>
+          <p class="text-sm text-gray-500 mt-1">{{ reviews_count }} avis</p>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Reviews List -->
+    {% if reviews %}
+    <div class="space-y-6">
+      {% for review in reviews %}
+      <div class="bg-white rounded-2xl shadow-card border border-gray-100 p-6">
+        <div class="flex items-start gap-3 mb-4">
+          <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-700 font-bold shrink-0">
+            {{ review.reviewer.get_full_name|default:review.reviewer.username|first|upper }}
+          </div>
+          <div class="flex-1">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="font-semibold text-gray-900">{{ review.reviewer.get_full_name|default:review.reviewer.username }}</p>
+                <div class="flex items-center gap-1 mt-1">
+                  {% for i in "54321" %}
+                  {% if i|length <= review.rating %}<span class="text-accent-500 text-sm">★</span>{% else %}<span class="text-gray-300 text-sm">☆</span>{% endif %}
+                  {% endfor %}
+                  <span class="text-xs text-gray-400 ml-2">{{ review.created_at|date:"d M Y" }}</span>
+                </div>
+              </div>
+              {% if review.title %}
+              <p class="font-semibold text-sm text-primary-600">{{ review.title }}</p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        {% if review.comment %}
+        <p class="text-gray-600 text-sm leading-relaxed">{{ review.comment|linebreaks }}</p>
+        {% endif %}
+        {% if review.is_verified %}
+        <span class="inline-block mt-3 text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full">
+          ✓ Transaction vérifiée
+        </span>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-20">
+      <div class="w-20 h-20 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-6">
+        <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.25 11.25l.041-.02a.75.75 0 011.063.862l-.704 2.816a.75.75 0 01-.56.578l-1.27.343a.75.75 0 01-.937-.937l.343-1.27a.75.75 0 01.862-.56z"></path><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"></circle></svg>
+      </div>
+      <h2 class="text-xl font-bold text-gray-900 mb-2">Aucun avis pour le moment</h2>
+      <p class="text-gray-500 mb-4">Soit le premier à laisser un avis pour ce propriétaire.</p>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

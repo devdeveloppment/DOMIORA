@@ -1,55 +1,63 @@
 {% load static %}
 <header x-data="{ mobileOpen: false }" class="sticky top-0 z-50 bg-white border-b border-gray-100 shadow-sm transition-all duration-300">
-  <div class="max-w-[1440px] 2xl:max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="flex items-center justify-between h-20">
 
       <!-- Logo -->
-      <a href="{% url 'core:home' %}" class="flex flex-col shrink-0">
-        <span class="text-[#71212d] font-extrabold text-2xl tracking-tight uppercase leading-none">DOMIORA</span>
-        <span class="text-[10px] text-gray-400 font-medium">Trouvez, visitez, emménagez.</span>
+      <a href="{% url 'core:home' %}" class="flex items-center shrink-0">
+        {% if site_settings.logo %}
+          <img src="{{ site_settings.logo_url }}" alt="{{ site_settings.site_name }}" class="h-14 w-auto object-contain">
+        {% else %}
+          <img src="{% static 'images/logo-domiora.png' %}" alt="DOMIORA Immobilier" class="h-14 w-auto object-contain"
+               onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+          <span class="hidden flex-col">
+            <span class="text-primary-600 font-extrabold text-2xl tracking-tight uppercase leading-none">DOMIORA</span>
+            <span class="text-[10px] text-gray-400 font-medium">Immobilier</span>
+          </span>
+        {% endif %}
       </a>
 
       <!-- Desktop Nav Links -->
-      <nav class="hidden lg:flex items-center gap-7">
-        <a href="{% url 'core:home' %}" class="text-sm font-semibold text-gray-600 hover:text-gray-900 transition">Accueil</a>
-        <a href="{% url 'properties:list' %}?transaction=vente" class="text-sm font-semibold text-gray-600 hover:text-gray-900 transition">Acheter</a>
-        <a href="{% url 'properties:list' %}?transaction=location" class="text-sm font-semibold text-gray-600 hover:text-gray-900 transition">Louer</a>
-        <a href="{% url 'properties:list' %}" class="text-sm font-semibold text-gray-600 hover:text-gray-900 transition">Annonces</a>
-        <a href="{% url 'core:about' %}" class="text-sm font-semibold text-gray-600 hover:text-gray-900 transition">À propos</a>
-        <a href="{% url 'core:contact' %}" class="text-sm font-semibold text-gray-600 hover:text-gray-900 transition">Contact</a>
+      <nav class="hidden lg:flex items-center gap-6">
+        <a href="{% url 'core:home' %}" class="text-sm font-semibold text-gray-600 hover:text-primary-600 transition">Accueil</a>
+        <a href="{% url 'properties:list' %}?transaction=vente" class="text-sm font-semibold text-gray-600 hover:text-primary-600 transition">Acheter</a>
+        <a href="{% url 'properties:list' %}?transaction=location" class="text-sm font-semibold text-gray-600 hover:text-primary-600 transition">Louer</a>
+        <a href="{% url 'properties:list' %}" class="text-sm font-semibold text-gray-600 hover:text-primary-600 transition">Annonces</a>
+        <a href="{% url 'properties:ai_search' %}" class="text-sm font-semibold text-gray-600 hover:text-primary-600 transition">✨ Recherche IA</a>
+        <a href="{% url 'core:services' %}" class="text-sm font-semibold text-gray-600 hover:text-primary-600 transition">Services</a>
+        <a href="{% url 'core:about' %}" class="text-sm font-semibold text-gray-600 hover:text-primary-600 transition">À propos</a>
+        <a href="{% url 'core:contact' %}" class="text-sm font-semibold text-gray-600 hover:text-primary-600 transition">Contact</a>
       </nav>
 
       <!-- Right Actions (Desktop) -->
       <div class="hidden md:flex items-center gap-3">
 
-        <!-- Mon espace (toujours visible, redirige selon connexion) -->
-        {% if request.user.is_authenticated and request.user.role == 'client' %}
-        <a href="{% url 'dashboard:client_overview' %}" class="flex items-center gap-2 border border-gray-200 text-gray-700 hover:text-[#71212d] hover:border-[#71212d]/30 font-bold text-sm px-5 py-2.5 rounded-lg transition">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-          Mon espace
-        </a>
-        {% else %}
-        <a href="{% url 'accounts:client_login' %}" class="flex items-center gap-2 border border-gray-200 text-gray-700 hover:text-[#71212d] hover:border-[#71212d]/30 font-bold text-sm px-5 py-2.5 rounded-lg transition">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-          Mon espace
-        </a>
-        {% endif %}
-
         <!-- Publier un bien (visible si non client connecté) -->
         {% if not request.user.is_authenticated or request.user.role != 'client' %}
-        <a href="{% url 'accounts:publish_landing' %}" id="btn-publier-bien" class="flex items-center gap-2 bg-[#71212d] hover:bg-[#5a1a24] text-white font-bold text-sm px-5 py-2.5 rounded-lg transition shadow-md">
+        <a href="{% url 'accounts:publish_landing' %}" id="btn-publier-bien" class="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white font-bold text-sm px-5 py-2.5 rounded-lg transition shadow-md">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
           Publier un bien
         </a>
         {% endif %}
 
-        <!-- Connexion (visible si non connecté) -->
-        {% if not request.user.is_authenticated %}
-        <a href="{% url 'accounts:login' %}" id="btn-connexion" class="flex items-center gap-2 border border-gray-200 text-gray-700 hover:text-[#71212d] hover:border-[#71212d]/30 font-bold text-sm px-5 py-2.5 rounded-lg transition">
+        <!-- Mon espace (toujours visible, redirige selon connexion) -->
+        {% if request.user.is_authenticated and request.user.role == 'client' %}
+        <a href="{% url 'dashboard:client_overview' %}" class="flex items-center gap-2 border border-gray-200 text-gray-700 hover:text-primary-600 hover:border-primary-600/30 font-bold text-sm px-5 py-2.5 rounded-lg transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+          Mon espace
+        </a>
+        {% else %}
+        <a href="{% url 'accounts:client_login' %}" class="flex items-center gap-2 border border-gray-200 text-gray-700 hover:text-primary-600 hover:border-primary-600/30 font-bold text-sm px-5 py-2.5 rounded-lg transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+          Mon espace
+        </a>
+        {% endif %}
+
+        <!-- Connexion (toujours visible) -->
+        <a href="{% url 'accounts:login' %}" id="btn-connexion" class="flex items-center gap-2 border border-gray-200 text-gray-700 hover:text-primary-600 hover:border-primary-600/30 font-bold text-sm px-5 py-2.5 rounded-lg transition">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
           Connexion
         </a>
-        {% endif %}
       </div>
 
       <!-- Mobile menu button -->
@@ -62,12 +70,14 @@
 
   <!-- Mobile menu -->
   <div x-cloak x-show="mobileOpen" x-transition class="lg:hidden bg-white border-t border-gray-100 px-5 py-4 space-y-1 shadow-xl absolute w-full">
-    <a href="{% url 'core:home' %}" class="block py-2.5 text-sm font-semibold text-gray-700 hover:text-[#71212d] border-b border-gray-50">Accueil</a>
-    <a href="{% url 'properties:list' %}?transaction=vente" class="block py-2.5 text-sm font-semibold text-gray-700 hover:text-[#71212d] border-b border-gray-50">Acheter</a>
-    <a href="{% url 'properties:list' %}?transaction=location" class="block py-2.5 text-sm font-semibold text-gray-700 hover:text-[#71212d] border-b border-gray-50">Louer</a>
-    <a href="{% url 'properties:list' %}" class="block py-2.5 text-sm font-semibold text-gray-700 hover:text-[#71212d] border-b border-gray-50">Annonces</a>
-    <a href="{% url 'core:about' %}" class="block py-2.5 text-sm font-semibold text-gray-700 hover:text-[#71212d] border-b border-gray-50">À propos</a>
-    <a href="{% url 'core:contact' %}" class="block py-2.5 text-sm font-semibold text-gray-700 hover:text-[#71212d]">Contact</a>
+    <a href="{% url 'core:home' %}" class="block py-2.5 text-sm font-semibold text-gray-700 hover:text-primary-600 border-b border-gray-50">Accueil</a>
+    <a href="{% url 'properties:list' %}?transaction=vente" class="block py-2.5 text-sm font-semibold text-gray-700 hover:text-primary-600 border-b border-gray-50">Acheter</a>
+    <a href="{% url 'properties:list' %}?transaction=location" class="block py-2.5 text-sm font-semibold text-gray-700 hover:text-primary-600 border-b border-gray-50">Louer</a>
+    <a href="{% url 'properties:list' %}" class="block py-2.5 text-sm font-semibold text-gray-700 hover:text-primary-600 border-b border-gray-50">Annonces</a>
+    <a href="{% url 'properties:ai_search' %}" class="block py-2.5 text-sm font-semibold text-gray-700 hover:text-primary-600 border-b border-gray-50">✨ Recherche avec l'IA</a>
+    <a href="{% url 'core:services' %}" class="block py-2.5 text-sm font-semibold text-gray-700 hover:text-primary-600 border-b border-gray-50">Services</a>
+    <a href="{% url 'core:about' %}" class="block py-2.5 text-sm font-semibold text-gray-700 hover:text-primary-600 border-b border-gray-50">À propos</a>
+    <a href="{% url 'core:contact' %}" class="block py-2.5 text-sm font-semibold text-gray-700 hover:text-primary-600 border-b border-gray-50">Contact</a>
     <div class="pt-3 space-y-2">
       {% if request.user.is_authenticated and request.user.role == 'client' %}
       <a href="{% url 'dashboard:client_overview' %}" class="flex items-center justify-center gap-2 w-full border border-gray-200 text-gray-700 font-bold text-sm px-4 py-3 rounded-lg">
@@ -79,13 +89,11 @@
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
         Mon espace
       </a>
-      <a href="{% url 'accounts:publish_landing' %}" class="flex items-center justify-center gap-2 w-full bg-[#71212d] text-white font-bold text-sm px-4 py-3 rounded-lg">
+      <a href="{% url 'accounts:publish_landing' %}" class="flex items-center justify-center gap-2 w-full bg-primary-600 text-white font-bold text-sm px-4 py-3 rounded-lg">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
         Publier un bien
       </a>
-      {% if not request.user.is_authenticated %}
       <a href="{% url 'accounts:login' %}" class="flex items-center justify-center gap-2 w-full border border-gray-200 text-gray-700 font-bold text-sm px-4 py-3 rounded-lg">Connexion</a>
-      {% endif %}
       {% endif %}
     </div>
   </div>

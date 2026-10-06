@@ -4,7 +4,7 @@
 <section class="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-10">
   <!-- Breadcrumb -->
   <p class="text-gray-500 text-xs mb-6 font-medium">
-    <a href="{% url 'core:home' %}" class="hover:text-[#71212d]">Accueil</a> / 
+    <a href="{% url 'core:home' %}" class="hover:text-primary-600">Accueil</a> / 
     <span class="text-gray-900">Profil de {% if owner %}{{ owner.get_full_name|default:owner.username }}{% else %}utilisateur{% endif %}</span>
   </p>
 
@@ -41,12 +41,12 @@
         <div class="flex flex-wrap gap-3 mt-4">
           <span class="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">
             {% if owner.average_response_minutes %}
-              🟢 Répond généralement en moins de {{ owner.average_response_display }}
+              <i class="fa-solid fa-circle" style="color: #10b981;"></i> Répond généralement en moins de {{ owner.average_response_display }}
             {% else %}
-              🟢 Temps de réponse en cours de calcul
+              <i class="fa-solid fa-circle" style="color: #10b981;"></i> Temps de réponse en cours de calcul
             {% endif %}
           </span>
-          <span class="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100">
+          <span class="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-primary-50 text-primary-700 border border-primary-100">
             Taux de réponse: {{ owner.response_rate }}%
           </span>
         </div>
@@ -56,19 +56,19 @@
     <!-- Stats Cards -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
       <div class="bg-gray-50 rounded-2xl p-4 text-center">
-        <p class="text-2xl font-extrabold text-[#71212d]">{{ published_count }}</p>
+        <p class="text-2xl font-extrabold text-primary-600">{{ published_count }}</p>
         <p class="text-xs text-gray-500 uppercase font-bold mt-1">Annonces publiées</p>
       </div>
       <div class="bg-gray-50 rounded-2xl p-4 text-center">
-        <p class="text-2xl font-extrabold text-[#71212d]">{{ active_count }}</p>
+        <p class="text-2xl font-extrabold text-primary-600">{{ active_count }}</p>
         <p class="text-xs text-gray-500 uppercase font-bold mt-1">Annonces actives</p>
       </div>
       <div class="bg-gray-50 rounded-2xl p-4 text-center">
-        <p class="text-2xl font-extrabold text-[#71212d]">{{ total_views }}</p>
+        <p class="text-2xl font-extrabold text-primary-600">{{ total_views }}</p>
         <p class="text-xs text-gray-500 uppercase font-bold mt-1">Total vues</p>
       </div>
       <div class="bg-gray-50 rounded-2xl p-4 text-center">
-        <p class="text-2xl font-extrabold text-[#71212d]">{{ total_favorites }}</p>
+        <p class="text-2xl font-extrabold text-primary-600">{{ total_favorites }}</p>
         <p class="text-xs text-gray-500 uppercase font-bold mt-1">Favoris</p>
       </div>
     </div>
@@ -77,7 +77,7 @@
   <div class="bg-white rounded-3xl border border-gray-100 shadow-lg p-8 mb-8 text-center">
     <h1 class="text-2xl font-extrabold text-gray-900">Utilisateur indisponible</h1>
     <p class="text-gray-500 mt-3">Ce profil n'est pas accessible ou a été supprimé.</p>
-    <a href="{% url 'core:home' %}" class="inline-flex items-center mt-6 text-[#71212d] font-semibold hover:underline">Retour à l’accueil</a>
+    <a href="{% url 'core:home' %}" class="inline-flex items-center mt-6 text-primary-600 font-semibold hover:underline">Retour à l’accueil</a>
   </div>
   {% endif %}
 

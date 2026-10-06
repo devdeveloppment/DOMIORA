@@ -6,7 +6,7 @@
 2. [Configuration requise](#configuration-requise)
 3. [Workflow de vérification d'identité](#workflow-de-vérification-didentité)
 4. [API Endpoints](#api-endpoints)
-5. [Assistant IA Gemini](#assistant-ia-gemini)
+5. [Assistant IA Mistral](#assistant-ia-mistral)
 6. [Configuration ngrok](#configuration-ngrok)
 7. [Tests et Dépannage](#tests-et-dépannage)
 
@@ -19,7 +19,7 @@ Cette intégration ajoute les fonctionnalités suivantes à DOMIORA :
 - ✅ Vérification automatique d'identité des propriétaires via n8n
 - ✅ Workflow de validation admin avec notifications
 - ✅ Emails automatiques (validation/refus)
-- ✅ Assistant IA conversationnel avec Gemini API
+- ✅ Assistant IA conversationnel avec Mistral API
 - ✅ Recherche intelligente de propriétés
 - ✅ Sécurité renforcée (validation fichiers, permissions)
 
@@ -35,8 +35,9 @@ Ajoutez ces variables à votre fichier `.env` :
 # Base URL pour les webhooks (utilisez ngrok pour localhost)
 BASE_URL=https://abcd-1234.ngrok-free.app
 
-# Clé API Gemini pour l'assistant IA
-GEMINI_API_KEY=your_gemini_api_key_here
+# Clé API Mistral pour l'assistant IA
+MISTRAL_API_KEY=your_mistral_api_key_here
+MISTRAL_MODEL=mistral-small-latest
 
 # Configuration SMTP Gmail
 EMAIL_HOST=smtp.gmail.com
@@ -187,7 +188,7 @@ POST /api/chat/
       "surface_area": 150
     }
   ],
-  "source": "gemini"
+  "source": "intelligent_assistant"
 }
 ```
 
@@ -210,7 +211,7 @@ POST /api/admin/notifications/
 
 ---
 
-## Assistant IA Gemini
+## Assistant IA Mistral
 
 ### Fonctionnalités
 
@@ -240,7 +241,7 @@ L'assistant interroge PostgreSQL pour trouver des propriétés correspondantes :
 
 ### Fallback
 
-Si l'API Gemini échoue, le système utilise des réponses basées sur des règles prédéfinies pour garantir une réponse.
+Si l'API Mistral échoue, le système utilise des réponses basées sur des règles prédéfinies pour garantir une réponse.
 
 ---
 
@@ -314,13 +315,13 @@ curl -X POST http://127.0.0.1:8000/api/chat/ \
 
 ```bash
 # En développement, les emails sont affichés dans la console
-# Vérifiez les logs pour les appels API n8n et Gemini
+# Vérifiez les logs pour les appels API n8n et Mistral
 ```
 
 ### Problèmes courants
 
-**Erreur 404 sur Gemini API**:
-- Vérifiez que `GEMINI_API_KEY` est correct dans `.env`
+**Erreur d'authentification Mistral API**:
+- Vérifiez que `MISTRAL_API_KEY` est correct dans `.env`
 - Assurez-vous que la clé est active et a des crédits
 
 **Erreur connexion SMTP**:
@@ -418,7 +419,7 @@ api/
 Pour toute question ou problème, consultez :
 - Logs Django dans la console
 - Logs n8n dans le tableau de bord n8n
-- Documentation Gemini API: https://ai.google.dev/docs
+- Documentation Mistral API: https://docs.mistral.ai/api/
 
 ---
 

@@ -7,78 +7,68 @@
 <meta name="description" content="{% block description %}DOMIORA, la plateforme n°1 en immobilier. Trouvez, louez ou vendez votre propriété en toute simplicité.{% endblock %}">
 <!-- DNS Prefetch & Preconnect for speed -->
 <link rel="dns-prefetch" href="https://fonts.googleapis.com">
-<link rel="dns-prefetch" href="https://cdn.tailwindcss.com">
 <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
 <link rel="dns-prefetch" href="https://images.unsplash.com">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preload" href="https://cdn.tailwindcss.com" as="script">
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdn.tailwindcss.com"></script>
-<script>
-  tailwind.config = {
-    darkMode: 'class',
-    theme: {
-      extend: {
-        fontFamily: { sans: ['Inter', 'sans-serif'], display: ['Montserrat', 'sans-serif'] },
-        colors: {
-          primary: {
-            50: '#f0f9ff', 100: '#e0f2fe', 200: '#bfe9ff', 300: '#7fd3ff',
-            400: '#38bdf8', 500: '#0ea5e9', 600: '#0284c7', 700: '#0369a1',
-            800: '#075985', 900: '#074461', 950: '#03253b'
-          },
-          ink: '#071023'
-        },
-        boxShadow: { card: '0 10px 30px -10px rgba(76, 29, 149, 0.15)', glow: '0 0 0 1px rgba(124,58,237,.15), 0 8px 24px -4px rgba(124,58,237,.25)' },
-        animation: { 'fade-up': 'fadeUp .6s ease-out both', 'float': 'float 6s ease-in-out infinite' },
-        keyframes: {
-          fadeUp: { '0%': { opacity: 0, transform: 'translateY(16px)' }, '100%': { opacity: 1, transform: 'translateY(0)' } },
-          float: { '0%,100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-8px)' } }
-        }
-      }
+<!-- Preload critical font subset -->
+<link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<link rel="preload" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
+<!-- Font Awesome - async to avoid render blocking -->
+<link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'" crossorigin="anonymous">
+<noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
+<link rel="stylesheet" href="{% static 'css/design-system.css' %}">
+<style>
+  body { font-family: 'Inter', sans-serif; }
+  h1, h2, h3, h4, h5, h6, .font-display { text-wrap: balance; }
+  h1, h2, h3, .font-display { font-family: 'Montserrat', sans-serif; }
+  /* Justify paragraphs only in main content sections - not in navs, footer, cards with icons */
+  main section p:not(.no-justify),
+  main article p:not(.no-justify) {
+    text-align: left;   /* mobile first: left-align, no hyphens */
+    hyphens: none;
+    line-height: 1.75;
+  }
+  /* Justify only on tablets and above where columns are wide enough */
+  @media (min-width: 768px) {
+    main section p:not(.no-justify),
+    main article p:not(.no-justify) {
+      text-align: justify;
+      hyphens: auto;
     }
   }
-</script>
-<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-<!-- Premium CSS -->
-{% load static %}
-<link rel="stylesheet" href="{% static 'css/premium.css' %}">
-<link rel="stylesheet" href="{% static 'css/premium-buttons.css' %}">
-<link rel="stylesheet" href="{% static 'css/glassmorphism-neumorphism.css' %}">
-<style>
-  body { font-family: 'Inter', sans-serif; overflow-wrap: break-word; word-wrap: break-word; -ms-word-break: break-all; word-break: break-word; -webkit-hyphens: auto; -ms-hyphens: auto; hyphens: auto; }
-  h1, h2, h3, h4, h5, h6, .font-display, p { text-wrap: balance; }
-  h1, h2, h3, .font-display { font-family: 'Montserrat', sans-serif; }
-  p { line-height: 1.625; }
-  img { max-width: 100%; height: auto; }
-  .gradient-hero { background-image: linear-gradient(180deg, rgba(14,165,233,0.12), rgba(3,132,199,0.08)), url('{% static "images/hero-illustration.svg" %}'); background-size: cover; background-position: center; }
-  .text-gradient { background: linear-gradient(90deg,#a78bfa,#7c3aed); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  /* Never justify short/UI text or elements with no-justify */
+  nav p, .btn, label, .badge,
+  .no-justify, .no-justify p,
+  p.text-sm, p.text-xs { text-align: left !important; }
+  /* Centered paragraphs always stay centered, even in footer */
+  p.text-center, footer .text-center p, .text-center > p { text-align: center !important; }
+  img { max-width: 100%; height: auto; display: block; }
+  .gradient-hero { background-image: linear-gradient(180deg, rgba(113,33,45,0.12), rgba(113,33,45,0.08)), url('{% static "images/hero-illustration.svg" %}'); background-size: cover; background-position: center; }
+  .text-gradient { background: linear-gradient(90deg, var(--color-primary-light), var(--color-primary)); -webkit-background-clip: text; background-clip: text; color: transparent; }
   [x-cloak] { display:none !important; }
-  .dark body { background:#0b0712; }
-  ::selection { background:#c4b5fd; color:#2e1065; }
+  ::selection { background: var(--color-accent); color: var(--color-primary); }
   .hover-lift { transition: transform .35s cubic-bezier(.2,.8,.2,1), box-shadow .35s; }
   .hover-lift:hover { transform: translateY(-6px); }
 </style>
-<script>
-  if (localStorage.getItem('domiora-theme') === 'dark' || (!('domiora-theme' in localStorage) && false)) {
-    document.documentElement.classList.add('dark');
-  }
-</script>
-<link rel="stylesheet" href="{% static 'css/maquette-overrides.css' %}">
 {% block extra_head %}{% endblock %}
 <!-- Three.js for 3D effects (disabled for performance) -->
 <!-- <script defer src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script> -->
 <!-- <script defer src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script> -->
 </head>
-<body class="bg-gray-50 dark:bg-[#0b0712] dark:text-gray-100 text-ink antialiased font-sans overflow-x-hidden flex flex-col min-h-screen" x-data="{ darkMode: localStorage.getItem('domiora-theme') === 'dark' }" x-init="$watch('darkMode', v => { document.documentElement.classList.toggle('dark', v); localStorage.setItem('domiora-theme', v ? 'dark' : 'light'); }); document.documentElement.classList.toggle('dark', darkMode)">
+<body class="bg-gray-50 text-gray-900 antialiased font-sans overflow-x-hidden flex flex-col min-h-screen">
 
 {% include "partials/navbar.html" %}
 
 <div>
 {% if messages %}
-  <div class="max-w-[1440px] 2xl:max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-4 space-y-2">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 space-y-2">
     {% for message in messages %}
-      <div class="rounded-xl px-4 py-3 text-sm font-medium {% if message.tags == 'success' %}bg-green-50 text-green-700 border border-green-200{% elif message.tags == 'error' %}bg-red-50 text-red-700 border border-red-200{% else %}bg-primary-50 text-primary-700 border border-primary-200{% endif %}">
+      <div class="rounded-xl px-4 py-3 text-sm font-medium {% if message.tags == 'success' %}bg-emerald-50 text-emerald-800 border border-emerald-200{% elif message.tags == 'error' %}bg-rose-50 text-rose-800 border border-rose-200{% else %}bg-primary-50 text-primary-800 border border-primary-200{% endif %}">
         {{ message }}
       </div>
     {% endfor %}

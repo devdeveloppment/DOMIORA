@@ -24,7 +24,7 @@
         </td>
         <td class="px-5 py-4 text-right space-x-2">
           {% if u.id_document %}
-          <a href="{{ u.id_document.url }}" target="_blank" class="text-blue-600 hover:underline text-xs font-semibold">Voir document</a>
+          <a href="{{ u.id_document.url }}" target="_blank" class="text-primary-600 hover:underline text-xs font-semibold">Voir document</a>
           {% endif %}
           {% if u.verification_status == 'pending' %}
           <a href="{% url 'dashboard:admin_verify_user' u.pk 'approved' %}" class="text-emerald-600 hover:underline text-xs font-semibold">Approuver</a>

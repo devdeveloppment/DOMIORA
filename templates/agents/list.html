@@ -2,7 +2,7 @@
 {% block title %}Nos propriétaires — {{ site_settings.site_name }}{% endblock %}
 
 {% block content %}
-<section class="bg-[#71212d] py-16 relative overflow-hidden" data-parallax="0.2">
+<section class="bg-primary-600 py-16 relative overflow-hidden" data-parallax="0.2">
   <div class="absolute inset-0 z-0 opacity-10">
     <img src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80" alt="Background" class="w-full h-full object-cover">
   </div>
@@ -20,8 +20,8 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
       </div>
-      <input type="text" name="q" value="{{ request.GET.q }}" placeholder="Rechercher un propriétaire..." class="block w-full pl-11 pr-4 py-4 border border-gray-200 rounded-full leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#71212d]/20 focus:border-[#71212d] sm:text-sm shadow-sm transition glass">
-      <button type="submit" class="absolute inset-y-1.5 right-1.5 px-4 bg-[#71212d] text-white font-bold rounded-full hover:bg-[#5a1a24] transition-colors text-sm btn-premium btn-premium-primary">
+      <input type="text" name="q" value="{{ request.GET.q }}" placeholder="Rechercher un propriétaire..." class="block w-full pl-11 pr-4 py-4 border border-gray-200 rounded-full leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-600/20 focus:border-primary-600 sm:text-sm shadow-sm transition glass">
+      <button type="submit" class="absolute inset-y-1.5 right-1.5 px-4 bg-primary-600 text-white font-bold rounded-full hover:bg-primary-700 transition-colors text-sm btn-premium btn-premium-primary">
         Rechercher
       </button>
     </div>
@@ -49,15 +49,15 @@
           </span>
           {% endif %}
           <span class="text-xs font-bold text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full">
-            ⭐ {{ agent.rating|floatformat:1|default:"0.0" }}
+            <i class="fa-solid fa-star"></i> {{ agent.rating|floatformat:1|default:"0.0" }}
           </span>
         </div>
         <div class="pt-4 border-t border-gray-100 flex items-center justify-between text-sm text-gray-600">
           <span class="flex items-center gap-2">
-            <svg class="w-4 h-4 text-[#d4af37]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+            <svg class="w-4 h-4 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
             <span class="font-semibold">{{ agent.total_properties_count }} annonces</span>
           </span>
-          <span class="text-[#71212d] font-bold group-hover:underline">Voir le profil &rarr;</span>
+          <span class="text-primary-600 font-bold group-hover:underline">Voir le profil &rarr;</span>
         </div>
       </div>
     </a>

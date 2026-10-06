@@ -1,28 +1,442 @@
 {% extends "dashboard/dashboard_base.html" %}
 {% block title %}Mon profil — {{ site_settings.site_name }}{% endblock %}
+
 {% block dashboard_content %}
-<section class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-  <h1 class="text-2xl font-extrabold mb-6">Mon profil</h1>
-  <div class="bg-white rounded-2xl shadow-card border border-gray-100 p-8">
-    <div class="flex items-center gap-4 mb-6">
-      <img src="{{ user.get_avatar_url }}" class="w-16 h-16 rounded-full object-cover">
-      <div>
-        <p class="font-bold">{{ user.get_full_name|default:user.username }}</p>
-        <p class="text-sm text-gray-500">{{ user.get_role_display }}</p>
+<div class="profile-wrapper">
+
+  <!-- Colonne gauche : carte identité + infos statiques -->
+  <aside class="profile-sidebar">
+
+    <!-- Avatar + nom -->
+    <div class="profile-id-card">
+      <div class="profile-avatar-wrap">
+        <img src="{{ user.get_avatar_url }}" alt="Avatar" class="profile-avatar">
+        <span class="profile-role-badge">{{ user.get_role_display }}</span>
+      </div>
+      <h2 class="profile-name">{{ user.get_full_name|default:user.username }}</h2>
+      <p class="profile-email-display">{{ user.email }}</p>
+    </div>
+
+    <!-- Infos rapides -->
+    <div class="profile-info-list">
+      {% if user.phone %}
+      <div class="profile-info-item">
+        <i class="fa fa-phone"></i>
+        <span>{{ user.phone }}</span>
+      </div>
+      {% endif %}
+      <div class="profile-info-item">
+        <i class="fa fa-calendar"></i>
+        <span>Membre depuis {{ user.date_joined|date:"M Y" }}</span>
+      </div>
+      {% if user.bio %}
+      <div class="profile-info-item profile-bio-preview">
+        <i class="fa fa-align-left"></i>
+        <span>{{ user.bio|truncatechars:80 }}</span>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Stat rapides client -->
+    <div class="profile-stats">
+      <div class="profile-stat">
+        <span class="stat-value">{{ user.propertyrequests.count|default:"0" }}</span>
+        <span class="stat-label">Demandes</span>
+      </div>
+      <div class="profile-stat">
+        <span class="stat-value">{{ user.favorites.count|default:"0" }}</span>
+        <span class="stat-label">Favoris</span>
       </div>
     </div>
-    <form method="post" enctype="multipart/form-data" class="space-y-4">
+  </aside>
+
+  <!-- Colonne droite : formulaire d'édition -->
+  <main class="profile-form-area">
+    <div class="profile-form-header">
+      <h1 class="profile-form-title">Modifier mon profil</h1>
+      <p class="profile-form-subtitle">Mettez à jour vos informations personnelles</p>
+    </div>
+
+    {% if messages %}
+      {% for message in messages %}
+        <div class="profile-alert profile-alert-{{ message.tags }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data" class="profile-form">
       {% csrf_token %}
-      <div class="grid sm:grid-cols-2 gap-4">
-        <div><label class="text-sm font-semibold text-gray-700">{{ form.first_name.label }}</label>{{ form.first_name }}</div>
-        <div><label class="text-sm font-semibold text-gray-700">{{ form.last_name.label }}</label>{{ form.last_name }}</div>
+
+      <div class="form-row-2">
+        <div class="form-group">
+          <label class="form-label">{{ form.first_name.label }}</label>
+          {{ form.first_name }}
+        </div>
+        <div class="form-group">
+          <label class="form-label">{{ form.last_name.label }}</label>
+          {{ form.last_name }}
+        </div>
       </div>
-      <div><label class="text-sm font-semibold text-gray-700">{{ form.email.label }}</label>{{ form.email }}</div>
-      <div><label class="text-sm font-semibold text-gray-700">{{ form.phone.label }}</label>{{ form.phone }}</div>
-      <div><label class="text-sm font-semibold text-gray-700">{{ form.bio.label }}</label>{{ form.bio }}</div>
-      <div><label class="text-sm font-semibold text-gray-700">{{ form.avatar.label }}</label>{{ form.avatar }}</div>
-      <button type="submit" class="bg-primary-600 hover:bg-primary-500 transition text-white font-semibold rounded-full px-6 py-3">Enregistrer</button>
+
+      <div class="form-row-2">
+        <div class="form-group">
+          <label class="form-label">{{ form.email.label }}</label>
+          {{ form.email }}
+        </div>
+        <div class="form-group">
+          <label class="form-label">{{ form.phone.label }}</label>
+          {{ form.phone }}
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">{{ form.bio.label }}</label>
+        {{ form.bio }}
+      </div>
+
+      <div class="profile-avatar-upload">
+        <label class="form-label">{{ form.avatar.label }}</label>
+        <div class="avatar-upload-row">
+          <img src="{{ user.get_avatar_url }}" class="avatar-preview-sm" alt="avatar actuel">
+          <div class="avatar-upload-btn-wrap">
+            {{ form.avatar }}
+            <p class="avatar-hint">JPG, PNG ou GIF · max 2 Mo</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn-save">
+          <i class="fa fa-save"></i> Enregistrer les modifications
+        </button>
+      </div>
     </form>
-  </div>
-</section>
+
+  </main>
+</div>
+
+<style>
+/* ===== LAYOUT ===== */
+.profile-wrapper {
+  display: flex;
+  gap: 1.5rem;
+  min-height: calc(100vh - 9rem);
+  align-items: stretch;
+}
+
+/* ===== SIDEBAR ===== */
+.profile-sidebar {
+  width: 260px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.profile-id-card {
+  background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 60%, #2563eb 100%);
+  border-radius: 1rem;
+  padding: 1.5rem 1rem;
+  text-align: center;
+  color: white;
+}
+
+.profile-avatar-wrap {
+  position: relative;
+  display: inline-block;
+  margin-bottom: .75rem;
+}
+
+.profile-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid rgba(255,255,255,.4);
+}
+
+.profile-role-badge {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  background: #fbbf24;
+  color: #78350f;
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  padding: 2px 6px;
+  border-radius: 999px;
+  border: 1.5px solid white;
+}
+
+.profile-name {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  color: white;
+  margin-bottom: .25rem;
+}
+
+.profile-email-display {
+  font-size: .75rem;
+  color: rgba(255,255,255,.7);
+  word-break: break-all;
+}
+
+/* info list */
+.profile-info-list {
+  background: white;
+  border-radius: 1rem;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: .75rem;
+  border: 1px solid #e5e7eb;
+  flex: 1;
+}
+
+.profile-info-item {
+  display: flex;
+  align-items: flex-start;
+  gap: .6rem;
+  font-size: .82rem;
+  color: #374151;
+}
+
+.profile-info-item i {
+  color: #2563eb;
+  margin-top: .15rem;
+  width: 14px;
+  flex-shrink: 0;
+}
+
+.profile-bio-preview span {
+  color: #6b7280;
+  font-style: italic;
+  line-height: 1.4;
+}
+
+/* stats */
+.profile-stats {
+  background: white;
+  border-radius: 1rem;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  divide-x: #e5e7eb;
+}
+
+.profile-stat {
+  flex: 1;
+  padding: .85rem .5rem;
+  text-align: center;
+}
+
+.profile-stat + .profile-stat {
+  border-left: 1px solid #e5e7eb;
+}
+
+.stat-value {
+  display: block;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #1d4ed8;
+  line-height: 1;
+}
+
+.stat-label {
+  display: block;
+  font-size: .7rem;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  margin-top: .2rem;
+}
+
+/* ===== FORM AREA ===== */
+.profile-form-area {
+  flex: 1;
+  background: white;
+  border-radius: 1rem;
+  border: 1px solid #e5e7eb;
+  padding: 1.75rem 2rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.profile-form-header {
+  margin-bottom: 1.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.profile-form-title {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #111827;
+}
+
+.profile-form-subtitle {
+  font-size: .8rem;
+  color: #9ca3af;
+  margin-top: .15rem;
+}
+
+/* Alert */
+.profile-alert {
+  padding: .65rem 1rem;
+  border-radius: .5rem;
+  font-size: .85rem;
+  font-weight: 500;
+  margin-bottom: 1rem;
+}
+.profile-alert-success { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+.profile-alert-error   { background: #fef2f2; color: #991b1b; border: 1px solid #fca5a5; }
+
+/* Form */
+.profile-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  flex: 1;
+}
+
+.form-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .85rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: .3rem;
+}
+
+.form-label {
+  font-size: .78rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+/* Inputs */
+.profile-form input[type="text"],
+.profile-form input[type="email"],
+.profile-form input[type="tel"],
+.profile-form input[type="number"],
+.profile-form select,
+.profile-form textarea {
+  width: 100%;
+  padding: .55rem .85rem;
+  border: 1.5px solid #e5e7eb;
+  border-radius: .6rem;
+  font-size: .875rem;
+  color: #111827;
+  background: #f9fafb;
+  outline: none;
+  transition: border-color .15s, background .15s;
+  box-sizing: border-box;
+}
+
+.profile-form input:focus,
+.profile-form select:focus,
+.profile-form textarea:focus {
+  border-color: #2563eb;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(37,99,235,.08);
+}
+
+.profile-form textarea {
+  resize: vertical;
+  min-height: 90px;
+  max-height: 160px;
+}
+
+/* Avatar upload */
+.profile-avatar-upload {
+  display: flex;
+  flex-direction: column;
+  gap: .4rem;
+}
+
+.avatar-upload-row {
+  display: flex;
+  align-items: center;
+  gap: .85rem;
+}
+
+.avatar-preview-sm {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #e5e7eb;
+  flex-shrink: 0;
+}
+
+.avatar-upload-btn-wrap {
+  flex: 1;
+}
+
+.profile-form input[type="file"] {
+  padding: .35rem .5rem;
+  font-size: .8rem;
+  background: #f3f4f6;
+  border: 1.5px dashed #d1d5db;
+  cursor: pointer;
+  border-radius: .5rem;
+  width: 100%;
+}
+
+.avatar-hint {
+  font-size: .7rem;
+  color: #9ca3af;
+  margin-top: .25rem;
+}
+
+/* Action button */
+.form-actions {
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid #f3f4f6;
+}
+
+.btn-save {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  background: linear-gradient(135deg, #1d4ed8, #2563eb);
+  color: white;
+  font-weight: 700;
+  font-size: .875rem;
+  padding: .65rem 1.5rem;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  transition: all .2s;
+  box-shadow: 0 4px 12px rgba(37,99,235,.25);
+}
+
+.btn-save:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(37,99,235,.35);
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .profile-wrapper {
+    flex-direction: column;
+    min-height: unset;
+  }
+  .profile-sidebar {
+    width: 100%;
+  }
+  .form-row-2 {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
 {% endblock %}

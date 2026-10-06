@@ -13,7 +13,7 @@
     </div>
     <div class="flex flex-wrap items-center gap-3">
       <form method="get" class="flex items-center gap-2">
-        <select name="status" onchange="this.form.submit()" class="text-sm border border-gray-200 rounded-xl bg-white px-3 py-2 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+        <select name="status" onchange="this.form.submit()" class="text-sm border border-gray-200 rounded-xl bg-white px-3 py-2 text-gray-700 focus:ring-2 focus:ring-primary-600 focus:border-primary-600">
           <option value="">Tous les statuts</option>
           <option value="disponible" {% if request.GET.status == "disponible" %}selected{% endif %}>Disponible</option>
           <option value="vendu" {% if request.GET.status == "vendu" %}selected{% endif %}>Vendu</option>
@@ -21,7 +21,7 @@
           <option value="brouillon" {% if request.GET.status == "brouillon" %}selected{% endif %}>Brouillon</option>
         </select>
       </form>
-      <a href="{% url 'dashboard:admin_property_create' %}" class="inline-flex items-center gap-2 bg-blue-600 text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:bg-blue-700 transition shadow-sm">
+      <a href="{% url 'dashboard:admin_property_create' %}" class="inline-flex items-center gap-2 bg-primary-600 text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:bg-primary-700 transition shadow-sm">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
         Ajouter
       </a>
@@ -52,7 +52,7 @@
                      onerror="this.src='https://placehold.co/48x48/f3f4f6/9ca3af?text=?'">
                 <div class="min-w-0">
                   <a href="{{ p.get_absolute_url }}" target="_blank"
-                     class="font-semibold text-gray-900 hover:text-blue-600 transition block truncate max-w-[220px]">{{ p.title }}</a>
+                     class="font-semibold text-gray-900 hover:text-primary-600 transition block truncate max-w-[220px]">{{ p.title }}</a>
                   <span class="text-xs text-gray-400">{{ p.city }}{% if p.neighborhood %}, {{ p.neighborhood }}{% endif %}</span>
                 </div>
               </div>
@@ -105,8 +105,13 @@
                   <button class="text-xs font-semibold text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 px-2.5 py-1.5 rounded-lg transition">Rejeter</button>
                 </form>
                 {% endif %}
+                <form method="post" action="{% url 'dashboard:admin_property_video_generate' p.pk %}" class="inline">
+                  {% csrf_token %}
+                  <button title="Visite virtuelle : {{ p.get_video_status_display }}{% if p.video_error %} — {{ p.video_error }}{% endif %}"
+                          class="text-xs font-semibold text-gray-600 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 px-2.5 py-1.5 rounded-lg transition">Vidéo{% if p.video_status == 'done' %} ✓{% elif p.video_status == 'failed' %} !{% endif %}</button>
+                </form>
                 <a href="{% url 'dashboard:admin_property_edit' p.pk %}"
-                   class="text-xs font-semibold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2.5 py-1.5 rounded-lg transition">Modifier</a>
+                   class="text-xs font-semibold text-primary-600 hover:text-primary-800 bg-primary-50 hover:bg-primary-100 px-2.5 py-1.5 rounded-lg transition">Modifier</a>
                 <form method="post" action="{% url 'dashboard:admin_property_delete' p.pk %}" class="inline"
                       onsubmit="return confirm('Supprimer définitivement ce bien ?');">
                   {% csrf_token %}

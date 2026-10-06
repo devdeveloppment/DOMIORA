@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.core.paginator import Paginator
+from django.db.models import Count, Q
 
 from .decorators import role_required
 from favorites.models import Favorite
@@ -35,13 +36,20 @@ def client_overview(request):
     messages_count = Message.objects.filter(conversation__buyer=request.user).count()
     notifications_count = Notification.objects.filter(user=request.user, is_read=False).count()
 
+    requests_agg = requests.aggregate(
+        total=Count('id'),
+        pending=Count('id', filter=Q(status="en_attente")),
+        accepted=Count('id', filter=Q(status="acceptee")),
+        rejected=Count('id', filter=Q(status="rejetee")),
+    )
+
     context = {
         "active": "overview",
         "favorites_count": favorites_count,
-        "requests_count": requests.count(),
-        "pending_count": requests.filter(status="en_attente").count(),
-        "accepted_count": requests.filter(status="acceptee").count(),
-        "rejected_count": requests.filter(status="rejetee").count(),
+        "requests_count": requests_agg["total"],
+        "pending_count": requests_agg["pending"],
+        "accepted_count": requests_agg["accepted"],
+        "rejected_count": requests_agg["rejected"],
         "recent_requests": requests[:5],
         "recent_favorites": Favorite.objects.filter(user=request.user).select_related("property")[:4],
         "viewed_properties": viewed_properties,
@@ -148,7 +156,14 @@ def client_requests(request):
 
 @role_required(User.Role.CLIENT)
 def client_notifications(request):
-    notifications = Notification.objects.filter(user=request.user).exclude(link__startswith='/dashboard/admin-panel/')
+    # Only show notifications intended for the CLIENT role:
+    # - notifications with a link pointing to /dashboard/client/
+    # - notifications with no link (generic system notifications)
+    # Exclude owner-specific and admin-specific notifications.
+    from django.db.models import Q
+    notifications = Notification.objects.filter(user=request.user).filter(
+        Q(link__startswith='/dashboard/client/') | Q(link='')
+    ).exclude(link__startswith='/dashboard/admin-panel/')
     context = {
         "dash_role": "client",
         "active": "notifications",
@@ -164,33 +179,40 @@ def client_unlocked_properties(request):
     """Show all properties this client has unlocked (paid for) - 'Mes mises en relation'."""
     from properties.models import PropertyUnlock
     from messaging.models import Conversation
-    
+
     unlocks = (
         PropertyUnlock.objects
-        .filter(user=request.user)
+        .filter(
+            user=request.user,
+            property__owner__isnull=False,
+            property__owner__role=User.Role.OWNER,
+            property__owner__is_active=True,
+        )
         .select_related("property", "property__owner")
         .prefetch_related("property__images")
         .order_by("-unlocked_at")
     )
-    
-    # Add conversation information for each unlock
+
+    # Fetch all conversations for this user in one query → no N+1
+    property_ids = [u.property_id for u in unlocks]
+    conversations_qs = Conversation.objects.filter(
+        buyer=request.user,
+        property_id__in=property_ids,
+    ).select_related("property", "owner")
+    conv_by_property = {c.property_id: c for c in conversations_qs}
+
     unlock_data = []
     for unlock in unlocks:
-        conversation = Conversation.objects.filter(
-            buyer=request.user,
-            owner=unlock.property.owner,
-            property=unlock.property
-        ).first()
-        
+        conversation = conv_by_property.get(unlock.property_id)
         unlock_data.append({
             'unlock': unlock,
             'conversation': conversation,
             'has_unread': conversation.unread_count_for(request.user) > 0 if conversation else False
         })
-    
+
     paginator = Paginator(unlock_data, 9)
     page_obj = paginator.get_page(request.GET.get("page"))
-    
+
     return render(request, "dashboard/client/my_connections.html", {
         "page_obj": page_obj,
         "active": "connections",

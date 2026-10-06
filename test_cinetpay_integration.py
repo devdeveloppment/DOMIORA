@@ -26,9 +26,9 @@ print(f"Secret Key: {secret_key[:20]}...{secret_key[-10:] if len(secret_key) > 3
 if not api_key or not site_id or not secret_key:
     print("\n❌ ERROR: CinetPay credentials not configured in .env file")
     print("Please add the following to your .env file:")
-    print("CINETPAY_API_KEY=143459870067b2ecff946dd7.59047762")
-    print("CINETPAY_SITE_ID=105888043")
-    print("CINETPAY_SECRET_KEY=112414020867b2ef474bb320.19729040")
+    print("CINETPAY_API_KEY=<set locally>")
+    print("CINETPAY_SITE_ID=<set locally>")
+    print("CINETPAY_SECRET_KEY=<set locally>")
 else:
     print("\n✅ CinetPay credentials are configured")
 

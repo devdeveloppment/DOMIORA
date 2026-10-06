@@ -1,8 +1,11 @@
+# Importations des bibliothèques mathématiques pour les calculs de distance
 from math import radians, sin, cos, sqrt, atan2
 from decimal import Decimal
+from datetime import timedelta
 import uuid
 import logging
 
+# Importations Django pour le framework web
 from django.contrib import messages
 from django.contrib.auth import get_user_model, login
 from django.contrib.auth.decorators import login_required
@@ -15,17 +18,22 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 from django.conf import settings
 
+# Importations des modèles DOMIORA
 from favorites.models import Favorite
 from rental_requests.forms import PropertyRequestForm
-
-from .cinetpay import generate_cinetpay_payment_url, verify_cinetpay_payment, verify_cinetpay_signature
+from .fedapay import generate_fedapay_payment_url, verify_fedapay_payment, verify_fedapay_webhook_signature
 from .models import Property, PropertyUnlock, PropertyView, SearchAlert
 
+# Configuration du logger pour le suivi des erreurs
 logger = logging.getLogger(__name__)
 
+# Récupération du modèle User personnalisé
 User = get_user_model()
 
 
+# Mapping des caractéristiques pour les filtres de recherche.
+# Chaque caractéristique principale est associée à plusieurs variantes de libellé,
+# afin de rester tolérant vis-à-vis des mots-clés saisis par l'utilisateur.
 FEATURE_MAP = {
     "garage": ["garage", "garage double", "parking privé", "parking prive"],
     "jardin": ["jardin", "jardin privatif"],
@@ -38,8 +46,32 @@ FEATURE_MAP = {
 }
 
 
+def _public_contactable_properties():
+    """Retourne les propriétés publiées, validées et visibles publiquement."""
+    # Les biens affichés dans la recherche doivent appartenir à un propriétaire actif
+    # et avoir été validés par l'administration avant d'être contactables.
+    from django.db.models import Count
+    return Property.objects.filter(
+        is_published=True,
+        is_validated=True,
+        owner__isnull=False,
+        owner__role=User.Role.OWNER,
+        owner__is_active=True,
+    ).annotate(_fav_count=Count('favorited_by', distinct=True))
+
+
+def _property_has_valid_owner(property_obj):
+    """Vérifie si la propriété a un propriétaire en règle et actif."""
+    return bool(
+        property_obj.owner
+        and property_obj.owner.role == User.Role.OWNER
+        and property_obj.owner.is_active
+    )
+
+
 def _haversine_km(lat1, lon1, lat2, lon2):
-    r = 6371.0
+    """Calcule la distance en kilomètres entre deux coordonnées GPS selon la formule de Haversine."""
+    r = 6371.0  # Rayon moyen de la Terre en kilomètres.
     d_lat = radians(lat2 - lat1)
     d_lon = radians(lon2 - lon1)
     a = sin(d_lat / 2) ** 2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(d_lon / 2) ** 2
@@ -47,6 +79,7 @@ def _haversine_km(lat1, lon1, lat2, lon2):
 
 
 def _default_nearby_services(property_obj):
+    """Fournit une liste de services de proximité par défaut pour une propriété."""
     base = [
         ("École", 250),
         ("Pharmacie", 500),
@@ -60,6 +93,7 @@ def _default_nearby_services(property_obj):
 
 
 def _apply_feature_filters(queryset, selected_features):
+    """Ajoute les filtres liés aux équipements sélectionnés sur un queryset de propriétés."""
     for feature in selected_features:
         aliases = FEATURE_MAP.get(feature, [])
         if not aliases:
@@ -72,10 +106,13 @@ def _apply_feature_filters(queryset, selected_features):
 
 
 def _build_alert_name(request_data):
+    """Construit un libellé lisible pour une alerte de recherche à partir des critères saisis."""
     city = (request_data.get("city") or "").strip()
     property_type = (request_data.get("type") or "").strip()
     price_max = (request_data.get("price_max") or "").strip()
     property_label = dict(Property.PropertyType.choices).get(property_type, "")
+
+    # Le nom de l'alerte se base d'abord sur la ville et le type de bien, si présents.
     if property_label and city:
         base_name = f"{property_label} à {city}"
     elif property_label:
@@ -84,6 +121,8 @@ def _build_alert_name(request_data):
         base_name = city
     else:
         base_name = "Recherche sauvegardée"
+
+    # Ajoute le budget maximum lorsque l'utilisateur le précise dans le formulaire.
     if price_max:
         try:
             formatted_budget = f"{int(float(price_max)):,}".replace(",", " ")
@@ -95,10 +134,14 @@ def _build_alert_name(request_data):
 
 @login_required
 def save_search_alert(request):
+    """Sauvegarde une alerte de recherche pour l'utilisateur connecté."""
     if request.method != "POST":
         return redirect("properties:list")
 
+    # Si aucun nom n'est fourni, on construit automatiquement un libellé explicite.
     name = (request.POST.get("name") or "").strip() or _build_alert_name(request.POST)
+
+    # Création complète de l'alerte avec les critères choisis par l'utilisateur.
     alert = SearchAlert.objects.create(
         user=request.user,
         name=name,
@@ -116,10 +159,13 @@ def save_search_alert(request):
 
 @login_required
 def my_alerts(request):
+    """Affiche et gère les alertes de recherche enregistrées par l'utilisateur."""
     if request.method == "POST":
         action = request.POST.get("action")
         alert_id = request.POST.get("alert_id")
         alert = get_object_or_404(SearchAlert, pk=alert_id, user=request.user)
+
+        # Activation/désactivation ou suppression de l'alerte choisie.
         if action == "toggle":
             alert.is_active = not alert.is_active
             alert.save()
@@ -129,73 +175,97 @@ def my_alerts(request):
             messages.success(request, "Alerte supprimée.")
         return redirect("properties:my_alerts")
 
+    # On récupère toutes les alertes de l'utilisateur, les plus récentes en premier.
     alerts = SearchAlert.objects.filter(user=request.user).order_by("-created_at")
     return render(request, "properties/my_alerts.html", {"alerts": alerts})
 
 
 def property_list(request):
+    """Vue principale de la liste des propriétés avec filtres et recherche avancée."""
+    # Requête optimisée pour afficher les biens publiés sans charger inutilement les relations lourdes.
     qs = (
-        Property.objects.select_related("owner")
-        .prefetch_related("images", "amenities")
-        .filter(is_published=True, is_validated=True)
+        Property.objects.filter(
+            is_published=True,
+            is_validated=True,
+            owner__isnull=False,
+            owner__role=User.Role.OWNER,
+            owner__is_active=True,
+        )
+        .select_related("owner")
+        .prefetch_related("images")
     )
 
+    # Filtre par type de transaction (vente/location)
     transaction = request.GET.get("transaction")
     if transaction in ("vente", "location"):
         qs = qs.filter(transaction_type=transaction)
 
+    # Filtre par type de propriété
     property_type = request.GET.get("type")
     if property_type:
         qs = qs.filter(property_type=property_type)
 
+    # Filtre par pays
     country = request.GET.get("country")
     if country:
         qs = qs.filter(country=country)
 
+    # Filtre par ville (recherche insensible à la casse)
     city = request.GET.get("city")
     if city:
         qs = qs.filter(city__icontains=city)
 
+    # Filtre par prix minimum
     price_min = request.GET.get("price_min")
     if price_min:
         qs = qs.filter(price__gte=price_min)
 
+    # Filtre par prix maximum
     price_max = request.GET.get("price_max")
     if price_max:
         qs = qs.filter(price__lte=price_max)
 
+    # Filtre par nombre de chambres minimum
     bedrooms = request.GET.get("bedrooms")
     if bedrooms:
         qs = qs.filter(bedrooms__gte=bedrooms)
 
+    # Filtre par nombre de salles de bain minimum
     bathrooms = request.GET.get("bathrooms")
     if bathrooms:
         qs = qs.filter(bathrooms__gte=bathrooms)
 
+    # Filtre par surface minimum
     surface_min = request.GET.get("surface_min")
     if surface_min:
         qs = qs.filter(surface_area__gte=surface_min)
 
+    # Filtre par statut (vendu/loué ou disponible)
     status = request.GET.get("status")
     if status == "vendu_loue":
         qs = qs.filter(status__in=["vendu", "loue"])
     elif status == "disponible":
         qs = qs.filter(status="disponible")
 
+    # Filtre par propriétaire vérifié
     if request.GET.get("owner_verified") == "1":
         qs = qs.filter(owner__verification_status=User.VerificationStatus.APPROVED)
 
+    # Filtre par propriété validée
     if request.GET.get("property_verified") == "1":
         qs = qs.filter(is_validated=True)
 
+    # Application des filtres de caractéristiques
     selected_features = request.GET.getlist("feature")
     if selected_features:
         qs = _apply_feature_filters(qs, selected_features)
 
+    # Recherche textuelle sur titre, ville, adresse et quartier
     q = request.GET.get("q")
     if q:
         qs = qs.filter(Q(title__icontains=q) | Q(city__icontains=q) | Q(address__icontains=q) | Q(neighborhood__icontains=q))
 
+    # Recherche géographique par coordonnées GPS et rayon
     lat = request.GET.get("lat")
     lng = request.GET.get("lng")
     radius_km = request.GET.get("radius_km", 15)
@@ -205,6 +275,7 @@ def property_list(request):
             lng = float(lng)
             radius_km = float(radius_km)
             nearby = []
+            # Calcule la distance pour chaque propriété avec coordonnées
             for item in qs.exclude(latitude__isnull=True).exclude(longitude__isnull=True):
                 distance = _haversine_km(lat, lng, float(item.latitude), float(item.longitude))
                 if distance <= radius_km:
@@ -215,8 +286,10 @@ def property_list(request):
         except (TypeError, ValueError):
             pass
 
+    # Tri des résultats
     sort = request.GET.get("sort", "recent")
     if isinstance(qs, list):
+        # Tri en Python pour les résultats géographiques
         if sort == "price_asc":
             qs.sort(key=lambda item: float(item.price))
         elif sort == "price_desc":
@@ -227,6 +300,7 @@ def property_list(request):
             qs.sort(key=lambda item: item.created_at, reverse=True)
         paginator = Paginator(qs, 12)
     else:
+        # Tri en base de données pour les résultats standards
         sort_map = {
             "recent": "-created_at",
             "price_asc": "price",
@@ -236,21 +310,34 @@ def property_list(request):
         qs = qs.order_by(sort_map.get(sort, "-created_at"))
         paginator = Paginator(qs, 12)
 
+    # Pagination des résultats
     page_obj = paginator.get_page(request.GET.get("page"))
 
+    # Récupération des favoris de l'utilisateur connecté
     favorite_ids = set()
     if request.user.is_authenticated:
         favorite_ids = set(Favorite.objects.filter(user=request.user).values_list("property_id", flat=True))
 
+    # Récupération des alertes de recherche sauvegardées
     saved_alerts = []
     if request.user.is_authenticated:
         saved_alerts = SearchAlert.objects.filter(user=request.user).order_by("-created_at")[:5]
 
+    # Récupération des pays disponibles pour les filtres
+    countries = Property.objects.filter(
+        is_published=True, 
+        is_validated=True, 
+        owner__isnull=False, 
+        owner__role=User.Role.OWNER, 
+        owner__is_active=True
+    ).values_list("country", flat=True).distinct()
+
+    # Contexte du template avec toutes les données nécessaires
     context = {
         "page_obj": page_obj,
         "total_count": paginator.count,
         "property_types": Property.PropertyType.choices,
-        "countries": Property.objects.values_list("country", flat=True).distinct(),
+        "countries": countries,
         "favorite_ids": favorite_ids,
         "view_mode": request.GET.get("view", "grid"),
         "current_sort": sort,
@@ -273,71 +360,136 @@ def property_list(request):
 
 
 def property_detail(request, slug):
+    # Optimized property retrieval with minimal queries
     property_obj = get_object_or_404(
-        Property.objects.select_related("owner").prefetch_related("images", "amenities"),
+        Property.objects.filter(
+            is_published=True,
+            is_validated=True,
+            owner__isnull=False,
+            owner__role=User.Role.OWNER,
+            owner__is_active=True,
+        ).select_related("owner").prefetch_related("images", "amenities"),
         slug=slug,
     )
 
+    # Optimize view count update - use atomic increment and skip Python increment
     Property.objects.filter(pk=property_obj.pk).update(views_count=F("views_count") + 1)
-    property_obj.views_count += 1
+    # Note: We don't increment property_obj.views_count in Python to avoid stale data
 
+    # Optimize session handling - only create if needed
     if not request.session.session_key:
         request.session.save()
 
-    PropertyView.objects.create(
-        user=request.user if request.user.is_authenticated else None,
-        property=property_obj,
-        ip_address=request.META.get("REMOTE_ADDR"),
-        session_key=request.session.session_key,
-    )
+    # Optimize PropertyView creation - make it optional/lazy
+    # Only create if user is authenticated or it's a new session
+    should_track_view = True
+    if request.user.is_authenticated:
+        # Check if user viewed this property recently (within last hour)
+        one_hour_ago = timezone.now() - timedelta(hours=1)
+        recent_view = PropertyView.objects.filter(
+            user=request.user,
+            property=property_obj,
+            viewed_at__gte=one_hour_ago
+        ).exists()
+        should_track_view = not recent_view
+    else:
+        # For anonymous users, check by session
+        one_hour_ago = timezone.now() - timedelta(hours=1)
+        recent_view = PropertyView.objects.filter(
+            session_key=request.session.session_key,
+            property=property_obj,
+            viewed_at__gte=one_hour_ago
+        ).exists()
+        should_track_view = not recent_view
 
+    if should_track_view:
+        PropertyView.objects.create(
+            user=request.user if request.user.is_authenticated else None,
+            property=property_obj,
+            ip_address=request.META.get("REMOTE_ADDR"),
+            session_key=request.session.session_key,
+        )
+
+    # Optimize favorite and unlock checks with single queries
     is_favorite = False
     has_unlocked = False
     if request.user.is_authenticated:
+        # Single query for favorite check
         is_favorite = Favorite.objects.filter(user=request.user, property=property_obj).exists()
-        has_unlocked = PropertyUnlock.objects.filter(user=request.user, property=property_obj).exists()
-    
-    # Owners and admins always have access
-    if request.user.is_authenticated and (request.user.role in [User.Role.OWNER, User.Role.ADMIN] or request.user.is_superuser):
-        has_unlocked = True
+        
+        # Single query for unlock check with owner optimization
+        if property_obj.owner:
+            has_unlocked = PropertyUnlock.objects.filter(
+                user=request.user, 
+                property__owner=property_obj.owner
+            ).exists()
+        else:
+            has_unlocked = PropertyUnlock.objects.filter(
+                user=request.user, 
+                property=property_obj
+            ).exists()
+        
+        # Owners and admins always have access
+        if request.user.role != User.Role.CLIENT:
+            has_unlocked = True
 
-    base_qs = (
-        Property.objects.select_related("owner")
-        .prefetch_related("images", "amenities")
-        .filter(is_published=True, is_validated=True)
+    # Optimize similar properties query - simplified logic
+    # Use only city and property_type for faster query
+    similar_qs = (
+        Property.objects.filter(
+            is_published=True,
+            is_validated=True,
+            owner__isnull=False,
+            owner__role=User.Role.OWNER,
+            owner__is_active=True,
+        )
+        .filter(city=property_obj.city)
         .exclude(pk=property_obj.pk)
+        .select_related("owner")
+        .prefetch_related("images", "amenities")[:12]
     )
-    similar_qs = base_qs.filter(
-        Q(city=property_obj.city)
-        | Q(property_type=property_obj.property_type)
-        | Q(price__gte=property_obj.price * Decimal("0.75"), price__lte=property_obj.price * Decimal("1.25"))
-        | Q(bedrooms__gte=max(property_obj.bedrooms - 1, 0), bedrooms__lte=property_obj.bedrooms + 1)
-    ).distinct()
 
-    if similar_qs.count() < 4 and property_obj.city:
-        similar_qs = base_qs.filter(city=property_obj.city)
+    # If not enough by city, add by property type
+    similar_list = list(similar_qs)
+    if len(similar_list) < 6:
+        additional_qs = (
+            Property.objects.filter(
+                is_published=True,
+                is_validated=True,
+                owner__isnull=False,
+                owner__role=User.Role.OWNER,
+                owner__is_active=True,
+                property_type=property_obj.property_type,
+            )
+            .exclude(pk__in=[p.pk for p in similar_list] + [property_obj.pk])
+            .select_related("owner")
+            .prefetch_related("images", "amenities")[:6]
+        )
+        similar_list.extend(list(additional_qs))
 
+    # Simple similarity score - optimized
     def similarity_score(item):
         score = 0
         if item.city == property_obj.city:
             score += 3
         if item.property_type == property_obj.property_type:
-            score += 3
-        if abs(float(item.price) - float(property_obj.price)) / float(property_obj.price or 1) < 0.25:
             score += 2
-        if item.bedrooms == property_obj.bedrooms:
-            score += 1
-        if item.owner and item.owner.is_verified_owner:
+        if abs(float(item.price) - float(property_obj.price)) / float(property_obj.price or 1) < 0.25:
             score += 1
         return score
 
-    similar = sorted(list(similar_qs[:18]), key=similarity_score, reverse=True)[:6]
+    similar = sorted(similar_list, key=similarity_score, reverse=True)[:6]
 
+    # Use cached nearby services or default
     nearby_services = property_obj.nearby_services or _default_nearby_services(property_obj)
     share_url = request.build_absolute_uri(property_obj.get_absolute_url())
     share_text = f"{property_obj.title} - {property_obj.price_display}"
 
-    request_form = PropertyRequestForm()
+    if request.method == "POST":
+        messages.info(request, "Veuillez régler les frais de mise en relation avant de contacter le propriétaire.")
+        return redirect("properties:payment_redirect", slug=property_obj.slug)
+
+    request_form = None
     if request.method == "POST" and request.user.is_authenticated:
         request_form = PropertyRequestForm(request.POST)
         if request_form.is_valid():
@@ -390,7 +542,8 @@ def toggle_favorite(request, pk):
 def compare_properties(request):
     ids = [i for i in request.GET.get("ids", "").split(",") if i.isdigit()][:3]
     properties = list(
-        Property.objects.filter(pk__in=ids)
+        _public_contactable_properties()
+        .filter(pk__in=ids)
         .select_related("owner")
         .prefetch_related("amenities", "images")
     )
@@ -403,7 +556,19 @@ def compare_properties(request):
 
 
 def property_payment_redirect(request, slug):
-    property_obj = get_object_or_404(Property, slug=slug)
+    property_obj = get_object_or_404(_public_contactable_properties(), slug=slug)
+
+    # Permettre aux admins/proprios de tester le flux (commenté la restriction)
+    # if request.user.is_authenticated and request.user.role != User.Role.CLIENT:
+    #     messages.error(request, "Seul un compte client peut effectuer une mise en relation.")
+    #     return redirect("properties:detail", slug=slug)
+
+    if request.user.is_authenticated:
+        # Per-owner unlock: check if user already paid for ANY property of this owner
+        owner = property_obj.owner
+        if owner and PropertyUnlock.objects.filter(user=request.user, property__owner=owner).exists():
+            messages.info(request, "Vous êtes déjà en relation avec ce propriétaire.")
+            return redirect("properties:detail", slug=slug)
 
     if request.method == "POST":
         customer_name = request.POST.get("customer_name", "")
@@ -424,7 +589,7 @@ def property_payment_redirect(request, slug):
             "password": customer_password,
         }
 
-        payment_url, trans_id = generate_cinetpay_payment_url(
+        payment_url, trans_id = generate_fedapay_payment_url(
             request,
             slug,
             amount=500,
@@ -437,14 +602,6 @@ def property_payment_redirect(request, slug):
         logger.info(f"Payment URL generation attempt: payment_url={payment_url}, trans_id={trans_id}")
         logger.info(f"Customer info: name={customer_name}, email={customer_email}, phone={customer_phone}")
         
-        # Temporary: Use simulation mode if API fails
-        if not payment_url:
-            logger.warning("Payment URL generation failed, using simulation mode")
-            # Simulate successful payment by redirecting to confirmation with test transaction
-            test_transaction_id = "test_" + str(uuid.uuid4())
-            messages.info(request, "Mode simulation: Paiement test activé")
-            return redirect(reverse('properties:payment_confirmation', args=[slug]) + f"?transaction_id={test_transaction_id}")
-        
         if payment_url:
             return redirect(payment_url)
         
@@ -452,22 +609,37 @@ def property_payment_redirect(request, slug):
         messages.error(request, "Erreur d'initialisation du paiement. Veuillez réessayer ou contacter le support.")
         return redirect("properties:detail", slug=slug)
 
-    return render(request, "properties/payment_init.html", {"property": property_obj})
+    from .fedapay import _get_fedapay_public_key, _get_fedapay_base_url
+    return render(request, "properties/payment_init.html", {
+        "property": property_obj,
+        "fedapay_public_key": _get_fedapay_public_key(),
+        "fedapay_sandbox": getattr(settings, 'FEDAPAY_SANDBOX', True),
+    })
 
 
 def property_payment_confirmation(request, slug):
-    property_obj = get_object_or_404(Property.objects.select_related("owner"), slug=slug)
-    transaction_id = request.GET.get("transaction_id")
+    property_obj = get_object_or_404(_public_contactable_properties().select_related("owner"), slug=slug)
 
-    if transaction_id:
-        # Handle test transactions (simulation mode)
-        if transaction_id.startswith("test_"):
-            logger.info(f"Processing test transaction: {transaction_id}")
-            is_paid = True  # Simulate successful payment
-            data = {"test": True}
+    # FedaPay envoie dans le callback : ?id=<id>&status=approved&token=<token>
+    # On lit les GET params en priorité, puis la session comme fallback
+    fedapay_id = (
+        request.GET.get("id")
+        or request.GET.get("transaction_id")
+        or request.session.get("fedapay_transaction_id")
+    )
+    fedapay_status = request.GET.get("status", "")
+
+    logger.info(f"Confirmation paiement: slug={slug}, fedapay_id={fedapay_id}, status_get={fedapay_status}")
+
+    if fedapay_id:
+        # Si FedaPay envoie status=approved dans le GET, on accepte directement,
+        # sinon on vérifie via l'API
+        if fedapay_status == "approved":
+            is_paid = True
+            logger.info("FedaPay: statut 'approved' reçu directement dans le callback GET.")
         else:
-            is_paid, data = verify_cinetpay_payment(transaction_id)
-            
+            is_paid, _ = verify_fedapay_payment(fedapay_id)
+
         if is_paid:
             if not request.user.is_authenticated:
                 pending = request.session.get("pending_payment", {})
@@ -477,25 +649,18 @@ def property_payment_confirmation(request, slug):
                 password = pending.get("password", "")
 
                 if email:
-                    # Create a complete client account automatically
                     import random
                     import string
-                    
-                    # Generate unique username
+
                     username = f"guest_{name.lower().replace(' ', '_')}_{random.randint(1000, 9999)}"
                     while User.objects.filter(username=username).exists():
                         username = f"guest_{name.lower().replace(' ', '_')}_{random.randint(1000, 9999)}"
-                    
-                    # Use provided password or generate random one if not provided
+
                     if not password:
                         password = ''.join(random.choices(string.ascii_letters + string.digits, k=12))
-                    
-                    # Try to get existing user by email, handle duplicates
-                    existing_users = User.objects.filter(email=email)
-                    if existing_users.exists():
-                        user = existing_users.first()
-                        created = False
-                        # Update password if user already exists
+
+                    user = User.objects.filter(email=email, role=User.Role.CLIENT).first()
+                    if user:
                         user.set_password(password)
                         user.save()
                     else:
@@ -509,60 +674,61 @@ def property_payment_confirmation(request, slug):
                         )
                         user.set_password(password)
                         user.save()
-                        created = True
-                    
+
                     login(request, user, backend="django.contrib.auth.backends.ModelBackend")
                     request.session["dash_role"] = "client"
                     request.session.modified = True
 
             if request.user.is_authenticated:
-                # Ensure session has correct dash_role for client
+                # Nettoyer la session de paiement
+                for _k in ("fedapay_transaction_id", "pending_transaction_id", "pending_payment"):
+                    request.session.pop(_k, None)
                 request.session["dash_role"] = "client"
                 request.session.modified = True
-                
+
                 owner = property_obj.owner
                 PropertyUnlock.objects.get_or_create(user=request.user, property=property_obj)
+                messages.success(request, "Paiement confirm\u00e9 ! Votre espace client est pr\u00eat. Vous pouvez maintenant contacter le propri\u00e9taire depuis vos mises en relation.")
+
                 if owner:
                     from notifications.models import Notification
                     from messaging.models import Conversation, Message
 
-                    # Create or get conversation with the owner
                     conversation, created = Conversation.objects.get_or_create(
                         buyer=request.user,
                         owner=owner,
                         property=property_obj
                     )
 
-                    # Send initial message if conversation was just created
                     if created:
                         Message.objects.create(
                             conversation=conversation,
                             sender=request.user,
-                            body=f"Bonjour, je suis intéressé par votre bien « {property_obj.title} ». J'aimerais avoir plus d'informations.",
+                            body=f"Bonjour, je suis int\u00e9ress\u00e9 par votre bien \u00ab {property_obj.title} \u00bb. J'aimerais avoir plus d'informations.",
                             message_type=Message.MessageType.TEXT
                         )
 
                     Notification.objects.create(
                         user=owner,
-                        title="Mise en relation débloquée",
-                        message=f"{request.user.get_full_name() or request.user.username} a payé les frais de mise en relation pour « {property_obj.title} ».",
+                        title="Mise en relation d\u00e9bloqu\u00e9e",
+                        message=f"{request.user.get_full_name() or request.user.username} a pay\u00e9 les frais de mise en relation pour \u00ab {property_obj.title} \u00bb.",
                         notification_type="systeme",
                         link=f"/dashboard/proprietaire/messagerie/{conversation.pk}/",
                     )
 
-                # Redirect to client messaging page to start conversation with owner
-                messages.success(request, "🎉 Paiement confirmé ! Votre espace client a été créé avec succès. Vous pouvez maintenant contacter le propriétaire et organiser une visite.")
-                return redirect("dashboard:client_messaging")
+                return redirect("dashboard:client_unlocked")
 
-    messages.error(request, "Le paiement n'a pas pu être validé.")
+    logger.warning(f"Confirmation paiement \u00e9chou\u00e9e: fedapay_id={fedapay_id}, GET={dict(request.GET)}")
+    messages.error(request, "Le paiement n'a pas pu \u00eatre valid\u00e9.")
     return redirect("properties:detail", slug=slug)
+
 
 
 @csrf_exempt
 def property_payment_notify(request, slug):
     """
-    CinetPay webhook for payment notifications.
-    Verifies HMAC signature and updates PropertyUnlock status.
+    FedaPay webhook pour les notifications de paiement.
+    Vérifie la signature et met à jour le statut PropertyUnlock.
     """
     import logging
     import json
@@ -574,44 +740,39 @@ def property_payment_notify(request, slug):
         return HttpResponse(status=405)
     
     try:
-        # Get raw body and signature header
+        # Récupération du corps et de la signature FedaPay
         payload_raw = request.body.decode('utf-8')
-        signature = request.META.get('HTTP_X_SIGNATURE', '')
-        secret_key = getattr(settings, 'CINETPAY_SECRET_KEY', '')
+        signature = request.META.get('HTTP_X_FEDAPAY_SIGNATURE', '')
         
         # Parse JSON
         payload = json.loads(payload_raw)
-        logger.info(f"Received payment notification for property {slug}")
+        logger.info(f"Notification de paiement FedaPay reçue pour le bien {slug}")
         
-        # Verify signature
-        if not secret_key:
-            logger.error("CINETPAY_SECRET_KEY not configured")
-            return HttpResponse(status=500)
+        if not verify_fedapay_webhook_signature(payload_raw, signature):
+            logger.warning("Signature FedaPay invalide — possible tentative de falsification")
+            return HttpResponse(status=403)
         
-        if not verify_cinetpay_signature(payload_raw, signature, secret_key):
-            logger.warning(f"Invalid signature for payment notification - possible tampering attempt")
-            return HttpResponse(status=403)  # Forbidden
+        # Données de la transaction FedaPay
+        event = payload.get('name', '')  # ex: 'transaction.approved'
+        transaction_data = payload.get('data', {}).get('transaction', {})
+        transaction_id = transaction_data.get('id')
+        status = transaction_data.get('status', '')  # 'approved', 'declined', 'canceled'
+        customer_email = (transaction_data.get('customer') or {}).get('email', '')
+        amount = transaction_data.get('amount')
         
-        # Get transaction details
-        transaction_id = payload.get('transaction_id')
-        status = payload.get('status')  # 'success', 'failed', 'pending'
-        customer_email = payload.get('customer_email')
-        amount = payload.get('amount')
-        
-        logger.info(f"Valid payment notification: transaction_id={transaction_id}, status={status}")
+        logger.info(f"Notification FedaPay valide: event={event}, id={transaction_id}, statut={status}")
         
         # Handle successful payments
-        if status == 'success' and customer_email:
+        if status == 'approved' and customer_email:
             try:
                 # Find user by email
-                user = User.objects.get(email=customer_email)
-                property_obj = get_object_or_404(Property, slug=slug)
+                user = User.objects.get(email=customer_email, role=User.Role.CLIENT)
+                property_obj = get_object_or_404(_public_contactable_properties(), slug=slug)
                 
                 # Create PropertyUnlock
                 unlock, created = PropertyUnlock.objects.get_or_create(
                     user=user,
                     property=property_obj,
-                    defaults={'transaction_id': transaction_id}
                 )
                 
                 if created:

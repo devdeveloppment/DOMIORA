@@ -1,0 +1,32 @@
+<div class="group bg-white rounded-2xl overflow-hidden shadow-lg border border-gray-100 flex flex-col h-full transition-all duration-300 hover:-translate-y-1">
+  <a :href="p.url" class="block relative w-full aspect-[4/3] overflow-hidden bg-gray-100">
+    <img :src="p.image" :alt="p.title" loading="lazy" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
+    <span class="absolute top-3 left-3 text-[11px] font-bold px-2.5 py-1 rounded-full shadow-sm" :class="levelClass(p.match_level)" x-text="p.match_label"></span>
+    <span x-show="p.owner_verified" class="absolute top-3 right-3 text-[10px] font-bold px-2 py-1 rounded shadow-sm bg-white/95 text-gray-800">✅ Propriétaire vérifié</span>
+  </a>
+  <div class="p-4 flex-1 flex flex-col">
+    <a :href="p.url" class="text-[15px] font-bold text-gray-900 line-clamp-1 hover:text-primary-600 transition-colors" x-text="p.title"></a>
+    <p class="text-sm text-gray-500 mt-1 truncate">
+      <span x-text="p.city"></span><span x-show="p.neighborhood" x-text="', ' + p.neighborhood"></span>
+      · <span x-text="p.property_type"></span>
+    </p>
+    <p class="text-lg font-extrabold text-primary-600 mt-2" x-text="p.price"></p>
+    <div class="flex items-center gap-3 mt-1 text-[11px] font-semibold text-gray-500">
+      <span x-show="p.bedrooms" x-text="p.bedrooms + ' Ch.'"></span>
+      <span x-show="p.bathrooms" x-text="p.bathrooms + ' SDB'"></span>
+      <span x-show="p.surface" x-text="p.surface + ' m²'"></span>
+    </div>
+    <ul class="mt-3 space-y-1 text-xs">
+      <template x-for="reason in p.reasons" :key="reason.text">
+        <li class="flex gap-1.5"><span class="font-bold" :class="reasonClass(reason.status)" x-text="reason.symbol"></span><span class="text-gray-600" x-text="reason.text"></span></li>
+      </template>
+    </ul>
+    <div class="mt-auto pt-4 flex gap-2">
+      <a :href="p.url" class="flex-1 text-center bg-primary-600 hover:bg-primary-700 text-white text-xs font-semibold rounded-full px-3 py-2 transition">Voir le bien</a>
+      <button type="button" @click="$store.compare.toggle(p.id)"
+              :class="$store.compare.has(p.id) ? 'bg-primary-50 text-primary-700 border-primary-200' : 'text-gray-600 border-gray-200 hover:border-primary-600 hover:text-primary-600'"
+              class="text-xs font-semibold rounded-full px-3 py-2 border transition"
+              x-text="$store.compare.has(p.id) ? '✓ Comparé' : 'Comparer'"></button>
+    </div>
+  </div>
+</div>

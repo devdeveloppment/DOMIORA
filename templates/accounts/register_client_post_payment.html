@@ -18,8 +18,8 @@
 
     <div class="bg-white rounded-3xl shadow-xl p-8 sm:p-10">
       <div class="text-center mb-8">
-        <div class="w-16 h-16 rounded-2xl bg-[#71212d]/10 flex items-center justify-center mx-auto mb-4">
-          <svg class="w-8 h-8 text-[#71212d]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+        <div class="w-16 h-16 rounded-2xl bg-primary-600/10 flex items-center justify-center mx-auto mb-4">
+          <svg class="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
         </div>
         <h1 class="text-2xl font-extrabold text-gray-900 mb-2">Complétez vos informations</h1>
         <p class="text-sm text-gray-500 leading-relaxed">
@@ -80,14 +80,14 @@
           </div>
         </div>
 
-        <button type="submit" id="btn-submit-client-register" class="w-full bg-[#71212d] hover:bg-[#5a1a24] text-white font-bold py-4 rounded-xl transition shadow-md text-sm mt-2">
+        <button type="submit" id="btn-submit-client-register" class="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-4 rounded-xl transition shadow-md text-sm mt-2">
           Accéder aux coordonnées du propriétaire →
         </button>
       </form>
 
       <p class="text-center text-xs text-gray-400 mt-6">
         Déjà un compte ?
-        <a href="{% url 'accounts:login' %}{% if property_slug %}?next={% url 'properties:payment_confirmation' property_slug %}{% endif %}" class="text-[#71212d] font-bold hover:underline">Se connecter</a>
+        <a href="{% url 'accounts:login' %}{% if property_slug %}?next={% url 'properties:payment_confirmation' property_slug %}{% endif %}" class="text-primary-600 font-bold hover:underline">Se connecter</a>
       </p>
     </div>
 

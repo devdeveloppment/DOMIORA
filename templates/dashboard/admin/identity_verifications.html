@@ -5,9 +5,18 @@
   <!-- Header -->
   <div class="flex items-center justify-between mb-6">
     <h1 class="text-2xl font-bold font-display text-gray-900">Vérifications d'identité</h1>
-    <div class="flex items-center gap-2">
+    <div class="flex items-center gap-2 flex-wrap">
       <a href="?status=pending" class="text-sm font-semibold px-3 py-1.5 rounded-full {% if status_filter == 'pending' %}bg-amber-100 text-amber-700{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %} transition">
         En attente
+      </a>
+      <a href="?status=documents_under_review" class="text-sm font-semibold px-3 py-1.5 rounded-full {% if status_filter == 'documents_under_review' %}bg-primary-100 text-primary-700{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %} transition">
+        Documents en cours
+      </a>
+      <a href="?status=field_visit_scheduled" class="text-sm font-semibold px-3 py-1.5 rounded-full {% if status_filter == 'field_visit_scheduled' %}bg-blue-100 text-blue-700{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %} transition">
+        Visite programmée
+      </a>
+      <a href="?status=field_visit_completed" class="text-sm font-semibold px-3 py-1.5 rounded-full {% if status_filter == 'field_visit_completed' %}bg-purple-100 text-purple-700{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %} transition">
+        Visite effectuée
       </a>
       <a href="?status=approved" class="text-sm font-semibold px-3 py-1.5 rounded-full {% if status_filter == 'approved' %}bg-emerald-100 text-emerald-700{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %} transition">
         Validées
@@ -64,6 +73,21 @@
                 <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
                 En attente
               </span>
+              {% elif verification.status == 'documents_under_review' %}
+              <span class="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1 rounded-full bg-primary-100 text-primary-700">
+                <span class="w-1.5 h-1.5 rounded-full bg-primary-500"></span>
+                Documents en cours
+              </span>
+              {% elif verification.status == 'field_visit_scheduled' %}
+              <span class="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1 rounded-full bg-blue-100 text-blue-700">
+                <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                Visite programmée
+              </span>
+              {% elif verification.status == 'field_visit_completed' %}
+              <span class="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1 rounded-full bg-purple-100 text-purple-700">
+                <span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
+                Visite effectuée
+              </span>
               {% elif verification.status == 'approved' %}
               <span class="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1 rounded-full bg-emerald-100 text-emerald-700">
                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
@@ -75,14 +99,14 @@
                 Refusé
               </span>
               {% elif verification.status == 'resubmission_requested' %}
-              <span class="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1 rounded-full bg-blue-100 text-blue-700">
-                <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+              <span class="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1 rounded-full bg-primary-100 text-primary-700">
+                <span class="w-1.5 h-1.5 rounded-full bg-primary-500"></span>
                 Nouvelle soumission
               </span>
               {% endif %}
             </td>
             <td class="px-6 py-4 text-center">
-              <a href="{% url 'dashboard:admin_identity_verification_detail' verification.pk %}" class="inline-flex items-center gap-1 text-sm font-semibold text-blue-600 hover:text-blue-800 transition">
+              <a href="{% url 'dashboard:admin_identity_verification_detail' verification.pk %}" class="inline-flex items-center gap-1 text-sm font-semibold text-primary-600 hover:text-primary-800 transition">
                 Voir détails
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
               </a>

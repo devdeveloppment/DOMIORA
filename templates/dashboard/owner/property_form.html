@@ -76,15 +76,18 @@
 
   {% if is_edit and property.images.all %}
   <div>
-    <label class="text-sm font-semibold text-gray-700 block mb-2">Photos actuelles</label>
+    <label class="text-sm font-semibold text-gray-700 block mb-1">Photos actuelles</label>
+    <p class="text-xs text-gray-500 mb-2">L'ordre des photos est utilisé par la galerie et par la visite virtuelle (la première photo ouvre la vidéo). Utilisez ← → pour le modifier.</p>
     <div class="grid grid-cols-4 sm:grid-cols-6 gap-3">
       {% for img in property.images.all %}
       <div class="relative group">
         <img src="{{ img.image.url }}" class="w-full h-20 object-cover rounded-lg">
-        <form method="post" action="{% url 'dashboard:owner_property_image_delete' property.pk img.pk %}" class="absolute top-1 right-1">
-          {% csrf_token %}
-          <button class="bg-black/60 text-white text-xs w-5 h-5 rounded-full opacity-0 group-hover:opacity-100 transition">✕</button>
-        </form>
+        <span class="absolute top-1 left-1 bg-black/60 text-white text-[10px] font-bold px-1.5 rounded">{{ forloop.counter }}</span>
+        <button form="delete-img-{{ img.pk }}" type="submit" class="absolute top-1 right-1 bg-black/60 text-white text-xs w-5 h-5 rounded-full opacity-0 group-hover:opacity-100 transition" title="Supprimer">✕</button>
+        <div class="absolute bottom-1 inset-x-1 flex justify-between opacity-0 group-hover:opacity-100 transition">
+          {% if not forloop.first %}<button form="move-img-{{ img.pk }}-up" type="submit" class="bg-black/60 text-white text-xs w-5 h-5 rounded-full" title="Avancer">←</button>{% else %}<span></span>{% endif %}
+          {% if not forloop.last %}<button form="move-img-{{ img.pk }}-down" type="submit" class="bg-black/60 text-white text-xs w-5 h-5 rounded-full" title="Reculer">→</button>{% endif %}
+        </div>
       </div>
       {% endfor %}
     </div>
@@ -92,8 +95,67 @@
   {% endif %}
 
   <div class="flex gap-3 pt-2">
-    <button type="submit" class="bg-[#71212d] hover:bg-[#5a1a24] transition text-white font-semibold rounded-full px-6 py-3">{% if is_edit %}Enregistrer les modifications{% else %}Soumettre pour validation{% endif %}</button>
+    <button type="submit" class="bg-primary-600 hover:bg-primary-700 transition text-white font-semibold rounded-full px-6 py-3">{% if is_edit %}Enregistrer les modifications{% else %}Soumettre pour validation{% endif %}</button>
     <a href="{% url 'dashboard:owner_properties' %}" class="border border-gray-200 text-gray-600 font-semibold rounded-full px-6 py-3">Annuler</a>
   </div>
 </form>
+
+{% if is_edit and property.images.all %}
+{% for img in property.images.all %}
+<form id="delete-img-{{ img.pk }}" method="post" action="{% url 'dashboard:owner_property_image_delete' property.pk img.pk %}" class="hidden">{% csrf_token %}</form>
+<form id="move-img-{{ img.pk }}-up" method="post" action="{% url 'dashboard:owner_property_image_move' property.pk img.pk %}" class="hidden">{% csrf_token %}<input type="hidden" name="direction" value="up"></form>
+<form id="move-img-{{ img.pk }}-down" method="post" action="{% url 'dashboard:owner_property_image_move' property.pk img.pk %}" class="hidden">{% csrf_token %}<input type="hidden" name="direction" value="down"></form>
+{% endfor %}
+{% endif %}
+
+{% if is_edit %}
+<!-- Visite virtuelle (génération asynchrone) -->
+<div x-data="virtualTourStatus('{% url 'dashboard:owner_property_video_status' property.pk %}')" x-init="refresh()"
+     class="mt-6 bg-white rounded-2xl border border-gray-100 shadow-card p-5">
+  <div class="flex flex-wrap items-start justify-between gap-3">
+    <div>
+      <h3 class="font-bold text-gray-900">Visite virtuelle</h3>
+      <p class="text-xs text-gray-500 mt-0.5">Vidéo générée à partir de vos photos (minimum {{ virtual_tour_min_photos|default:3 }}, 20 maximum, dans l'ordre ci-dessus). Elle ne contient ni prix, ni adresse, ni coordonnées.</p>
+    </div>
+    <span class="text-xs font-bold px-2.5 py-1 rounded-full"
+          :class="{'bg-emerald-50 text-emerald-700': state.status === 'done', 'bg-rose-50 text-rose-700': state.status === 'failed', 'bg-amber-50 text-amber-700': state.in_progress, 'bg-gray-100 text-gray-600': !state.in_progress && !['done','failed'].includes(state.status)}"
+          x-text="state.label || '…'"></span>
+  </div>
+
+  <div x-show="state.in_progress" x-cloak class="mt-4">
+    <div class="h-2 bg-gray-100 rounded-full overflow-hidden"><div class="h-full bg-primary-600 transition-all duration-500" :style="'width:' + (state.progress || 0) + '%'"></div></div>
+    <p class="text-xs text-gray-500 mt-1"><span x-text="state.progress || 0"></span> % — vous pouvez quitter cette page, la génération continue.</p>
+  </div>
+  <p x-show="state.error" x-cloak x-text="state.error" class="mt-3 text-sm text-rose-700 bg-rose-50 border border-rose-100 rounded-xl px-3 py-2"></p>
+  <template x-if="state.video_url">
+    <video class="mt-4 w-full max-h-72 rounded-xl bg-black" controls preload="metadata" :src="state.video_url"></video>
+  </template>
+
+  <form method="post" action="{% url 'dashboard:owner_property_video_generate' property.pk %}" class="mt-4">
+    {% csrf_token %}
+    <button type="submit" :disabled="state.photo_count < state.min_photos"
+            class="bg-primary-600 hover:bg-primary-700 disabled:bg-gray-300 transition text-white text-sm font-semibold rounded-full px-5 py-2.5"
+            x-text="state.in_progress ? 'Relancer la génération' : (state.status === 'done' ? 'Régénérer la visite virtuelle' : 'Générer la visite virtuelle')"></button>
+    <span x-show="state.photo_count < state.min_photos" x-cloak class="ml-2 text-xs text-gray-500" x-text="'Ajoutez au moins ' + state.min_photos + ' photos (actuellement : ' + state.photo_count + ').'"></span>
+  </form>
+</div>
+
+<script>
+function virtualTourStatus(url) {
+  return {
+    state: {},
+    timer: null,
+    async refresh() {
+      try {
+        const response = await fetch(url, { headers: { 'Accept': 'application/json' } });
+        if (response.ok) this.state = await response.json();
+      } catch (e) {}
+      clearTimeout(this.timer);
+      if (this.state.in_progress) this.timer = setTimeout(() => this.refresh(), 3000);
+    },
+  };
+}
+</script>
+{% endif %}
+
 {% endblock %}
