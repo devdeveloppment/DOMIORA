@@ -94,7 +94,10 @@ class User(AbstractUser):
         if self.avatar:
             return self.avatar.url
         if self.role == self.Role.ADMIN or self.is_superuser:
-            return "/media/settings/ChatGPT_Image_26_août_2026_14_32_40.png"
+            # URL via le stockage par défaut : /media/... en local, Cloudinary en production.
+            from django.core.files.storage import default_storage
+
+            return default_storage.url("settings/ChatGPT_Image_26_août_2026_14_32_40.png")
         return "https://ui-avatars.com/api/?background=7c3aed&color=fff&name=" + (self.get_full_name() or self.username).replace(" ", "+")
 
     @property

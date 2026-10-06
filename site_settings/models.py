@@ -36,6 +36,13 @@ class SiteSettings(models.Model):
         """Retourne l'URL correcte d'un ImageField en évitant le double préfixe /media/media/."""
         if not field:
             return None
+        # Stockage distant (Cloudinary en production) : URL fournie par le stockage.
+        try:
+            url = field.url
+        except Exception:
+            url = ""
+        if url.startswith("http"):
+            return url
         name = field.name or ""
         # Si le nom commence par 'media/', on le supprime car MEDIA_URL est déjà /media/
         if name.startswith("media/"):
