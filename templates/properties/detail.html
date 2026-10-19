@@ -736,8 +736,17 @@
           <!-- Payer - Visible si pas encore débloqué, OU si c'est un owner/admin qui teste l'affichage -->
           <a href="{% url 'properties:payment_redirect' property.slug %}" class="w-full rounded-xl bg-primary-600 hover:bg-primary-700 text-white font-bold px-5 py-3 flex items-center justify-center gap-2 transition shadow-lg text-sm text-center">
             <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-            Entrer en contact avec le propriétaire
+            Entrer en contact avec le propriétaire ({{ contact_fee_amount }} FCFA)
           </a>
+          {% if request.user.is_authenticated and request.user.is_client %}
+          <form method="post" action="{% url 'properties:ask_question' property.slug %}" class="mt-3 space-y-2">
+            {% csrf_token %}
+            <label for="question" class="block text-xs font-bold text-gray-700">Une question avant la mise en relation ?</label>
+            <textarea id="question" name="question" rows="3" minlength="10" maxlength="500" required class="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm" placeholder="Ex. : le bien est-il encore disponible en décembre ?"></textarea>
+            <p class="text-[11px] text-gray-500">Sans coordonnées : téléphone, e-mail et liens sont bloqués. Le contact direct, la messagerie et les visites restent réservés à la mise en relation.</p>
+            <button class="w-full rounded-xl border border-gray-300 hover:bg-gray-50 font-bold py-2.5 text-sm">Envoyer la question</button>
+          </form>
+          {% endif %}
           {% endif %}
         </div>
       </div>

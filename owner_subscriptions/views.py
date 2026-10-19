@@ -35,7 +35,7 @@ def subscription_home(request):
         "pending": pending, "pending_payment": pending_payment, "renewal_payment": renewal_payment,
         "promoted_ids": promoted_property_ids_for_owner(request.user) if enabled else set(),
         "payments": SubscriptionPayment.objects.filter(owner=request.user).select_related("plan")[:20],
-        "trial_days": services.settings.SUBSCRIPTION_TRIAL_DAYS,
+        "trial_days": services.settings.SUBSCRIPTION_TRIAL_DAYS if services.trial_available(request.user) else 0,
         "dash_role": "owner", "active": "subscription",
     })
 

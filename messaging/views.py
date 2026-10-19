@@ -551,3 +551,49 @@ def conversation_state(request, pk):
     response = JsonResponse({"last_message_id": last, "unread": unread})
     response["Cache-Control"] = "private, no-store"
     return response
+
+
+@login_required
+def ask_question(request, slug):
+    """Question avant mise en relation (voir messaging/inquiries.py). POST uniquement."""
+    from .inquiries import InquiryError, create_inquiry
+
+    prop = get_object_or_404(Property.objects.select_related("owner"), slug=slug, is_published=True, is_validated=True)
+    if request.method != "POST":
+        return redirect(prop.get_absolute_url())
+    try:
+        create_inquiry(request.user, prop, request.POST.get("question", ""))
+    except InquiryError as exc:
+        django_messages.error(request, str(exc))
+    else:
+        django_messages.success(request, "Question envoyée au propriétaire. Ses coordonnées restent accessibles après la mise en relation.")
+    return redirect(prop.get_absolute_url())
+
+
+@login_required
+def owner_inquiries(request):
+    from .inquiries import InquiryError, answer_inquiry
+    from .models import ListingInquiry
+
+    if request.user.role != User.Role.OWNER:
+        return redirect("dashboard:redirect")
+    if request.method == "POST":
+        try:
+            answer_inquiry(request.user, request.POST.get("inquiry_id"), request.POST.get("answer", ""))
+        except InquiryError as exc:
+            django_messages.error(request, str(exc))
+        else:
+            django_messages.success(request, "Réponse envoyée.")
+        return redirect("dashboard:owner_inquiries")
+    inquiries = ListingInquiry.objects.filter(owner=request.user).select_related("property", "client")[:50]
+    return render(request, "messaging/inquiries_owner.html", {"inquiries": inquiries, "dash_role": "owner", "active": "inquiries"})
+
+
+@login_required
+def client_inquiries(request):
+    from .models import ListingInquiry
+
+    if request.user.role != User.Role.CLIENT:
+        return redirect("dashboard:redirect")
+    inquiries = ListingInquiry.objects.filter(client=request.user).select_related("property")[:50]
+    return render(request, "messaging/inquiries_client.html", {"inquiries": inquiries, "dash_role": "client", "active": "inquiries"})

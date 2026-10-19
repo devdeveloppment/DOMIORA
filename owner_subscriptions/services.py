@@ -87,8 +87,22 @@ def _check_owner(owner):
         raise SubscriptionError("Les abonnements sont réservés aux propriétaires et agents immobiliers.")
 
 
-def _trial_available(owner):
-    return settings.SUBSCRIPTION_TRIAL_DAYS > 0 and not OwnerSubscription.objects.filter(owner=owner, trial_used=True).exists()
+def trial_available(owner):
+    """Essai : activé, durée > 0, compte inscrit après la date d'éligibilité, jamais utilisé."""
+    from datetime import date
+
+    if not settings.SUBSCRIPTION_TRIAL_ENABLED or settings.SUBSCRIPTION_TRIAL_DAYS <= 0:
+        return False
+    try:
+        since = date.fromisoformat(settings.SUBSCRIPTION_TRIAL_ELIGIBLE_FROM)
+    except (TypeError, ValueError):
+        return False  # aucune date : aucun compte éligible (jamais d'activation rétroactive)
+    if timezone.localdate(owner.date_joined) < since:
+        return False
+    return not OwnerSubscription.objects.filter(owner=owner, trial_used=True).exists()
+
+
+_trial_available = trial_available
 
 
 def _new_payment(sub, plan, purpose):
@@ -245,6 +259,12 @@ def process_due(now=None):
                 new = OwnerSubscription.objects.create(owner=sub.owner, plan=scheduled, status=S.PENDING)
                 _new_payment(new, scheduled, SubscriptionPayment.Purpose.NEW)
                 _log(new, "request", "", "Plan programmé : paiement requis")
+            if not (scheduled and scheduled.is_free):
+                # Fin d'essai ou d'abonnement : retour explicite au plan gratuit (sans échéance).
+                fp = free_plan()
+                if fp and not OwnerSubscription.objects.filter(owner=sub.owner, status__in=OwnerSubscription.CURRENT).exists():
+                    new_free = OwnerSubscription.objects.create(owner=sub.owner, plan=fp, status=S.ACTIVE, started_at=now)
+                    _log(new_free, "start_free", "", "Retour au plan gratuit après échéance")
             done += 1
     return done
 

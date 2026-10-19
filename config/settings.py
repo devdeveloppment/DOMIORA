@@ -366,11 +366,17 @@ if PAYMENT_MODE == "simulation" and not DEBUG and not env.bool(
 # en production ils restent désactivés tant que les tarifs ne sont pas validés.
 # Les paiements d'abonnement sont TOUJOURS simulés (aucun fournisseur réel branché).
 OWNER_SUBSCRIPTIONS_ENABLED = env.bool("OWNER_SUBSCRIPTIONS_ENABLED", default=DEBUG)
-# Durée de l'essai gratuit (jours) ; 0 = pas d'essai. Valeur à valider commercialement.
-SUBSCRIPTION_TRIAL_DAYS = env.int("SUBSCRIPTION_TRIAL_DAYS", default=0)
+# Essai gratuit préparé (30 jours) mais INACTIF tant qu'il n'est pas validé :
+# - SUBSCRIPTION_TRIAL_ENABLED=False par défaut ;
+# - seuls les propriétaires inscrits à partir de SUBSCRIPTION_TRIAL_ELIGIBLE_FROM (AAAA-MM-JJ)
+#   y ont droit : les anciens comptes ne le reçoivent jamais automatiquement (vide = personne).
+SUBSCRIPTION_TRIAL_ENABLED = env.bool("SUBSCRIPTION_TRIAL_ENABLED", default=False)
+SUBSCRIPTION_TRIAL_DAYS = env.int("SUBSCRIPTION_TRIAL_DAYS", default=30)
+SUBSCRIPTION_TRIAL_ELIGIBLE_FROM = env("SUBSCRIPTION_TRIAL_ELIGIBLE_FROM", default="")
 # PROPOSITIONS tarifaires (non validées). Chargées en base par
 # `manage.py sync_subscription_plans` ; la base devient ensuite la source de vérité.
-# Aucune trace d'un tarif de 700 FCFA n'a été trouvée dans le code ni l'historique Git.
+# Aucun tarif de 700 FCFA n'existe dans le code ni l'historique Git (seul « 700 » métier : une
+# distance en mètres dans properties/views.py). Les frais de mise en relation sont de 500 FCFA.
 SUBSCRIPTION_PLAN_PROPOSALS = [
     {"code": "gratuit", "name": "Gratuit", "price_xof": 0, "visibility_level": 0, "max_promoted_listings": 0,
      "order": 0, "features": ["Publication des annonces après vérification", "Classement organique normal",

@@ -104,3 +104,47 @@ class RankingTests(TestCase):
     @override_settings(OWNER_SUBSCRIPTIONS_ENABLED=False)
     def test_no_promotion_when_disabled(self):
         self.assertEqual(ranking.sponsored(Property.objects.select_related("owner").prefetch_related("images")), [])
+
+
+@override_settings(OWNER_SUBSCRIPTIONS_ENABLED=True, STORAGES=SIMPLE_STATIC)
+class QuotaRotationTests(TestCase):
+    def setUp(self):
+        call_command("sync_subscription_plans", stdout=io.StringIO())
+        self.owners = {}
+        for code in ("intermediaire", "superieur", "premium"):
+            u = owner(code)
+            for i in range(7):
+                make_property(u, title=f"{code} {i}", description="x" * 250)
+            subscribe(u, code)
+            self.owners[code] = u
+        self.qs = Property.objects.select_related("owner").prefetch_related("images")
+
+    def test_quotas_1_3_5_enforced_server_side(self):
+        expected = {"intermediaire": 1, "superieur": 3, "premium": 5}
+        for code, n in expected.items():
+            self.assertEqual(len(ranking.promoted_property_ids_for_owner(self.owners[code])), n)
+        chosen = ranking.sponsored(self.qs, slots=50)
+        per_owner = {}
+        for p in chosen:
+            per_owner[p.owner.username] = per_owner.get(p.owner.username, 0) + 1
+        self.assertEqual(per_owner, expected)
+
+    @override_settings(SUBSCRIPTION_PLAN_PROPOSALS=[])
+    def test_quota_is_configurable_in_database(self):
+        from owner_subscriptions.models import Plan
+        Plan.objects.filter(code="premium").update(max_promoted_listings=2)
+        self.assertEqual(len(ranking.promoted_property_ids_for_owner(self.owners["premium"])), 2)
+
+    def test_rotation_changes_with_day_and_is_stable_within_day(self):
+        day1 = timezone.now().replace(hour=10)
+        same_day = [p.pk for p in ranking.sponsored(self.qs, now=day1)]
+        self.assertEqual(same_day, [p.pk for p in ranking.sponsored(self.qs, now=day1.replace(hour=20))])
+        seen = {tuple(p.pk for p in ranking.sponsored(self.qs, now=day1 + timedelta(days=d))) for d in range(30)}
+        self.assertGreater(len(seen), 1)  # rotation effective sur un mois
+
+    def test_expired_subscription_loses_slots_and_bonus(self):
+        prem = self.owners["premium"]
+        OwnerSubscription.objects.filter(owner=prem).update(current_period_end=timezone.now() - timedelta(seconds=1))
+        self.assertEqual(ranking.promoted_property_ids_for_owner(prem), set())
+        self.assertTrue(all(p.owner_id != prem.pk for p in ranking.sponsored(self.qs, slots=50)))
+        self.assertTrue(all(p.plan_level == 0 for p in ranking.rank(self.qs) if p.owner_id == prem.pk))

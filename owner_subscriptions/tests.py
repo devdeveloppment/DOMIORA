@@ -131,7 +131,7 @@ class SubscriptionTests(TestCase):
         sub.refresh_from_db()
         self.assertEqual(sub.current_period_end, end + timedelta(days=30))
 
-    @override_settings(SUBSCRIPTION_TRIAL_DAYS=7)
+    @override_settings(SUBSCRIPTION_TRIAL_ENABLED=True, SUBSCRIPTION_TRIAL_DAYS=7, SUBSCRIPTION_TRIAL_ELIGIBLE_FROM="2000-01-01")
     def test_trial_once_then_expires(self):
         sub, payment = services.subscribe(self.owner, "premium")
         self.assertIsNone(payment)
@@ -177,3 +177,53 @@ class SubscriptionTests(TestCase):
             services.subscribe(self.owner, "premium")
         self.assertIsNone(services.active_plan(self.owner))
         self.assertFalse(services.subscription_required_for(self.owner))
+
+
+@override_settings(OWNER_SUBSCRIPTIONS_ENABLED=True, STORAGES=SIMPLE_STATIC, SUBSCRIPTION_TRIAL_DAYS=30)
+class TrialTests(TestCase):
+    def setUp(self):
+        call_command("sync_subscription_plans", stdout=io.StringIO())
+        self.owner = owner()
+
+    def test_trial_disabled_by_default(self):
+        self.assertFalse(settings.SUBSCRIPTION_TRIAL_ENABLED)
+        self.assertFalse(services.trial_available(self.owner))
+        sub, payment = services.subscribe(self.owner, "premium")
+        self.assertEqual(sub.status, S.PENDING)
+        self.assertIsNotNone(payment)
+
+    @override_settings(SUBSCRIPTION_TRIAL_ENABLED=True, SUBSCRIPTION_TRIAL_ELIGIBLE_FROM="")
+    def test_enabled_without_date_grants_nobody(self):
+        self.assertFalse(services.trial_available(self.owner))
+
+    @override_settings(SUBSCRIPTION_TRIAL_ENABLED=True)
+    def test_old_accounts_not_eligible(self):
+        User.objects.filter(pk=self.owner.pk).update(date_joined=timezone.now() - timedelta(days=400))
+        self.owner.refresh_from_db()
+        with self.settings(SUBSCRIPTION_TRIAL_ELIGIBLE_FROM=timezone.localdate().isoformat()):
+            self.assertFalse(services.trial_available(self.owner))
+            fresh = owner("nouveau")
+            self.assertTrue(services.trial_available(fresh))
+
+    @override_settings(SUBSCRIPTION_TRIAL_ENABLED=True, SUBSCRIPTION_TRIAL_ELIGIBLE_FROM="2000-01-01")
+    def test_trial_end_exact_and_falls_back_to_free(self):
+        before = timezone.now()
+        sub, payment = services.subscribe(self.owner, "superieur")
+        self.assertIsNone(payment)
+        self.assertEqual(sub.status, S.TRIAL)
+        delta = sub.current_period_end - sub.started_at
+        self.assertEqual(delta, timedelta(days=30))
+        self.assertGreaterEqual(sub.started_at, before)
+        self.assertEqual(services.active_plan(self.owner).code, "superieur")
+        # 1 seconde avant l'échéance : encore actif ; à l'échéance : avantages retirés.
+        self.assertEqual(services.active_plan(self.owner, now=sub.current_period_end - timedelta(seconds=1)).code, "superieur")
+        self.assertEqual(services.active_plan(self.owner, now=sub.current_period_end).code, "gratuit")
+        self.assertEqual(services.process_due(now=sub.current_period_end - timedelta(seconds=1)), 0)
+        self.assertEqual(services.process_due(now=sub.current_period_end), 1)
+        self.assertEqual(services.process_due(now=sub.current_period_end), 0)
+        sub.refresh_from_db()
+        self.assertEqual(sub.status, S.EXPIRED)
+        free = OwnerSubscription.objects.get(owner=self.owner, status=S.ACTIVE)
+        self.assertEqual((free.plan.code, free.current_period_end), ("gratuit", None))
+        sub2, payment2 = services.subscribe(self.owner, "superieur")
+        self.assertIsNotNone(payment2)  # essai non renouvelable

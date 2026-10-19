@@ -126,3 +126,33 @@ class RendezvousRequest(models.Model):
 
     def __str__(self):
         return f"Rendezvous request for {self.conversation.property.title if self.conversation.property else 'Unknown'} - {self.status}"
+
+
+class ListingInquiry(models.Model):
+    """
+    Première question sur une annonce, AVANT la mise en relation payante.
+    Une question, une réponse du propriétaire, sans coordonnées (filtrées) : elle ne crée
+    aucune relation, ne donne accès ni au contact, ni à la conversation, ni aux visites,
+    ni aux avis. La mise en relation reste soumise aux frais (CONTACT_FEE_AMOUNT).
+    """
+
+    class Status(models.TextChoices):
+        OPEN = "open", "En attente de réponse"
+        ANSWERED = "answered", "Répondue"
+        CLOSED = "closed", "Close"
+
+    client = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="sent_inquiries")
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="received_inquiries")
+    property = models.ForeignKey("properties.Property", on_delete=models.CASCADE, related_name="inquiries")
+    question = models.TextField(max_length=500)
+    answer = models.TextField(max_length=500, blank=True)
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.OPEN, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    answered_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(fields=["client", "owner"], condition=models.Q(status="open"),
+                                    name="one_open_inquiry_per_client_owner"),
+        ]

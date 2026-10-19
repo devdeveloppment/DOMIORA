@@ -3,6 +3,7 @@ from field_verification import views as fv
 from moderation import views as moderation_views
 from owner_subscriptions import views as subscription_views
 from core import views_private
+from messaging import views as messaging_views
 
 from . import views, views_client, views_owner, views_admin
 
@@ -78,6 +79,10 @@ urlpatterns = [
     path("verificateur/missions/<int:pk>/", fv.verifier_mission, name="verifier_mission"),
     path("verificateur/missions/<int:pk>/preuves/", fv.verifier_evidence_upload, name="verifier_evidence_upload"),
     path("preuves/<int:pk>/", fv.evidence_file, name="mission_evidence_file"),
+
+    # Questions avant mise en relation
+    path("proprietaire/questions/", messaging_views.owner_inquiries, name="owner_inquiries"),
+    path("client/questions/", messaging_views.client_inquiries, name="client_inquiries"),
 
     # Abonnements propriétaires / agents (paiements simulés)
     path("proprietaire/abonnement/", subscription_views.subscription_home, name="owner_subscription"),

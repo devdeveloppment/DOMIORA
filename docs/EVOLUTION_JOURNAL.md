@@ -204,6 +204,22 @@ Détail : `docs/ABONNEMENTS_CLASSEMENT_MESSAGERIE.md`.
 
 ---
 
+## Finalisation locale (2026-10-19, soir)
+
+- Frais de mise en relation confirmés à 500 FCFA (source unique `CONTACT_FEE_AMOUNT`) ; aucun
+  « 700 FCFA » n'existe (seul « 700 » : une distance en mètres).
+- Essai 30 jours préparé, inactif, réservé aux comptes inscrits après une date à fixer ; retour
+  automatique au plan Gratuit à l'échéance.
+- Quotas Sponsorisé 1/3/5 vérifiés (serveur, rotation quotidienne, expiration).
+- Questions avant mise en relation (`messaging.ListingInquiry`, migration `0007`), anti-spam et
+  coordonnées bloquées.
+- Annonce 256 du compte 93 : diffusion suspendue en local (`suspend_unverified_owner_listings`,
+  journal de retour arrière) ; annonce, médias, relations et conversations conservés.
+- Tâche Celery `owner_subscriptions.process_due` ; documentation de planification Render.
+- 275 tests OK.
+
+---
+
 ## Liste de tâches
 
 - [x] Étape 0 — audit, sauvegarde, branche

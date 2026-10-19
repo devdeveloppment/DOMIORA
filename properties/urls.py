@@ -1,4 +1,5 @@
 from django.urls import path
+from messaging.views import ask_question
 from moderation.views import report_listing
 
 from . import views, views_ai
@@ -16,6 +17,7 @@ urlpatterns = [
     path("favori/<int:pk>/", views.toggle_favorite, name="toggle_favorite"),
     path("<slug:slug>/", views.property_detail, name="detail"),
     path("<slug:slug>/signaler/", report_listing, name="report"),
+    path("<slug:slug>/question/", ask_question, name="ask_question"),
     path("<slug:slug>/payer/", views.property_payment_redirect, name="payment_redirect"),
     path("<slug:slug>/confirmation/", views.property_payment_confirmation, name="payment_confirmation"),
     path("<slug:slug>/notification/", views.property_payment_notify, name="payment_notify"),
