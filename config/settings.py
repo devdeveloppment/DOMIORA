@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     "ratings",
     "payments",
     "field_verification",
+    "owner_subscriptions",
 ]
 
 MIDDLEWARE = [
@@ -356,6 +357,8 @@ if PAYMENT_MODE == "simulation" and not DEBUG and not env.bool(
     "PAYMENT_SIMULATION_ALLOWED_IN_PRODUCTION", default=False
 ):
     PAYMENT_MODE = "fedapay"
+# Abonnements propriétaires : architecture prête mais DÉSACTIVÉE (aucun tarif validé).
+OWNER_SUBSCRIPTIONS_ENABLED = env.bool("OWNER_SUBSCRIPTIONS_ENABLED", default=False)
 # Fraîcheur du badge « Vérifié DOMIORA » (mois après la dernière validation).
 VERIFICATION_FRESHNESS_MONTHS = env.int("VERIFICATION_FRESHNESS_MONTHS", default=12)
 # Durée de validité d'une tentative de paiement en attente (minutes).

@@ -106,15 +106,38 @@ double verrou.
 
 ---
 
+## Étape 4–5 — UX ciblée et mobile PWA (2026-10-19)
+
+- Badge « ✅ Vérifié DOMIORA · MM/AAAA » si la validation date de moins de
+  `VERIFICATION_FRESHNESS_MONTHS` (12 par défaut), sinon « contrôle à renouveler ».
+- Correction : le logo de repli de la navbar pointait vers `images/logo-domiora.png`
+  (inexistant → erreur 500 possible en production sans logo configuré) → `images/logo.svg`.
+- PWA : `/manifest.webmanifest`, `/sw.js` (cache limité à `/static/`), `/hors-ligne/` ; vidéos
+  en `preload="none"`. Guide : `docs/MOBILE_PWA.md`. Tests : `core/tests_pwa.py` (4).
+- **Refonte visuelle globale (accueil, navbar, résultats…) NON réalisée** : en attente de
+  votre accord, deux restaurations de refontes ayant été demandées par le passé.
+
+## Étape 6 — Abonnements propriétaires (préparés, désactivés)
+
+- App `owner_subscriptions` (label distinct de l'ancienne app `subscriptions` supprimée en
+  `bc8f703`) : `Plan` (prix facultatif, `is_demo`, `is_active=False`), `OwnerSubscription`
+  (essai, actif, renouvellement échoué, expiré, annulé), `SubscriptionEvent` (historique).
+- `OWNER_SUBSCRIPTIONS_ENABLED=False` : `subscription_required_for()` renvoie toujours False ;
+  ce point d'extension n'est **pas branché** sur la publication actuelle.
+- Cycle simulé : `simulate_start/renewal/cancel`, `expire_due` (`manage.py expire_owner_subscriptions`).
+- Migration : `owner_subscriptions/0001_initial` (création de tables). Tests : 5.
+
+---
+
 ## Liste de tâches
 
 - [x] Étape 0 — audit, sauvegarde, branche
 - [x] Étape 1 — failles critiques, décorateur, API, relations gratuites
 - [x] Étape 2 — paiements simulés + tests
 - [x] Étape 3 — missions de vérification de terrain (rôle VERIFIER)
-- [ ] Étape 4 — système visuel / UX
-- [ ] Étape 5 — mobile (PWA)
-- [ ] Étape 6 — abonnements propriétaires (désactivés)
+- [~] Étape 4 — UX ciblée faite ; refonte globale en attente de validation
+- [x] Étape 5 — mobile (PWA)
+- [x] Étape 6 — abonnements propriétaires (désactivés)
 - [ ] Étape 7 — innovations (badge, signalement, alertes…)
 - [ ] Étape 8 — audit vidéo / Render
 - [ ] Étape 9 — CI GitHub Actions, sécurité, performance
