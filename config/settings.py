@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     "payments",
     "field_verification",
     "owner_subscriptions",
+    "moderation",
 ]
 
 MIDDLEWARE = [

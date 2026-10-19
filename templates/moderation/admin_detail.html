@@ -1,0 +1,28 @@
+{% extends "dashboard/dashboard_base.html" %}
+{% block title %}Signalement #{{ report.pk }} — DOMIORA{% endblock %}
+{% block dashboard_content %}
+<a href="{% url 'dashboard:admin_listing_reports' %}" class="text-sm text-gray-500 underline">← Signalements</a>
+<h1 class="text-2xl font-extrabold text-gray-900 mt-2 mb-6">Signalement #{{ report.pk }} <span class="text-sm font-bold px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 align-middle">{{ report.get_status_display }}</span></h1>
+<div class="grid lg:grid-cols-3 gap-5">
+  <div class="lg:col-span-2 bg-white rounded-2xl border border-gray-200 p-5 text-sm space-y-2">
+    <p><span class="text-gray-500">Annonce :</span> <a class="underline text-primary-600" href="{% url 'dashboard:admin_property_edit' report.property.pk %}">{{ report.property.title }}</a> {% if report.property.is_published %}(publiée){% else %}(dépubliée){% endif %}</p>
+    <p><span class="text-gray-500">Propriétaire :</span> {{ report.property.owner.get_full_name|default:report.property.owner.username }}</p>
+    <p><span class="text-gray-500">Signalé par :</span> {{ report.reporter.get_full_name|default:report.reporter.username|default:"compte supprimé" }} · {{ report.created_at|date:"d/m/Y H:i" }}</p>
+    <p><span class="text-gray-500">Motif :</span> <strong>{{ report.get_reason_display }}</strong></p>
+    {% if report.details %}<p class="whitespace-pre-line bg-gray-50 rounded-xl p-3">{{ report.details }}</p>{% endif %}
+    {% if others %}<p class="pt-2 text-amber-800">Autres signalements sur cette annonce : {{ others|length }}</p>{% endif %}
+    {% if report.handled_by %}<p class="pt-2 text-gray-500">Traité par {{ report.handled_by.get_full_name|default:report.handled_by.username }} le {{ report.handled_at|date:"d/m/Y H:i" }}{% if report.listing_unpublished %} — annonce dépubliée{% endif %}</p>{% endif %}
+  </div>
+  <form method="post" class="bg-white rounded-2xl border border-gray-200 p-5 space-y-3" onsubmit="return confirm('Confirmer ?');">
+    {% csrf_token %}
+    <label for="admin_note" class="block font-bold text-gray-900">Note interne</label>
+    <textarea id="admin_note" name="admin_note" rows="4" class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm">{{ report.admin_note }}</textarea>
+    <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="unpublish" class="h-4 w-4"> Dépublier l'annonce (avec « Mesure prise »)</label>
+    <div class="grid gap-2">
+      <button name="action" value="reviewing" class="rounded-xl border border-gray-300 font-bold py-2.5 text-sm">Mettre en examen</button>
+      <button name="action" value="dismissed" class="rounded-xl border border-gray-300 font-bold py-2.5 text-sm">Classer sans suite</button>
+      <button name="action" value="action_taken" class="rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold py-2.5 text-sm">Mesure prise</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

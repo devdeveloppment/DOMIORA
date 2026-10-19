@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master, "evolution/**"]
+  pull_request:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    env:
+      DEBUG: "True"
+      SECRET_KEY: ci-only-not-secret
+      PAYMENT_MODE: simulation
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Dépendances
+        run: pip install -r requirements.txt
+      - name: Vérifications Django
+        run: |
+          python manage.py check
+          python manage.py makemigrations --check --dry-run
+      - name: Tests
+        run: >
+          python manage.py test
+          accounts agents appointments core dashboard favorites messaging notifications
+          properties services ratings rental_requests transactions api payments
+          field_verification owner_subscriptions moderation

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Signaler une annonce — DOMIORA{% endblock %}
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-10 px-4">
+  <div class="max-w-lg mx-auto bg-white rounded-3xl shadow-xl p-6 sm:p-8">
+    <a href="{{ property.get_absolute_url }}" class="text-sm text-gray-500 underline">← Retour à l'annonce</a>
+    <h1 class="text-2xl font-extrabold text-gray-900 mt-3">Signaler cette annonce</h1>
+    <p class="text-sm text-gray-600 mt-1">« {{ property.title }} ». Votre signalement est examiné par l'administration ; le propriétaire ne voit pas votre identité.</p>
+    <p class="mt-3 text-xs text-amber-900 bg-amber-50 border border-amber-200 rounded-xl p-3">Rappel : ne versez jamais d'argent en dehors de DOMIORA, même si on vous le demande.</p>
+    <form method="post" class="mt-5 space-y-4">
+      {% csrf_token %}
+      <fieldset>
+        <legend class="text-sm font-bold text-gray-900 mb-2">Motif *</legend>
+        <div class="space-y-2">
+          {% for value, label in reasons %}
+          <label class="flex items-center gap-3 rounded-xl border border-gray-200 px-3 py-2.5 text-sm hover:bg-gray-50"><input type="radio" name="reason" value="{{ value }}" required class="h-4 w-4"> {{ label }}</label>
+          {% endfor %}
+        </div>
+      </fieldset>
+      <div>
+        <label for="details" class="block text-sm font-bold text-gray-900 mb-1">Précisions (facultatif)</label>
+        <textarea id="details" name="details" rows="4" maxlength="2000" class="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm" placeholder="Ce que vous avez constaté…"></textarea>
+      </div>
+      <button class="w-full rounded-xl bg-primary-600 hover:bg-primary-700 text-white font-bold py-3">Envoyer le signalement</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

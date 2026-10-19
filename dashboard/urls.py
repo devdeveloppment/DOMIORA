@@ -1,5 +1,6 @@
 from django.urls import path
 from field_verification import views as fv
+from moderation import views as moderation_views
 
 from . import views, views_client, views_owner, views_admin
 
@@ -75,4 +76,8 @@ urlpatterns = [
     path("verificateur/missions/<int:pk>/", fv.verifier_mission, name="verifier_mission"),
     path("verificateur/missions/<int:pk>/preuves/", fv.verifier_evidence_upload, name="verifier_evidence_upload"),
     path("preuves/<int:pk>/", fv.evidence_file, name="mission_evidence_file"),
+
+    # Signalements d'annonces
+    path("admin-panel/signalements/", moderation_views.admin_reports, name="admin_listing_reports"),
+    path("admin-panel/signalements/<int:pk>/", moderation_views.admin_report_detail, name="admin_listing_report"),
 ]

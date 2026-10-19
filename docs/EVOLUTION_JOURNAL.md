@@ -129,6 +129,37 @@ double verrou.
 
 ---
 
+## Étape 7 — Innovations (2026-10-19)
+
+- Fait : badge « Vérifié DOMIORA » daté (étape 4) ; **signalement d'annonce** (app
+  `moderation`, migration `0001_initial`) : connexion requise, un signalement ouvert par
+  annonce et par utilisateur, 5/jour au maximum, identité du signaleur non montrée au
+  propriétaire, modération et dépublication réservées à l'admin. Tests : 6.
+- Alertes de recherche : déjà existantes (notification à la publication) ; pré-filtrage en
+  base ajouté. Passage en tâche Celery : à décider (le worker partage le conteneur web sur le plan gratuit).
+- **En attente de décision** : geste commercial si le propriétaire ne répond pas (délai,
+  montant, conditions) ; rédaction d'annonce par l'IA ; estimation de prix (le volume de
+  données réelles est trop faible localement : 7 biens publiés) ; WhatsApp/SMS (choix du fournisseur).
+
+## Étape 8 — Visites virtuelles (audit, sans changement de production)
+
+- Code : la garde `video_job_id` empêche un ancien job d'écraser un résultat récent (testé) ;
+  mise en file après commit ; erreurs visibles (`video_error`) ; génération limitée au
+  propriétaire du bien et à l'admin ; consultation publique de la vidéo d'une annonce publiée.
+- Render gratuit : worker Celery dans le conteneur web (`start.sh`) ; une mise en veille interrompt
+  le travail en cours (reprise à la redélivrance de la tâche, ou relance manuelle).
+- **Production non validée de bout en bout** : aucun test réel n'a été réalisé depuis cet
+  environnement (pas d'accès à Render).
+
+## Étape 9 — Tests, sécurité, CI
+
+- CI GitHub Actions : `.github/workflows/ci.yml` (check, migrations, tests des apps).
+- Suite complète : **202 tests OK** (143 au départ).
+- `check --deploy` : la production (`DEBUG=False`) active SSL, cookies sécurisés et nosniff.
+  Reste recommandé : `SECURE_HSTS_SECONDS` (non activé, car irréversible côté navigateurs).
+
+---
+
 ## Liste de tâches
 
 - [x] Étape 0 — audit, sauvegarde, branche
@@ -138,6 +169,6 @@ double verrou.
 - [~] Étape 4 — UX ciblée faite ; refonte globale en attente de validation
 - [x] Étape 5 — mobile (PWA)
 - [x] Étape 6 — abonnements propriétaires (désactivés)
-- [ ] Étape 7 — innovations (badge, signalement, alertes…)
-- [ ] Étape 8 — audit vidéo / Render
-- [ ] Étape 9 — CI GitHub Actions, sécurité, performance
+- [~] Étape 7 — badge + signalement faits ; autres en attente de décision
+- [~] Étape 8 — audit du code fait ; validation production à faire par vous
+- [x] Étape 9 — CI GitHub Actions, sécurité, performance

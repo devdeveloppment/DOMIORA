@@ -200,7 +200,14 @@ class Property(models.Model):
 
         from notifications.models import Notification
 
-        alerts = SearchAlert.objects.filter(is_active=True, user__is_active=True)
+        from django.db.models import Q
+
+        # Pré-filtrage en base (ville, type, transaction) pour ne pas parcourir toutes les alertes.
+        alerts = SearchAlert.objects.filter(is_active=True, user__is_active=True).filter(
+            Q(city="") | Q(city__iexact=self.city),
+            Q(property_type="") | Q(property_type=self.property_type),
+            Q(transaction_type="") | Q(transaction_type=self.transaction_type),
+        ).select_related("user")
         for alert in alerts:
             if not self._matches_search_alert(alert):
                 continue

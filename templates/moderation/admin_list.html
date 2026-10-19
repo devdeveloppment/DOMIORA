@@ -1,0 +1,17 @@
+{% extends "dashboard/dashboard_base.html" %}
+{% block title %}Signalements — DOMIORA{% endblock %}
+{% block dashboard_content %}
+<h1 class="text-2xl font-extrabold text-gray-900 mb-4">Signalements d'annonces</h1>
+<nav class="flex flex-wrap gap-2 mb-4 text-sm" aria-label="Filtrer par statut">
+  {% for value, label in statuses %}<a href="?status={{ value }}" class="px-3 py-1.5 rounded-full border {% if status_filter == value %}bg-gray-900 text-white border-gray-900{% else %}border-gray-300 text-gray-700{% endif %}">{{ label }}</a>{% endfor %}
+  <a href="?status=all" class="px-3 py-1.5 rounded-full border {% if status_filter == 'all' %}bg-gray-900 text-white border-gray-900{% else %}border-gray-300 text-gray-700{% endif %}">Tous</a>
+</nav>
+<div class="bg-white rounded-2xl border border-gray-200 divide-y divide-gray-100">
+  {% for r in page_obj %}
+  <a href="{% url 'dashboard:admin_listing_report' r.pk %}" class="flex flex-wrap items-center justify-between gap-2 p-4 hover:bg-gray-50">
+    <div><p class="font-semibold text-gray-900 text-sm">#{{ r.pk }} · {{ r.property.title }}</p><p class="text-xs text-gray-500">{{ r.get_reason_display }} · {{ r.created_at|date:"d/m/Y H:i" }}</p></div>
+    <span class="text-xs font-bold px-2.5 py-1 rounded-full bg-gray-100 text-gray-700">{{ r.get_status_display }}</span>
+  </a>
+  {% empty %}<p class="p-8 text-center text-gray-500 text-sm">Aucun signalement.</p>{% endfor %}
+</div>
+{% endblock %}
