@@ -19,6 +19,7 @@ class User(AbstractUser):
         CLIENT = "client", "Client"  # Acheteur ou locataire
         OWNER = "owner", "Propriétaire"  # Propriétaire de biens immobiliers
         ADMIN = "admin", "Administrateur"  # Administrateur système
+        VERIFIER = "verifier", "Vérificateur terrain"  # Agent de vérification (ne valide jamais)
 
     # Champs de base hérités d'AbstractUser : username, email, first_name, last_name, password, etc.
     
@@ -84,6 +85,16 @@ class User(AbstractUser):
     def is_admin_role(self):
         """Vérifie si l'utilisateur est un administrateur"""
         return self.role == self.Role.ADMIN or self.is_superuser
+
+    @property
+    def is_verifier(self):
+        """Vérificateur de terrain : contrôle et rapporte, ne valide jamais."""
+        return self.role == self.Role.VERIFIER
+
+    @property
+    def is_verified_owner(self):
+        """Source de vérité de la vérification propriétaire : verification_status."""
+        return self.role == self.Role.OWNER and self.verification_status == self.VerificationStatus.APPROVED
 
     def get_absolute_url(self):
         """Retourne l'URL du profil utilisateur"""

@@ -41,6 +41,11 @@ def dashboard_redirect(request):
         request.session.modified = True
         return redirect("dashboard:admin_overview")
 
+    # Les vérificateurs de terrain ont leur propre espace.
+    if user.role == User.Role.VERIFIER:
+        request.session['dash_role'] = 'verifier'
+        return redirect("dashboard:verifier_home")
+
     # Les propriétaires sont envoyés vers leur espace dédié.
     if user.role == User.Role.OWNER:
         request.session['dash_role'] = 'owner'

@@ -11,6 +11,7 @@
       <h1 class="text-2xl font-bold font-display text-gray-900">Détail de la vérification</h1>
     </div>
     <div class="flex items-center gap-2">
+      <a href="{% url 'dashboard:admin_mission_create' %}?owner={{ verification.owner.pk }}" class="text-xs font-bold px-3 py-1.5 rounded-full border border-gray-300 hover:bg-gray-50">Créer une mission terrain</a>
       {% if verification.status == 'pending' %}
       <span class="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full bg-amber-100 text-amber-700">
         <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>

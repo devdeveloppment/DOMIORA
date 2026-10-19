@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     "property_boost",
     "ratings",
     "payments",
+    "field_verification",
 ]
 
 MIDDLEWARE = [

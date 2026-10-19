@@ -1,0 +1,48 @@
+{% extends "dashboard/dashboard_base.html" %}
+{% block title %}Missions de vérification — DOMIORA{% endblock %}
+{% block dashboard_content %}
+<div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+  <h1 class="text-2xl font-extrabold text-gray-900">Missions de vérification terrain</h1>
+  <a href="{% url 'dashboard:admin_mission_create' %}" class="rounded-xl bg-primary-600 hover:bg-primary-700 text-white text-sm font-bold px-4 py-2.5">Nouvelle mission</a>
+</div>
+<form method="get" class="mb-4 flex flex-wrap gap-2 items-center">
+  <label for="status" class="text-sm text-gray-600">Statut</label>
+  <select id="status" name="status" onchange="this.form.submit()" class="rounded-lg border border-gray-200 text-sm px-3 py-2">
+    <option value="">Tous</option>
+    {% for value, label in statuses %}<option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+  </select>
+  <noscript><button class="rounded-lg border px-3 py-2 text-sm">Filtrer</button></noscript>
+</form>
+<div class="bg-white rounded-2xl border border-gray-200 overflow-x-auto">
+  <table class="w-full text-sm">
+    <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500"><tr><th class="p-3">#</th><th class="p-3">Propriétaire</th><th class="p-3">Bien</th><th class="p-3">Vérificateur</th><th class="p-3">Statut</th><th class="p-3">Créée</th></tr></thead>
+    <tbody class="divide-y divide-gray-100">
+    {% for m in page_obj %}
+      <tr class="hover:bg-gray-50">
+        <td class="p-3"><a class="font-bold text-primary-600 underline" href="{% url 'dashboard:admin_mission_detail' m.pk %}">#{{ m.pk }}</a></td>
+        <td class="p-3">{{ m.owner.get_full_name|default:m.owner.username }}</td>
+        <td class="p-3">{{ m.property.title|default:"—" }}</td>
+        <td class="p-3">{% if m.verifier %}{{ m.verifier.get_full_name|default:m.verifier.username }}{% else %}Non attribuée{% endif %}</td>
+        <td class="p-3">{% include "field_verification/_status_badge.html" %}</td>
+        <td class="p-3 text-gray-500">{{ m.created_at|date:"d/m/Y" }}</td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="6" class="p-8 text-center text-gray-500">Aucune mission pour le moment.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+<details class="mt-8 bg-white rounded-2xl border border-gray-200 p-5">
+  <summary class="font-bold text-gray-900 cursor-pointer">Ajouter un compte vérificateur</summary>
+  <form method="post" action="{% url 'dashboard:admin_verifier_create' %}" class="mt-4 grid sm:grid-cols-2 gap-3">
+    {% csrf_token %}
+    <label class="text-sm">Identifiant *<input required name="username" autocomplete="off" class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2"></label>
+    <label class="text-sm">Mot de passe provisoire * (10 caractères min.)<input required type="password" minlength="10" name="password" autocomplete="new-password" class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2"></label>
+    <label class="text-sm">Prénom<input name="first_name" class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2"></label>
+    <label class="text-sm">Nom<input name="last_name" class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2"></label>
+    <label class="text-sm">E-mail<input type="email" name="email" class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2"></label>
+    <label class="text-sm">Téléphone<input name="phone" class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2"></label>
+    <button class="sm:col-span-2 rounded-xl bg-gray-900 text-white font-bold py-2.5">Créer le vérificateur</button>
+  </form>
+</details>
+{% endblock %}

@@ -1,0 +1,28 @@
+<div class="bg-white rounded-2xl border border-gray-200 p-5">
+  <h2 class="font-bold text-gray-900 mb-3">Checklist</h2>
+  <ul class="space-y-2 text-sm">
+    {% for item in mission.checklist %}
+    <li class="flex gap-2"><span aria-hidden="true">{% if item.checked %}✅{% else %}⬜{% endif %}</span><span><span class="sr-only">{% if item.checked %}Contrôlé :{% else %}Non contrôlé :{% endif %}</span>{{ item.label }}{% if item.note %}<span class="block text-xs text-gray-500">{{ item.note }}</span>{% endif %}</span></li>
+    {% endfor %}
+  </ul>
+  {% if mission.observations %}<h3 class="font-bold text-sm mt-4">Observations</h3><p class="text-sm text-gray-700 whitespace-pre-line">{{ mission.observations }}</p>{% endif %}
+  {% if mission.report %}<h3 class="font-bold text-sm mt-4">Rapport</h3><p class="text-sm text-gray-700 whitespace-pre-line">{{ mission.report }}</p>{% endif %}
+  {% if mission.recommendation %}<p class="mt-3 text-sm">Avis du vérificateur (consultatif) : <strong>{{ mission.get_recommendation_display }}</strong></p>{% endif %}
+</div>
+<div class="bg-white rounded-2xl border border-gray-200 p-5">
+  <h2 class="font-bold text-gray-900 mb-1">Preuves ({{ mission.evidences.count }})</h2>
+  <p class="text-xs text-gray-500 mb-3">L'heure et la position GPS sont déclarées par l'appareil et peuvent être falsifiées. Seule l'heure de réception par le serveur est fiable.</p>
+  <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+    {% for e in mission.evidences.all %}
+    <figure class="border border-gray-200 rounded-xl overflow-hidden">
+      <a href="{% url 'dashboard:mission_evidence_file' e.pk %}" target="_blank" rel="noopener"><img src="{% url 'dashboard:mission_evidence_file' e.pk %}" alt="{{ e.caption|default:'Preuve' }}" loading="lazy" class="w-full h-32 object-cover"></a>
+      <figcaption class="p-2 text-[11px] text-gray-600 space-y-0.5">
+        {% if e.caption %}<p class="font-semibold text-gray-800">{{ e.caption }}</p>{% endif %}
+        <p>Reçue : {{ e.uploaded_at|date:"d/m/Y H:i" }}</p>
+        {% if e.device_captured_at %}<p>Appareil : {{ e.device_captured_at|date:"d/m/Y H:i" }}</p>{% endif %}
+        {% if e.latitude %}<p>GPS : {{ e.latitude }}, {{ e.longitude }}{% if e.accuracy_m %} (±{{ e.accuracy_m }} m){% endif %}</p>{% else %}<p>GPS non fourni</p>{% endif %}
+      </figcaption>
+    </figure>
+    {% empty %}<p class="text-sm text-gray-500 col-span-full">Aucune preuve.</p>{% endfor %}
+  </div>
+</div>

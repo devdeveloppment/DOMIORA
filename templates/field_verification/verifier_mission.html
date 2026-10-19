@@ -1,0 +1,116 @@
+{% extends "dashboard/dashboard_base.html" %}
+{% block title %}Mission #{{ mission.pk }} — DOMIORA{% endblock %}
+{% block dashboard_content %}
+<a href="{% url 'dashboard:verifier_home' %}" class="text-sm text-gray-500 underline">← Mes missions</a>
+<div class="flex flex-wrap items-center gap-3 mt-2 mb-4">
+  <h1 class="text-2xl font-extrabold text-gray-900">Mission #{{ mission.pk }}</h1>
+  {% with m=mission %}{% include "field_verification/_status_badge.html" %}{% endwith %}
+</div>
+
+{% if mission.status == 'info_requested' and mission.admin_feedback %}
+<div role="alert" class="mb-4 rounded-2xl bg-amber-50 border border-amber-200 p-4 text-sm text-amber-900"><strong>Complément demandé :</strong> {{ mission.admin_feedback }}</div>
+{% endif %}
+
+<div class="grid lg:grid-cols-3 gap-5">
+  <div class="lg:col-span-2 space-y-5">
+    <section class="bg-white rounded-2xl border border-gray-200 p-5 text-sm space-y-1">
+      <h2 class="font-bold text-gray-900 mb-2">À vérifier</h2>
+      <p><span class="text-gray-500">Propriétaire :</span> <strong>{{ mission.owner.get_full_name|default:mission.owner.username }}</strong></p>
+      {% if mission.owner.phone %}<p><span class="text-gray-500">Téléphone :</span> <a class="underline" href="tel:{{ mission.owner.phone }}">{{ mission.owner.phone }}</a></p>{% endif %}
+      {% if mission.property %}<p><span class="text-gray-500">Bien :</span> {{ mission.property.title }} — {{ mission.property.address|default:mission.property.city }}</p>{% endif %}
+      {% if mission.instructions %}<p class="pt-2 whitespace-pre-line"><span class="text-gray-500">Consignes :</span> {{ mission.instructions }}</p>{% endif %}
+    </section>
+
+    {% if mission.status == 'assigned' or mission.status == 'scheduled' %}
+    <section class="bg-white rounded-2xl border border-gray-200 p-5 grid sm:grid-cols-2 gap-4">
+      <form method="post" class="space-y-2">
+        {% csrf_token %}<input type="hidden" name="action" value="schedule">
+        <label for="scheduled_for" class="block text-sm font-bold text-gray-900">Planifier la visite</label>
+        <input id="scheduled_for" type="datetime-local" name="scheduled_for" required class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm" value="{{ mission.scheduled_for|date:'Y-m-d\TH:i' }}">
+        <button class="w-full rounded-xl border border-gray-300 font-bold py-2.5 text-sm">Enregistrer la date</button>
+      </form>
+      <form method="post" class="flex flex-col justify-end">
+        {% csrf_token %}<input type="hidden" name="action" value="start">
+        <button class="w-full rounded-xl bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 text-sm">Démarrer la visite</button>
+      </form>
+    </section>
+    {% endif %}
+
+    {% if mission.status == 'in_progress' or mission.status == 'info_requested' %}
+    <form method="post" class="bg-white rounded-2xl border border-gray-200 p-5 space-y-4">
+      {% csrf_token %}
+      <fieldset>
+        <legend class="font-bold text-gray-900 mb-3">Checklist</legend>
+        <div class="space-y-3">
+          {% for item in mission.checklist %}
+          <div class="border border-gray-100 rounded-xl p-3">
+            <label class="flex items-start gap-3 text-sm"><input type="checkbox" name="check_{{ item.key }}" {% if item.checked %}checked{% endif %} class="mt-0.5 h-5 w-5 rounded"> <span>{{ item.label }}</span></label>
+            <label class="sr-only" for="note_{{ item.key }}">Note : {{ item.label }}</label>
+            <input id="note_{{ item.key }}" name="note_{{ item.key }}" value="{{ item.note }}" placeholder="Note (facultatif)" class="mt-2 w-full rounded-lg border border-gray-200 px-3 py-1.5 text-xs">
+          </div>
+          {% endfor %}
+        </div>
+      </fieldset>
+      <div>
+        <label for="observations" class="block text-sm font-bold text-gray-900 mb-1">Observations</label>
+        <textarea id="observations" name="observations" rows="3" class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm">{{ mission.observations }}</textarea>
+      </div>
+      <div>
+        <label for="report" class="block text-sm font-bold text-gray-900 mb-1">Rapport *</label>
+        <textarea id="report" name="report" rows="6" class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm">{{ mission.report }}</textarea>
+      </div>
+      <div>
+        <label for="recommendation" class="block text-sm font-bold text-gray-900 mb-1">Votre avis (consultatif)</label>
+        <select id="recommendation" name="recommendation" class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm">
+          {% for value, label in recommendations %}<option value="{{ value }}" {% if mission.recommendation == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="grid sm:grid-cols-2 gap-3">
+        <button name="action" value="save" class="rounded-xl border border-gray-300 font-bold py-3 text-sm">Enregistrer le brouillon</button>
+        <button name="action" value="submit" onclick="return confirm('Transmettre le rapport à l’administration ?');" class="rounded-xl bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 text-sm">Transmettre le rapport</button>
+      </div>
+    </form>
+
+    <form method="post" action="{% url 'dashboard:verifier_evidence_upload' mission.pk %}" enctype="multipart/form-data" class="bg-white rounded-2xl border border-gray-200 p-5 space-y-3" id="evidence-form">
+      {% csrf_token %}
+      <h2 class="font-bold text-gray-900">Ajouter une preuve photo</h2>
+      <label for="evidence-image" class="block text-sm">Photo (JPEG, PNG ou WebP, 8 Mo max.)</label>
+      <input id="evidence-image" type="file" name="image" accept="image/jpeg,image/png,image/webp" capture="environment" required class="block w-full text-sm">
+      <label for="evidence-caption" class="block text-sm">Légende</label>
+      <input id="evidence-caption" name="caption" maxlength="200" class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm">
+      <label class="flex items-start gap-2 text-sm"><input type="checkbox" id="use-geo" class="mt-0.5 h-5 w-5"> <span>Joindre ma position GPS (vous devrez l'autoriser dans le navigateur)</span></label>
+      <p id="geo-status" class="text-xs text-gray-500" aria-live="polite"></p>
+      <input type="hidden" name="latitude"><input type="hidden" name="longitude"><input type="hidden" name="accuracy"><input type="hidden" name="device_captured_at">
+      <button class="w-full rounded-xl bg-gray-900 text-white font-bold py-2.5 text-sm">Envoyer la preuve</button>
+    </form>
+    {% endif %}
+
+    {% include "field_verification/_report.html" %}
+  </div>
+  <div class="space-y-5">{% include "field_verification/_history.html" %}</div>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+(function () {
+  var form = document.getElementById('evidence-form');
+  if (!form) return;
+  var box = document.getElementById('use-geo'), status = document.getElementById('geo-status');
+  form.elements.device_captured_at.value = new Date().toISOString();
+  box.addEventListener('change', function () {
+    ['latitude', 'longitude', 'accuracy'].forEach(function (n) { form.elements[n].value = ''; });
+    if (!box.checked) { status.textContent = ''; return; }
+    if (!navigator.geolocation) { status.textContent = 'Géolocalisation indisponible sur cet appareil.'; box.checked = false; return; }
+    status.textContent = 'Recherche de la position…';
+    navigator.geolocation.getCurrentPosition(function (p) {
+      form.elements.latitude.value = p.coords.latitude.toFixed(6);
+      form.elements.longitude.value = p.coords.longitude.toFixed(6);
+      form.elements.accuracy.value = Math.round(p.coords.accuracy);
+      status.textContent = 'Position jointe (précision ±' + Math.round(p.coords.accuracy) + ' m).';
+    }, function () { status.textContent = 'Position refusée ou indisponible : la preuve sera envoyée sans GPS.'; box.checked = false; },
+    { enableHighAccuracy: true, timeout: 15000 });
+  });
+  form.addEventListener('submit', function () { form.elements.device_captured_at.value = new Date().toISOString(); });
+})();
+</script>
+{% endblock %}

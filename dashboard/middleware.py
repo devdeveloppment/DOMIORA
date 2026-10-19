@@ -40,6 +40,13 @@ class DashboardRoleMiddleware:
                     messages.error(request, "Accès refusé. Cette zone est réservée aux propriétaires.")
                     return redirect("accounts:login")
 
+            elif current_path.startswith('/dashboard/verificateur/'):
+                # Espace réservé aux vérificateurs de terrain.
+                if request.user.role != User.Role.VERIFIER:
+                    from django.contrib import messages
+                    messages.error(request, "Accès refusé. Cette zone est réservée aux vérificateurs.")
+                    return redirect("accounts:login")
+
             elif current_path.startswith('/dashboard/client/'):
                 # L'accès au tableau de bord client est autorisé pour les utilisateurs authentifiés.
                 # La vérification spécifique du paiement est gérée ailleurs par le statut "has_unlocked".

@@ -1,0 +1,61 @@
+{% extends "dashboard/dashboard_base.html" %}
+{% block title %}Mission #{{ mission.pk }} — DOMIORA{% endblock %}
+{% block dashboard_content %}
+<a href="{% url 'dashboard:admin_missions' %}" class="text-sm text-gray-500 underline">← Missions</a>
+<div class="flex flex-wrap items-center gap-3 mt-2 mb-6">
+  <h1 class="text-2xl font-extrabold text-gray-900">Mission #{{ mission.pk }}</h1>
+  {% with m=mission %}{% include "field_verification/_status_badge.html" %}{% endwith %}
+</div>
+<div class="grid lg:grid-cols-3 gap-5">
+  <div class="lg:col-span-2 space-y-5">
+    <div class="bg-white rounded-2xl border border-gray-200 p-5 text-sm space-y-1">
+      <p><span class="text-gray-500">Propriétaire :</span> <strong>{{ mission.owner.get_full_name|default:mission.owner.username }}</strong> ({{ mission.owner.get_verification_status_display }})</p>
+      <p><span class="text-gray-500">Bien :</span> {% if mission.property %}{{ mission.property.title }}{% else %}Vérification d'identité{% endif %}</p>
+      {% if mission.identity_request %}<p><span class="text-gray-500">Dossier d'identité :</span> <a class="underline text-primary-600" href="{% url 'dashboard:admin_identity_verification_detail' mission.identity_request.pk %}">#{{ mission.identity_request.pk }} — {{ mission.identity_request.get_status_display }}</a></p>{% endif %}
+      <p><span class="text-gray-500">Vérificateur :</span> {% if mission.verifier %}{{ mission.verifier.get_full_name|default:mission.verifier.username }}{% else %}Non attribuée{% endif %}</p>
+      {% if mission.scheduled_for %}<p><span class="text-gray-500">Visite prévue :</span> {{ mission.scheduled_for|date:"d/m/Y H:i" }}</p>{% endif %}
+      {% if mission.instructions %}<p class="pt-2 whitespace-pre-line"><span class="text-gray-500">Consignes :</span> {{ mission.instructions }}</p>{% endif %}
+      {% if mission.previous_mission %}<p><span class="text-gray-500">Fait suite à :</span> <a class="underline" href="{% url 'dashboard:admin_mission_detail' mission.previous_mission.pk %}">mission #{{ mission.previous_mission.pk }}</a></p>{% endif %}
+    </div>
+    {% include "field_verification/_report.html" %}
+  </div>
+  <div class="space-y-5">
+    {% if mission.status != 'closed' and mission.status != 'report_submitted' %}
+    <form method="post" class="bg-white rounded-2xl border border-gray-200 p-5 space-y-3">
+      {% csrf_token %}<input type="hidden" name="action" value="assign">
+      <label for="verifier" class="block font-bold text-gray-900">{% if mission.verifier %}Réattribuer{% else %}Attribuer{% endif %}</label>
+      <select id="verifier" name="verifier" required class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm">
+        {% for v in verifiers %}<option value="{{ v.pk }}" {% if mission.verifier_id == v.pk %}selected{% endif %}>{{ v.get_full_name|default:v.username }}</option>{% endfor %}
+      </select>
+      <button class="w-full rounded-xl bg-gray-900 text-white font-bold py-2.5 text-sm">Attribuer</button>
+    </form>
+    {% endif %}
+    {% if mission.status == 'report_submitted' %}
+    <form method="post" class="bg-white rounded-2xl border border-gray-200 p-5 space-y-3">
+      {% csrf_token %}<input type="hidden" name="action" value="request_info">
+      <label for="feedback" class="block font-bold text-gray-900">Demander un complément au vérificateur</label>
+      <textarea id="feedback" name="feedback" rows="3" required class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"></textarea>
+      <button class="w-full rounded-xl border border-gray-300 font-bold py-2.5 text-sm">Demander un complément</button>
+    </form>
+    <form method="post" class="bg-white rounded-2xl border-2 border-primary-600 p-5 space-y-3" onsubmit="return confirm('Confirmer cette décision définitive ?');">
+      {% csrf_token %}
+      <p class="font-bold text-gray-900">Décision finale (administrateur)</p>
+      <label for="reason" class="block text-sm text-gray-600">Motif (obligatoire pour refuser ou revérifier)</label>
+      <textarea id="reason" name="reason" rows="3" class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"></textarea>
+      <div class="grid gap-2">
+        <button name="action" value="validate" class="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 text-sm">Valider le propriétaire</button>
+        <button name="action" value="refuse" class="rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold py-2.5 text-sm">Refuser</button>
+        <button name="action" value="reverify" class="rounded-xl border border-gray-300 font-bold py-2.5 text-sm">Nouvelle vérification</button>
+      </div>
+    </form>
+    {% endif %}
+    {% if mission.decisions.exists %}
+    <div class="bg-white rounded-2xl border border-gray-200 p-5 text-sm space-y-2">
+      <h2 class="font-bold text-gray-900">Décisions</h2>
+      {% for d in mission.decisions.all %}<p><strong>{{ d.get_decision_display }}</strong>{% if d.admin %} — {{ d.admin.get_full_name|default:d.admin.username }}{% endif %}, {{ d.created_at|date:"d/m/Y H:i" }}{% if d.reason %}<br><span class="text-gray-600">{{ d.reason }}</span>{% endif %}</p>{% endfor %}
+    </div>
+    {% endif %}
+    {% include "field_verification/_history.html" %}
+  </div>
+</div>
+{% endblock %}

@@ -15,6 +15,8 @@ def user_dash_role(request):
         return {"dash_role": "admin"}
     elif current_path.startswith('/dashboard/client/'):
         return {"dash_role": "client"}
+    elif current_path.startswith('/dashboard/verificateur/') or getattr(request.user, "role", "") == User.Role.VERIFIER:
+        return {"dash_role": "verifier"}
 
     # 2. Pour les pages globales, on se base sur la session pour garder le bon contexte.
     dash_role = request.session.get('dash_role')

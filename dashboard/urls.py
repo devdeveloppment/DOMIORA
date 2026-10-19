@@ -1,4 +1,6 @@
 from django.urls import path
+from field_verification import views as fv
+
 from . import views, views_client, views_owner, views_admin
 
 app_name = "dashboard"
@@ -63,4 +65,14 @@ urlpatterns = [
     path("admin-panel/statistiques/", views_admin.admin_stats, name="admin_stats"),
     path("admin-panel/rapports/", views_admin.admin_reports, name="admin_reports"),
     path("admin-panel/parametres/", views_admin.admin_settings, name="admin_settings"),
+
+    # Missions de vérification terrain (admin : décision finale ; vérificateur : contrôle et rapport)
+    path("admin-panel/missions/", fv.admin_missions, name="admin_missions"),
+    path("admin-panel/missions/nouvelle/", fv.admin_mission_create, name="admin_mission_create"),
+    path("admin-panel/missions/<int:pk>/", fv.admin_mission_detail, name="admin_mission_detail"),
+    path("admin-panel/verificateurs/ajouter/", fv.admin_verifier_create, name="admin_verifier_create"),
+    path("verificateur/", fv.verifier_home, name="verifier_home"),
+    path("verificateur/missions/<int:pk>/", fv.verifier_mission, name="verifier_mission"),
+    path("verificateur/missions/<int:pk>/preuves/", fv.verifier_evidence_upload, name="verifier_evidence_upload"),
+    path("preuves/<int:pk>/", fv.evidence_file, name="mission_evidence_file"),
 ]

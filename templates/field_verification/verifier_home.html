@@ -1,0 +1,26 @@
+{% extends "dashboard/dashboard_base.html" %}
+{% block title %}Mes missions — DOMIORA{% endblock %}
+{% block dashboard_content %}
+<h1 class="text-2xl font-extrabold text-gray-900 mb-1">Mes missions de vérification</h1>
+<p class="text-sm text-gray-500 mb-6">Vous contrôlez et rapportez. La décision finale appartient à l'administration.</p>
+<div class="space-y-3">
+  {% for m in open_missions %}
+  <a href="{% url 'dashboard:verifier_mission' m.pk %}" class="block bg-white rounded-2xl border border-gray-200 hover:border-primary-600 p-4 focus:outline-none focus:ring-2 focus:ring-primary-600">
+    <div class="flex items-center justify-between gap-3">
+      <p class="font-bold text-gray-900">Mission #{{ m.pk }} — {{ m.owner.get_full_name|default:m.owner.username }}</p>
+      {% include "field_verification/_status_badge.html" %}
+    </div>
+    <p class="text-sm text-gray-600 mt-1">{% if m.property %}{{ m.property.title }} · {{ m.property.city }}{% else %}Vérification d'identité{% endif %}</p>
+    {% if m.scheduled_for %}<p class="text-xs text-gray-500 mt-1">Visite prévue le {{ m.scheduled_for|date:"d/m/Y à H:i" }}</p>{% endif %}
+  </a>
+  {% empty %}
+  <div class="bg-white rounded-2xl border border-dashed border-gray-300 p-8 text-center text-gray-500">Aucune mission en cours.</div>
+  {% endfor %}
+</div>
+{% if closed_missions %}
+<h2 class="text-lg font-bold text-gray-900 mt-8 mb-3">Missions clôturées</h2>
+<ul class="text-sm text-gray-600 space-y-1">
+  {% for m in closed_missions %}<li><a class="underline" href="{% url 'dashboard:verifier_mission' m.pk %}">#{{ m.pk }} — {{ m.owner.get_full_name|default:m.owner.username }}</a></li>{% endfor %}
+</ul>
+{% endif %}
+{% endblock %}

@@ -82,12 +82,36 @@ double verrou.
 
 ---
 
+## Étape 3 — Missions de vérification de terrain (2026-10-19)
+
+- Rôle `VERIFIER` (« Vérificateur terrain ») ajouté à `User.Role` — migration
+  `accounts/0010_alter_user_role` (liste de choix uniquement, aucune donnée modifiée).
+- App `field_verification` : `VerificationMission`, `MissionEvidence`, `MissionLog`,
+  `AdminDecision` — migration `field_verification/0001_initial` (création de tables).
+- États : à attribuer → attribuée → planifiée → en cours → rapport soumis
+  (→ complément demandé → rapport soumis) → clôturée.
+- Le vérificateur planifie, démarre, remplit la checklist, joint des photos (GPS facultatif
+  et déclaratif, avec horodatage serveur), émet un **avis consultatif** et transmet. Il fait
+  évoluer le statut du propriétaire jusqu'à « vérification terrain effectuée » au plus — jamais
+  « approuvé » ni « refusé ».
+- L'administrateur crée/attribue, demande un complément, et décide seul : valider (approuve le
+  dossier d'identité), refuser (motif obligatoire) ou nouvelle vérification (crée une mission
+  liée). La décision ne publie aucune annonce.
+- Preuves servies par une vue protégée (`/dashboard/preuves/<id>/`, `Cache-Control: private`) :
+  admin + vérificateur de la mission uniquement. **Limite** : en production avec Cloudinary,
+  le fichier reste accessible à quiconque connaît son URL Cloudinary (non exposée dans les pages).
+- Espaces : `/dashboard/admin-panel/missions/` et `/dashboard/verificateur/` (protégés par
+  middleware + `role_required` + contrôle objet en 404).
+- Tests : `field_verification/tests.py` (13).
+
+---
+
 ## Liste de tâches
 
 - [x] Étape 0 — audit, sauvegarde, branche
 - [x] Étape 1 — failles critiques, décorateur, API, relations gratuites
 - [x] Étape 2 — paiements simulés + tests
-- [ ] Étape 3 — missions de vérification de terrain (rôle VERIFIER)
+- [x] Étape 3 — missions de vérification de terrain (rôle VERIFIER)
 - [ ] Étape 4 — système visuel / UX
 - [ ] Étape 5 — mobile (PWA)
 - [ ] Étape 6 — abonnements propriétaires (désactivés)
