@@ -12,7 +12,12 @@ from .forms import ReviewForm
 def create_review(request, owner_id):
     """Create a review for an owner"""
     owner = get_object_or_404(User, pk=owner_id, role=User.Role.OWNER)
-    
+
+    # Un vérificateur de terrain (intervenant mandaté) ou un propriétaire ne note pas un propriétaire.
+    if request.user.role in (User.Role.VERIFIER, User.Role.OWNER) or request.user == owner:
+        messages.error(request, "Seuls les clients peuvent laisser un avis sur un propriétaire.")
+        return redirect("properties:list")
+
     # Check if user already reviewed this owner
     if Review.objects.filter(owner=owner, reviewer=request.user).exists():
         messages.warning(request, "Vous avez déjà noté ce propriétaire.")

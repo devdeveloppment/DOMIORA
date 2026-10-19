@@ -569,8 +569,13 @@ def property_payment_redirect(request, slug):
             messages.info(request, "Vous êtes déjà en relation avec ce propriétaire.")
             return redirect("properties:detail", slug=slug)
 
+    from payments.services import demo_isolation_required
+
     form = None
     if request.method == "POST":
+        if not request.user.is_authenticated and demo_isolation_required():
+            messages.info(request, "Mode démonstration : connectez-vous avec un compte de démonstration.")
+            return redirect(f"{reverse('accounts:login')}?next={request.path}")
         if not request.user.is_authenticated:
             form = ClientPostPaymentForm(request.POST)
             email = (request.POST.get("email") or "").strip()

@@ -354,7 +354,7 @@ def _generate_fallback_response(message, properties=None, user_role=None):
     # Check for who are you
     who_are_you = ['qui es-tu', 'qui etes vous', "c'est quoi domiora", "qu'est-ce que domiora"]
     if any(w in message_lower for w in who_are_you):
-        return "Je suis l'assistant intelligent de DOMIORA, une plateforme immobilière qui connecte propriétaires et clients. Les propriétaires peuvent publier gratuitement leurs annonces après vérification d'identité, et les clients peuvent consulter les biens librement et contacter les propriétaires contre 500 FCFA de frais de mise en relation."
+        return f"Je suis l'assistant intelligent de DOMIORA, une plateforme immobilière qui connecte propriétaires et clients. Les propriétaires peuvent publier gratuitement leurs annonces après vérification d'identité, et les clients peuvent consulter les biens librement et contacter les propriétaires contre {knowledge.CONNECTION_FEE} de frais de mise en relation."
 
     # Explain identity verification before the generic "how it works" response.
     identity_terms = ['vérification', 'verification', 'identité', 'identite', 'pièce d\'identité', 'piece d\'identite', 'cni', 'passeport']
@@ -364,7 +364,7 @@ def _generate_fallback_response(message, properties=None, user_role=None):
     # Check for how it works
     how_it_works = ['comment ça marche', 'comment fonctionne', 'comment ca marche']
     if any(h in message_lower for h in how_it_works):
-        return "DOMIORA fonctionne simplement : en tant que visiteur, vous pouvez consulter toutes les annonces gratuitement. Lorsque vous souhaitez contacter un proprietaire ou demander une visite, vous payez 500 FCFA via un paiement securise pour debloquer la mise en relation. Les proprietaires doivent verifier leur identite avant de publier gratuitement leurs annonces."
+        return f"DOMIORA fonctionne simplement : en tant que visiteur, vous pouvez consulter toutes les annonces gratuitement. Lorsque vous souhaitez contacter un proprietaire ou demander une visite, vous payez {knowledge.CONNECTION_FEE} via un paiement securise pour debloquer la mise en relation. Les proprietaires doivent verifier leur identite avant de publier gratuitement leurs annonces."
     
     # Check for visit virtuelle specifically
     if 'visite virtuelle' in message_lower:
@@ -373,17 +373,17 @@ def _generate_fallback_response(message, properties=None, user_role=None):
     # Role-specific responses for visitors
     if user_role == 'visitor' or user_role is None:
         if 'compte' in message_lower and ('créer' in message_lower or 'inscription' in message_lower or 'sinscrire' in message_lower):
-            return "Sur DOMIORA, vous n'avez pas besoin de creer un compte pour consulter les biens. Vous pouvez parcourir toutes les annonces librement. Lorsque vous souhaitez contacter un proprietaire ou demander une visite, il suffit de debloquer la mise en relation (500 FCFA via un paiement securise)."
+            return f"Sur DOMIORA, vous n'avez pas besoin de creer un compte pour consulter les biens. Vous pouvez parcourir toutes les annonces librement. Lorsque vous souhaitez contacter un proprietaire ou demander une visite, il suffit de debloquer la mise en relation ({knowledge.CONNECTION_FEE} via un paiement securise)."
         elif 'contacter' in message_lower or 'propriétaire' in message_lower or 'proprietaire' in message_lower:
-            return "Pour contacter un proprietaire sur DOMIORA, vous devez debloquer la mise en relation. Cela coute 500 FCFA via un paiement securise. Une fois le paiement effectue, vous aurez acces aux coordonnees du proprietaire et pourrez echanger avec lui."
+            return f"Pour contacter un proprietaire sur DOMIORA, vous devez debloquer la mise en relation. Cela coute {knowledge.CONNECTION_FEE} via un paiement securise. Une fois le paiement effectue, vous aurez acces aux coordonnees du proprietaire et pourrez echanger avec lui."
         elif 'frais' in message_lower or 'prix' in message_lower or 'cout' in message_lower or 'coût' in message_lower:
-            return "Les frais de mise en relation sur DOMIORA sont de 500 FCFA. Ce montant unique vous donne acces aux coordonnees du proprietaire et permet d'echanger avec lui pour organiser des visites."
+            return f"Les frais de mise en relation sur DOMIORA sont de {knowledge.CONNECTION_FEE}. Ce montant unique vous donne acces aux coordonnees du proprietaire et permet d'echanger avec lui pour organiser des visites."
         elif 'paiement' in message_lower or 'payer' in message_lower:
             return "Les frais de mise en relation sont payables via un paiement securise. Les moyens de paiement disponibles s'affichent au moment de la validation."
         elif 'photo' in message_lower or 'image' in message_lower:
             return "Oui, vous pouvez voir toutes les photos et videos des biens gratuitement sur DOMIORA avant de decider de contacter le proprietaire. Il n'y a pas besoin de payer pour consulter les annonces."
         elif 'payer' in message_lower and 'frais' in message_lower:
-            return "Pour payer les frais de mise en relation, cliquez sur le bouton 'Contacter' ou 'Demander une visite' sur une annonce. Vous serez redirige vers l'interface de paiement securisee pour regler les 500 FCFA."
+            return f"Pour payer les frais de mise en relation, cliquez sur le bouton 'Contacter' ou 'Demander une visite' sur une annonce. Vous serez redirige vers l'interface de paiement securisee pour regler les {knowledge.CONNECTION_FEE}."
     
     # Role-specific responses for owners
     if user_role == 'owner':
@@ -425,7 +425,7 @@ def _generate_fallback_response(message, properties=None, user_role=None):
         and any(term in message_lower for term in ['bien', 'logement', 'propriete', 'propriété', 'annonce'])
     )
     if how_to_find_property:
-        return "Pour trouver un bien sur DOMIORA, utilisez la barre de recherche ou les filtres pour choisir la ville, le type de bien, le budget et le nombre de chambres. Ouvrez ensuite une annonce pour consulter ses photos, sa description, son prix et ses caractéristiques. Vous pouvez voir les annonces librement. Pour contacter le propriétaire ou demander une visite, cliquez sur le bouton prévu et débloquez la mise en relation pour 500 FCFA via un paiement sécurisé."
+        return f"Pour trouver un bien sur DOMIORA, utilisez la barre de recherche ou les filtres pour choisir la ville, le type de bien, le budget et le nombre de chambres. Ouvrez ensuite une annonce pour consulter ses photos, sa description, son prix et ses caractéristiques. Vous pouvez voir les annonces librement. Pour contacter le propriétaire ou demander une visite, cliquez sur le bouton prévu et débloquez la mise en relation pour {knowledge.CONNECTION_FEE} via un paiement sécurisé."
 
     # Search-related fallback
     if 'cherche' in message_lower or 'recherche' in message_lower or 'trouver' in message_lower:
@@ -468,13 +468,13 @@ def _generate_fallback_response(message, properties=None, user_role=None):
         return "Si vous avez paye mais n'avez pas acces au proprietaire, verifiez d'abord que le paiement a ete confirme. Si le probleme persiste, contactez notre support avec votre numero de transaction."
     
     if 'visite' in message_lower and 'sans payer' in message_lower:
-        return "Les visites virtuelles (photos et videos) sont gratuites a consulter. Pour une visite physique ou contacter le proprietaire, les frais de mise en relation de 500 FCFA s'appliquent."
+        return f"Les visites virtuelles (photos et videos) sont gratuites a consulter. Pour une visite physique ou contacter le proprietaire, les frais de mise en relation de {knowledge.CONNECTION_FEE} s'appliquent."
     
     if 'changer' in message_lower and 'mot de passe' in message_lower:
         return "Pour changer votre mot de passe, connectez-vous a votre compte, allez dans 'Mon profil' ou 'Parametres', puis cliquez sur 'Changer le mot de passe'. Vous devrez entrer votre mot de passe actuel et le nouveau."
     
     # General fallback with DOMIORA context
-    return "Je suis l'assistant DOMIORA et je suis la pour vous aider avec vos questions immobilieres. Sur DOMIORA, vous pouvez consulter librement les annonces et contacter les proprietaires apres paiement des frais de mise en relation (500 FCFA). Que puis-je faire pour vous ?"
+    return f"Je suis l'assistant DOMIORA et je suis la pour vous aider avec vos questions immobilieres. Sur DOMIORA, vous pouvez consulter librement les annonces et contacter les proprietaires apres paiement des frais de mise en relation ({knowledge.CONNECTION_FEE}). Que puis-je faire pour vous ?"
 
 
 def _sanitize_payment_provider_names(response):

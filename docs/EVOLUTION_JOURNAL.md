@@ -160,6 +160,32 @@ double verrou.
 
 ---
 
+## Audit complémentaire règles métier & autorisations (2026-10-19)
+
+Bogues confirmés et corrigés :
+- Demandes de visite/achat/location **sans relation payée** possibles par URL directe :
+  `rental_requests:create` (création de compte invité incluse), API `POST /api/requests/`,
+  `appointments:book` (rendez-vous physique avec un propriétaire). Les trois exigent désormais un
+  client connecté en relation avec le propriétaire.
+- Simulation : une tentative FedaPay pouvait être vérifiée (appel réseau) en mode simulation, et le
+  webhook FedaPay restait actif → bloqués. Isolation de la démo : `User.is_demo` (migration
+  `accounts/0011`, défaut False) + `PAYMENT_SIMULATION_DEMO_ACCOUNTS_ONLY` (vrai par défaut hors
+  DEBUG) : seuls client ET propriétaire de démonstration peuvent être mis en relation par simulation ;
+  défense en profondeur à la confirmation ; bandeau « MODE DÉMONSTRATION » sur tout le site public.
+- Verrou sur le client lors d'une confirmation (double relation en cas de confirmations concurrentes).
+- API : `address` retirée de l'API publique et de ses champs de recherche (adresse devinable).
+- Vérificateur : ne peut plus noter un propriétaire ; mot de passe des comptes vérificateurs soumis
+  aux validateurs Django.
+- `audit_verification --fix` aurait accordé la publication à 7 comptes « approuvés » **sans aucune
+  preuve** → la commande ne donne plus jamais de droit à une approbation non justifiée et exige `--confirm`.
+- Montant : 9 réponses de l'assistant IA et sa base de connaissances lisent `CONTACT_FEE_AMOUNT`.
+- E-mails retirés des journaux (`services/email_service.py`).
+
+Tests : `payments/tests_audit.py` (18). Total : 220 tests, identiques avec ou sans étiquettes
+d'applications (les scripts de `scripts/legacy/` ne sont pas découverts).
+
+---
+
 ## Liste de tâches
 
 - [x] Étape 0 — audit, sauvegarde, branche

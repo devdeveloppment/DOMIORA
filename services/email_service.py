@@ -49,11 +49,11 @@ def send_identity_verification_email(user, verification_status, rejection_reason
             fail_silently=False
         )
         
-        logger.info(f"Email sent to {user.email} for verification {verification_status}")
+        logger.info(f"Email sent to user {user.pk} for verification {verification_status}")
         return True
         
     except Exception as e:
-        logger.error(f"Error sending email to {user.email}: {str(e)}")
+        logger.error(f"Error sending email to user {user.pk}: {e.__class__.__name__}")
         return False
 
 
@@ -79,7 +79,7 @@ def send_welcome_email(user):
             fail_silently=True
         )
         
-        logger.info(f"Welcome email sent to {user.email}")
+        logger.info(f"Welcome email sent to user {user.pk}")
         return True
         
     except Exception as e:

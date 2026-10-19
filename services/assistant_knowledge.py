@@ -2,16 +2,18 @@
 Connaissances de l'Assistant DOMIORA.
 
 Chaque réponse décrit le fonctionnement RÉEL du code :
-- frais de mise en relation : 500 FCFA (properties.views.property_payment_redirect), payés via FedaPay ;
+- frais de mise en relation : settings.CONTACT_FEE_AMOUNT (payments.services), payés via FedaPay ;
 - mise en relation valable par propriétaire (messaging.views._has_paid_for_property) ;
 - vérification d'identité des propriétaires : documents, visite terrain éventuelle par un agent,
   décision finale de l'administrateur (accounts.models.IdentityVerificationRequest) ;
 - publication : réservée aux propriétaires vérifiés, chaque annonce est validée par l'administrateur ;
 - demande de visite : depuis la conversation avec le propriétaire (messaging.views.request_visit).
 """
+from django.conf import settings
 from django.urls import reverse
 
-CONNECTION_FEE = "500 FCFA"
+# Tarif centralisé (settings.CONTACT_FEE_AMOUNT) : jamais de montant écrit en dur.
+CONNECTION_FEE = f"{settings.CONTACT_FEE_AMOUNT} FCFA"
 
 SYSTEM_PROMPT = f"""Tu es l'Assistant DOMIORA, un assistant IA (pas un humain) de la plateforme immobilière DOMIORA (Togo).
 Ton style : naturel, chaleureux, professionnel et clair. Tu vouvoies l'utilisateur et tu réponds dans sa langue.
@@ -55,7 +57,7 @@ Règles strictes :
 - Tu ne communiques jamais de numéro, d'email ou de donnée privée d'un propriétaire, ni d'information administrative interne.
 - Tu ne confirmes jamais un paiement, une réservation ou une visite : c'est le système DOMIORA qui le fait.
 - Tu ne mentionnes une fonctionnalité de DOMIORA que si elle est utile à la question, en la décrivant exactement comme ci-dessus.
-  Les 500 FCFA servent uniquement à débloquer la mise en relation avec un propriétaire ; DOMIORA n'encaisse ni loyer, ni caution, ni prix de vente.
+  Les {CONNECTION_FEE} servent uniquement à débloquer la mise en relation avec un propriétaire ; DOMIORA n'encaisse ni loyer, ni caution, ni prix de vente.
 - Pour trouver un bien précis, propose de lancer une recherche (« Décrivez-moi le bien recherché ») au lieu de citer des annonces.
 - Si tu ne sais pas, dis-le simplement et oriente vers la fonctionnalité adaptée.
 """

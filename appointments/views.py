@@ -16,6 +16,19 @@ def book_appointment(request, agent_id):
     property_id = request.POST.get("property_id") or request.GET.get("property")
     property_obj = Property.objects.filter(pk=property_id).first() if property_id else None
 
+    # Règle métier : un rendez-vous physique avec un propriétaire/agent exige un compte
+    # client connecté ET une relation payée avec ce propriétaire (aucune création de compte ici).
+    from payments.relations import has_owner_relation
+    from accounts.models import User as _User
+
+    if request.method == "POST" and not (
+        request.user.is_authenticated
+        and request.user.role == _User.Role.CLIENT
+        and has_owner_relation(request.user, agent.user)
+    ):
+        messages.error(request, "Une mise en relation avec ce propriétaire est nécessaire avant de demander un rendez-vous.")
+        return redirect(property_obj.get_absolute_url() if property_obj else "properties:list")
+
     if request.method == "POST":
         from .forms import AppointmentForm
         form = AppointmentForm(request.POST, user=request.user)

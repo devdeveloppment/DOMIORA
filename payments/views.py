@@ -117,6 +117,9 @@ def my_payments(request):
 @require_POST
 def fedapay_webhook(request):
     """Notification FedaPay : signature vérifiée, puis statut re-vérifié auprès de l'API."""
+    if simulation_enabled():
+        # En démonstration, aucune notification FedaPay n'est traitée (aucun appel réseau).
+        return HttpResponse("ignored", status=200)
     payload_raw = request.body.decode("utf-8", errors="replace")
     signature = request.META.get("HTTP_X_FEDAPAY_SIGNATURE", "")
     if not verify_fedapay_webhook_signature(payload_raw, signature):

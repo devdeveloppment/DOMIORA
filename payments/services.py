@@ -28,6 +28,15 @@ def simulation_enabled():
     return settings.PAYMENT_MODE == PaymentAttempt.Provider.SIMULATION
 
 
+def demo_isolation_required():
+    return simulation_enabled() and settings.PAYMENT_SIMULATION_DEMO_ACCOUNTS_ONLY
+
+
+def demo_pair_allowed(client, owner):
+    """En démonstration isolée, seuls des comptes de démonstration peuvent être mis en relation."""
+    return not demo_isolation_required() or bool(client and owner and client.is_demo and owner.is_demo)
+
+
 def _expiry_threshold():
     return timezone.now() - timedelta(minutes=settings.PAYMENT_ATTEMPT_TTL_MINUTES)
 
@@ -44,6 +53,10 @@ def start_contact_payment(request, client, property_obj):
         raise PaymentNotAllowed("Ce bien n'a pas de propriétaire contactable.")
     if has_owner_relation(client, owner):
         raise PaymentNotAllowed("Vous êtes déjà en relation avec ce propriétaire.")
+    if not demo_pair_allowed(client, owner):
+        raise PaymentNotAllowed(
+            "Mode démonstration : la mise en relation simulée est réservée aux comptes et annonces de démonstration."
+        )
 
     provider = get_provider()
     # Reprise : une tentative encore valide pour ce propriétaire est réutilisée (pas de double paiement).
@@ -81,8 +94,13 @@ def _on_approved(attempt):
     from messaging.models import Conversation, Message
     from notifications.models import Notification
 
+    from accounts.models import User
+
     if attempt.property is None:
         return
+    # Verrou sur le client : deux confirmations concurrentes (tentatives différentes pour le
+    # même propriétaire) ne peuvent pas créer deux relations (effectif sur PostgreSQL).
+    User.objects.select_for_update().filter(pk=attempt.client_id).first()
     unlock, created = grant_owner_relation(attempt.client, attempt.property)
     attempt.relation_granted = True
     if not created:
@@ -122,6 +140,11 @@ def apply_provider_status(attempt_id, provider_status, source, event_key, note="
         new_status = STATUS_MAP.get((provider_status or "").lower(), PaymentAttempt.Status.PENDING)
         if new_status == PaymentAttempt.Status.PENDING and attempt.created_at < _expiry_threshold():
             new_status = PaymentAttempt.Status.EXPIRED
+        if (new_status == PaymentAttempt.Status.APPROVED and attempt.is_simulation
+                and not demo_pair_allowed(attempt.client, attempt.owner)):
+            # Défense en profondeur : une simulation ne donne jamais de droits à des comptes réels.
+            new_status = PaymentAttempt.Status.FAILED
+            event.note = "Simulation refusée : comptes hors démonstration"
         attempt.status = new_status
         attempt.last_error = ""
         if new_status == PaymentAttempt.Status.APPROVED:
@@ -129,7 +152,7 @@ def apply_provider_status(attempt_id, provider_status, source, event_key, note="
             _on_approved(attempt)
         attempt.save()
         event.status_after = attempt.status
-        event.save(update_fields=["status_after"])
+        event.save(update_fields=["status_after", "note"])
         logger.info("Paiement %s : %s → %s (%s)", attempt.reference, event.status_before, attempt.status, source)
         return attempt
 
@@ -142,8 +165,9 @@ def verify_attempt(attempt, source=PaymentEvent.Source.RETURN):
     """
     if attempt.is_terminal:
         return attempt
-    if attempt.is_simulation and not simulation_enabled():
-        # Une tentative simulée ne peut jamais être confirmée hors du mode démonstration.
+    if attempt.is_simulation != simulation_enabled():
+        # - tentative simulée hors mode démonstration : jamais confirmée ;
+        # - tentative FedaPay en mode démonstration : aucun appel à l'API réelle.
         return attempt
     provider = get_provider(attempt.provider)
     try:

@@ -31,6 +31,9 @@ class User(AbstractUser):
     avatar = models.ImageField(upload_to="avatars/", blank=True, null=True)  # Photo de profil
     bio = models.TextField(blank=True)  # Biographie
     is_suspended = models.BooleanField(default=False, help_text="Compte désactivé par un administrateur")  # Suspension du compte
+    # Compte de démonstration : seul type de compte autorisé à utiliser la simulation de
+    # paiement en production. Jamais positionné automatiquement.
+    is_demo = models.BooleanField(default=False, help_text="Compte de démonstration (paiements simulés uniquement)")
     created_at = models.DateTimeField(auto_now_add=True)  # Date de création du compte
     
     # Système de vérification d'identité pour les propriétaires

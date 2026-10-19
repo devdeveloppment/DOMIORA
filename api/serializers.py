@@ -70,7 +70,9 @@ class PropertySerializer(serializers.ModelSerializer):
         model = Property
         fields = [
             "id", "title", "slug", "description", "property_type", "transaction_type",
-            "price", "currency", "country", "city", "address", "latitude", "longitude",
+            # « address » retirée : l'adresse précise est réservée aux clients en relation
+            # (la page web la masque aussi). Les coordonnées restent publiques (carte des annonces).
+            "price", "currency", "country", "city", "latitude", "longitude",
             "bedrooms", "bathrooms", "surface_area", "floors", "year_built", "status",
             "is_featured", "is_published", "views_count", "owner", "images", "amenities",
             "primary_image", "badge_label", "owner_verification_label", "created_at", "updated_at",

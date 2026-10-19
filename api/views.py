@@ -38,7 +38,7 @@ class PropertyViewSet(viewsets.ReadOnlyModelViewSet):
         "property_type", "transaction_type", "status", "country", "city", "bedrooms",
         "bathrooms", "is_featured", "is_validated", "owner__verification_status",
     ]
-    search_fields = ["title", "city", "address", "description"]
+    search_fields = ["title", "city", "description"]  # sans "address" : la recherche permettrait de la deviner
     ordering_fields = ["price", "created_at", "views_count", "surface_area"]
     lookup_field = "slug"
 
@@ -85,7 +85,13 @@ class PropertyRequestViewSet(viewsets.ModelViewSet):
         return PropertyRequest.objects.filter(user=user)
 
     def perform_create(self, serializer):
+        from rest_framework.exceptions import PermissionDenied
+        from payments.relations import has_owner_relation
+
         property = serializer.validated_data["property"]
+        user = self.request.user
+        if user.role != User.Role.CLIENT or not has_owner_relation(user, property.owner):
+            raise PermissionDenied("Une mise en relation avec ce propriétaire est nécessaire.")
         serializer.save(
             user=self.request.user,
             agent=getattr(property.owner, "agent_profile", None),

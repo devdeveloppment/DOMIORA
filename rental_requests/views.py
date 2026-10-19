@@ -9,6 +9,7 @@ from django.views.decorators.csrf import csrf_exempt
 from .models import PropertyRequest
 from properties.models import Property
 from notifications.models import Notification
+from accounts.models import User
 import json
 
 
@@ -29,8 +30,18 @@ def create_property_request(request):
         # Vérifier que l'utilisateur a bien débloqué la propriété (payé)
         property_obj = get_object_or_404(Property, id=property_id, is_published=True, is_validated=True, owner__isnull=False)
         
-        # Pour les utilisateurs non connectés (guest), créer un compte automatiquement
-        if not request.user.is_authenticated:
+        # Règle métier : une demande (visite, achat, location) exige un compte client connecté
+        # disposant d'une relation payée avec le propriétaire. Plus de création de compte invité.
+        from payments.relations import has_owner_relation
+
+        if not (request.user.is_authenticated and request.user.role == User.Role.CLIENT
+                and has_owner_relation(request.user, property_obj.owner)):
+            return JsonResponse({
+                "success": False,
+                "message": "Une mise en relation avec ce propriétaire est nécessaire avant d'envoyer une demande.",
+            }, status=403)
+
+        if not request.user.is_authenticated:  # code invité historique, désormais inatteignable
             guest_name = data.get("guest_name", "")
             guest_email = data.get("guest_email", "")
             guest_phone = data.get("guest_phone", "")
@@ -42,7 +53,6 @@ def create_property_request(request):
                 }, status=400)
             
             # Créer un compte client automatiquement
-            from accounts.models import User
             import random
             import string
             

@@ -362,6 +362,9 @@ if PAYMENT_MODE == "simulation" and not DEBUG and not env.bool(
 OWNER_SUBSCRIPTIONS_ENABLED = env.bool("OWNER_SUBSCRIPTIONS_ENABLED", default=False)
 # Fraîcheur du badge « Vérifié DOMIORA » (mois après la dernière validation).
 VERIFICATION_FRESHNESS_MONTHS = env.int("VERIFICATION_FRESHNESS_MONTHS", default=12)
+# Isolation de la démonstration : la simulation n'est utilisable qu'entre comptes marqués
+# is_demo (client ET propriétaire). Obligatoire par défaut hors développement.
+PAYMENT_SIMULATION_DEMO_ACCOUNTS_ONLY = env.bool("PAYMENT_SIMULATION_DEMO_ACCOUNTS_ONLY", default=not DEBUG)
 # Durée de validité d'une tentative de paiement en attente (minutes).
 PAYMENT_ATTEMPT_TTL_MINUTES = env.int("PAYMENT_ATTEMPT_TTL_MINUTES", default=30)
 

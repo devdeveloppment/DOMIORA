@@ -117,8 +117,18 @@ def admin_verifier_create(request):
     if request.method == "POST":
         username = request.POST.get("username", "").strip()
         password = request.POST.get("password", "")
-        if not username or len(password) < 10:
-            messages.error(request, "Identifiant requis et mot de passe d'au moins 10 caractères.")
+        from django.contrib.auth.password_validation import validate_password
+        from django.core.exceptions import ValidationError
+
+        try:
+            if len(password) < 10:
+                raise ValidationError("Le mot de passe doit contenir au moins 10 caractères.")
+            validate_password(password)
+            password_error = ""
+        except ValidationError as exc:
+            password_error = " ".join(exc.messages)
+        if not username or password_error:
+            messages.error(request, password_error or "Identifiant requis.")
         elif User.objects.filter(username=username).exists():
             messages.error(request, "Cet identifiant existe déjà.")
         else:
