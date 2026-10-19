@@ -18,3 +18,4 @@ env/
 
 # File locale du broker Celery (développement)
 .celery/
+private_media/

@@ -8,6 +8,7 @@ from django.utils.text import slugify
 from django.conf import settings
 
 from properties.video.storage import video_storage
+from core.private_storage import private_storage
 
 
 class Amenity(models.Model):
@@ -410,7 +411,7 @@ class PropertyDocument(models.Model):
         AUTRE = "autre", "Autre document"
     
     related_property = models.ForeignKey(Property, on_delete=models.CASCADE, related_name="documents")
-    file = models.FileField(upload_to="properties/documents/%Y/%m/", help_text="PDF, JPG, PNG, DOC autorisés")
+    file = models.FileField(upload_to="properties/documents/%Y/%m/", storage=private_storage, help_text="PDF, JPG, PNG, DOC autorisés")
     document_type = models.CharField(max_length=30, choices=DocumentType.choices, default=DocumentType.AUTRE)
     title = models.CharField(max_length=200, help_text="Titre du document")
     description = models.TextField(blank=True, help_text="Description optionnelle")

@@ -6,6 +6,7 @@ from django.db import models
 from django.urls import reverse
 from django.utils import timezone
 from django.db.models import Avg
+from core.private_storage import private_storage
 
 
 class User(AbstractUser):
@@ -48,7 +49,7 @@ class User(AbstractUser):
         
     verification_status = models.CharField(max_length=30, choices=VerificationStatus.choices, default=VerificationStatus.UNVERIFIED)  # Statut de vérification
     can_publish_properties = models.BooleanField(default=False, help_text="Autorisé à publier des propriétés après vérification")  # Droit de publication
-    id_document = models.ImageField(upload_to="id_documents/", blank=True, null=True)  # Pièce d'identité
+    id_document = models.ImageField(upload_to="id_documents/", storage=private_storage, blank=True, null=True)  # Pièce d'identité
     id_document_type = models.CharField(max_length=50, blank=True)  # Type de pièce d'identité
     id_document_number = models.CharField(max_length=50, blank=True)  # Numéro de pièce d'identité
     verification_date = models.DateTimeField(null=True, blank=True)  # Date de vérification
@@ -282,8 +283,8 @@ class IdentityVerificationRequest(models.Model):
     )
     
     # Documents d'identité
-    id_document_front = models.ImageField(upload_to="id_documents/front/", verbose_name="Recto de la pièce d'identité")  # Recto de la pièce d'identité
-    id_document_back = models.ImageField(upload_to="id_documents/back/", verbose_name="Verso de la pièce d'identité")  # Verso de la pièce d'identité
+    id_document_front = models.ImageField(upload_to="id_documents/front/", storage=private_storage, verbose_name="Recto de la pièce d'identité")  # Recto de la pièce d'identité
+    id_document_back = models.ImageField(upload_to="id_documents/back/", storage=private_storage, verbose_name="Verso de la pièce d'identité")  # Verso de la pièce d'identité
     
     # Informations sur le document
     id_document_type = models.CharField(max_length=50, blank=True, verbose_name="Type de pièce d'identité")  # Type (CNI, passeport, etc.)

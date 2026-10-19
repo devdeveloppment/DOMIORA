@@ -57,8 +57,8 @@
     <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-5">
       <h2 class="text-sm sm:text-base font-bold text-gray-900 mb-3">Recto de la pièce d'identité</h2>
       <div class="bg-gray-50 rounded-xl p-3 flex items-center justify-center">
-        <a href="{{ verification.id_document_front.url }}" target="_blank" title="Ouvrir en plein écran">
-          <img src="{{ verification.id_document_front.url }}" class="max-h-48 sm:max-h-72 w-auto rounded-lg shadow-sm hover:shadow-md transition cursor-zoom-in" alt="Recto">
+        <a href="{% url 'dashboard:private_identity_document' verification.pk 'recto' %}" target="_blank" title="Ouvrir en plein écran">
+          <img src="{% url 'dashboard:private_identity_document' verification.pk 'recto' %}" class="max-h-48 sm:max-h-72 w-auto rounded-lg shadow-sm hover:shadow-md transition cursor-zoom-in" alt="Recto">
         </a>
       </div>
     </div>
@@ -67,8 +67,8 @@
     <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-5">
       <h2 class="text-sm sm:text-base font-bold text-gray-900 mb-3">Verso de la pièce d'identité</h2>
       <div class="bg-gray-50 rounded-xl p-3 flex items-center justify-center">
-        <a href="{{ verification.id_document_back.url }}" target="_blank" title="Ouvrir en plein écran">
-          <img src="{{ verification.id_document_back.url }}" class="max-h-48 sm:max-h-72 w-auto rounded-lg shadow-sm hover:shadow-md transition cursor-zoom-in" alt="Verso">
+        <a href="{% url 'dashboard:private_identity_document' verification.pk 'verso' %}" target="_blank" title="Ouvrir en plein écran">
+          <img src="{% url 'dashboard:private_identity_document' verification.pk 'verso' %}" class="max-h-48 sm:max-h-72 w-auto rounded-lg shadow-sm hover:shadow-md transition cursor-zoom-in" alt="Verso">
         </a>
       </div>
     </div>

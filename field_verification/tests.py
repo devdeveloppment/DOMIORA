@@ -27,7 +27,7 @@ def png_bytes():
     return buf.getvalue()
 
 
-@override_settings(STORAGES=SIMPLE_STATIC, MEDIA_ROOT=TMP_MEDIA)
+@override_settings(STORAGES=SIMPLE_STATIC, MEDIA_ROOT=TMP_MEDIA, PRIVATE_MEDIA_ROOT=TMP_MEDIA + "/private", PRIVATE_MEDIA_BACKEND="filesystem")
 class MissionTests(TestCase):
     @classmethod
     def tearDownClass(cls):

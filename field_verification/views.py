@@ -237,6 +237,6 @@ def evidence_file(request, pk):
         user.role == User.Role.VERIFIER and evidence.mission.verifier_id == user.pk)
     if not allowed:
         raise Http404
-    response = FileResponse(evidence.image.open("rb"))
-    response["Cache-Control"] = "private, no-store"
-    return response
+    from core.views_private import private_file_response
+
+    return private_file_response(evidence.image)

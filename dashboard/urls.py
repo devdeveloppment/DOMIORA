@@ -2,6 +2,7 @@ from django.urls import path
 from field_verification import views as fv
 from moderation import views as moderation_views
 from owner_subscriptions import views as subscription_views
+from core import views_private
 
 from . import views, views_client, views_owner, views_admin
 
@@ -82,6 +83,11 @@ urlpatterns = [
     path("proprietaire/abonnement/", subscription_views.subscription_home, name="owner_subscription"),
     path("proprietaire/abonnement/action/", subscription_views.subscription_action, name="owner_subscription_action"),
     path("proprietaire/abonnement/paiement/<uuid:reference>/", subscription_views.subscription_payment, name="owner_subscription_payment"),
+
+    # Fichiers sensibles servis après contrôle d'accès
+    path("fichiers/identite/<int:pk>/<str:side>/", views_private.identity_document, name="private_identity_document"),
+    path("fichiers/identite-profil/<int:pk>/", views_private.user_identity_document, name="private_user_identity_document"),
+    path("fichiers/document-bien/<int:pk>/", views_private.property_document, name="private_property_document"),
 
     # Signalements d'annonces
     path("admin-panel/signalements/", moderation_views.admin_reports, name="admin_listing_reports"),
