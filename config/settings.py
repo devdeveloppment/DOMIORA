@@ -358,8 +358,40 @@ if PAYMENT_MODE == "simulation" and not DEBUG and not env.bool(
     "PAYMENT_SIMULATION_ALLOWED_IN_PRODUCTION", default=False
 ):
     PAYMENT_MODE = "fedapay"
-# Abonnements propriétaires : architecture prête mais DÉSACTIVÉE (aucun tarif validé).
-OWNER_SUBSCRIPTIONS_ENABLED = env.bool("OWNER_SUBSCRIPTIONS_ENABLED", default=False)
+# Abonnements propriétaires / agents. Actifs par défaut en développement uniquement ;
+# en production ils restent désactivés tant que les tarifs ne sont pas validés.
+# Les paiements d'abonnement sont TOUJOURS simulés (aucun fournisseur réel branché).
+OWNER_SUBSCRIPTIONS_ENABLED = env.bool("OWNER_SUBSCRIPTIONS_ENABLED", default=DEBUG)
+# Durée de l'essai gratuit (jours) ; 0 = pas d'essai. Valeur à valider commercialement.
+SUBSCRIPTION_TRIAL_DAYS = env.int("SUBSCRIPTION_TRIAL_DAYS", default=0)
+# PROPOSITIONS tarifaires (non validées). Chargées en base par
+# `manage.py sync_subscription_plans` ; la base devient ensuite la source de vérité.
+# Aucune trace d'un tarif de 700 FCFA n'a été trouvée dans le code ni l'historique Git.
+SUBSCRIPTION_PLAN_PROPOSALS = [
+    {"code": "gratuit", "name": "Gratuit", "price_xof": 0, "visibility_level": 0, "max_promoted_listings": 0,
+     "order": 0, "features": ["Publication des annonces après vérification", "Classement organique normal",
+                              "Messagerie et demandes de visite"]},
+    {"code": "intermediaire", "name": "Intermédiaire", "price_xof": 1000, "visibility_level": 1, "max_promoted_listings": 1,
+     "order": 1, "features": ["Tout le plan Gratuit", "Priorité de visibilité niveau 1", "1 annonce mise en avant (Sponsorisé)"]},
+    {"code": "superieur", "name": "Supérieur", "price_xof": 2000, "visibility_level": 2, "max_promoted_listings": 3,
+     "order": 2, "features": ["Tout le plan Intermédiaire", "Priorité de visibilité niveau 2", "3 annonces mises en avant"]},
+    {"code": "premium", "name": "Premium", "price_xof": 5000, "visibility_level": 3, "max_promoted_listings": 5,
+     "order": 3, "features": ["Tout le plan Supérieur", "Priorité de visibilité niveau 3", "5 annonces mises en avant"]},
+    # Quatrième niveau envisagé : tarif et avantages à définir → non souscriptible.
+    {"code": "entreprise", "name": "Entreprise (à définir)", "price_xof": None, "visibility_level": 3,
+     "max_promoted_listings": 5, "order": 4, "active": False, "features": ["Avantages à définir"]},
+]
+
+# Classement des annonces (voir properties/ranking.py). Pondérations configurables.
+RANKING_WEIGHTS = {
+    "freshness": 30,      # récence (décroît sur RANKING_FRESHNESS_DAYS)
+    "quality": 30,        # complétude : photos, description, surface, coordonnées
+    "verified": 10,       # propriétaire vérifié
+    "plan_per_level": 6,  # bonus par niveau de plan (plafonné, voir RANKING_PLAN_BONUS_CAP)
+}
+RANKING_FRESHNESS_DAYS = 60
+RANKING_PLAN_BONUS_CAP = 18          # le bonus d'abonnement ne dépasse jamais ~20 % du score
+RANKING_SPONSORED_SLOTS = 2          # emplacements « Sponsorisé » en tête de la 1re page
 # Fraîcheur du badge « Vérifié DOMIORA » (mois après la dernière validation).
 VERIFICATION_FRESHNESS_MONTHS = env.int("VERIFICATION_FRESHNESS_MONTHS", default=12)
 # Isolation de la démonstration : la simulation n'est utilisable qu'entre comptes marqués

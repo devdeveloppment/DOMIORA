@@ -20,5 +20,7 @@ urlpatterns = [
     path("verification/resume/<int:verification_id>/", views.verification_resume, name="verification_resume"),
     path("chat/", views.chat_assistant, name="chat_assistant"),
     path("admin/notifications/", views.admin_notification_webhook, name="admin_notification_webhook"),
+    path("subscriptions/plans/", views.subscription_plans, name="subscription_plans"),
+    path("subscriptions/me/", views.my_subscription, name="my_subscription"),
     path("", include(router.urls)),
 ]

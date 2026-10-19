@@ -234,8 +234,14 @@ def admin_property_edit(request, pk):
 
 @role_required(User.Role.ADMIN)
 def admin_property_validate(request, pk):
-    """Valide une annonce et la publie immédiatement."""
-    property = get_object_or_404(Property, pk=pk)
+    """Valide une annonce et la publie immédiatement (propriétaire vérifié uniquement)."""
+    if request.method != "POST":
+        return redirect("dashboard:admin_properties")
+    property = get_object_or_404(Property.objects.select_related("owner"), pk=pk)
+    # Règle métier : seule l'annonce d'un propriétaire vérifié peut être publiée.
+    if not (property.owner and property.owner.is_verified_owner):
+        messages.error(request, "Le propriétaire de cette annonce n'est pas vérifié : publication impossible.")
+        return redirect("dashboard:admin_properties")
     property.is_validated = True
     property.is_published = True
     property.validation_status = Property.ValidationStatus.APPROVED
@@ -272,6 +278,8 @@ def admin_property_video_generate(request, pk):
 
 @role_required(User.Role.ADMIN)
 def admin_property_reject(request, pk):
+    if request.method != "POST":
+        return redirect("dashboard:admin_properties")
     property = get_object_or_404(Property, pk=pk)
     property.is_validated = False
     property.is_published = False

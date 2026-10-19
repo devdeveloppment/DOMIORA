@@ -370,3 +370,43 @@ def admin_notification_webhook(request):
             {'error': str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Abonnements (lecture seule) : la souscription passe par le parcours serveur du
+# tableau de bord ; aucun champ envoyé par un client ne peut activer un plan.
+# ─────────────────────────────────────────────────────────────────────────────
+@api_view(["GET"])
+@permission_classes([permissions.AllowAny])
+def subscription_plans(request):
+    from owner_subscriptions.models import Plan
+    from owner_subscriptions.services import subscriptions_enabled
+
+    if not subscriptions_enabled():
+        return Response({"enabled": False, "plans": []})
+    plans = Plan.objects.filter(is_active=True)
+    return Response({"enabled": True, "currency": "XOF", "plans": [
+        {"code": p.code, "name": p.name, "price_xof": p.price_xof, "period_days": p.period_days,
+         "is_proposal": p.is_proposal, "visibility_level": p.visibility_level,
+         "max_promoted_listings": p.max_promoted_listings, "features": p.features} for p in plans]})
+
+
+@api_view(["GET"])
+@permission_classes([permissions.IsAuthenticated])
+def my_subscription(request):
+    from owner_subscriptions.services import active_plan, current_subscription, subscriptions_enabled
+
+    if request.user.role != User.Role.OWNER:
+        return Response({"detail": "Réservé aux propriétaires."}, status=status.HTTP_403_FORBIDDEN)
+    if not subscriptions_enabled():
+        return Response({"enabled": False})
+    sub = current_subscription(request.user)
+    plan = active_plan(request.user)
+    return Response({
+        "enabled": True,
+        "plan": plan.code if plan else None,
+        "status": sub.status if sub else ("active" if plan else None),
+        "current_period_end": sub.current_period_end if sub else None,
+        "cancel_at_period_end": bool(sub and sub.cancel_at_period_end),
+        "scheduled_plan": sub.scheduled_plan.code if sub and sub.scheduled_plan else None,
+    })

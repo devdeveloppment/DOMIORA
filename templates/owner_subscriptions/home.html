@@ -1,0 +1,78 @@
+{% extends "dashboard/dashboard_base.html" %}
+{% load humanize %}
+{% block title %}Abonnement — DOMIORA{% endblock %}
+{% block dashboard_content %}
+<h1 class="text-2xl font-extrabold text-gray-900 mb-1">Abonnement et visibilité</h1>
+<p class="text-sm text-gray-500 mb-4">Les plans améliorent la position de vos annonces dans les résultats DOMIORA. Ils ne garantissent ni un nombre de vues ni de contacts, et aucune diffusion hors de DOMIORA.</p>
+
+{% if not enabled %}
+  <div class="rounded-2xl border border-dashed border-gray-300 bg-white p-8 text-center text-gray-600">Les abonnements ne sont pas encore ouverts. La publication reste gratuite.</div>
+{% else %}
+<div role="status" class="mb-6 rounded-xl border-2 border-amber-500 bg-amber-100 px-4 py-2 text-sm font-extrabold text-amber-950">MODE DÉMONSTRATION — tarifs envisagés, paiements simulés, aucun argent réel.</div>
+
+<section class="grid md:grid-cols-3 gap-4 mb-8">
+  <div class="md:col-span-2 bg-white rounded-2xl border border-gray-200 p-5">
+    <h2 class="text-xs font-bold uppercase text-gray-500">Plan actuel</h2>
+    <p class="text-xl font-extrabold text-gray-900 mt-1">{{ active_plan.name|default:"Gratuit" }}
+      {% if current and current.status == 'trial' %}<span class="ml-2 text-xs font-bold bg-blue-50 text-blue-700 rounded-full px-2 py-0.5">Essai</span>{% endif %}</p>
+    {% if current.current_period_end %}
+      <p class="text-sm text-gray-600 mt-1">{% if current.cancel_at_period_end %}Se termine{% else %}Échéance{% endif %} le <strong>{{ current.current_period_end|date:"d/m/Y à H:i" }}</strong> (heure de Lomé, GMT).</p>
+    {% endif %}
+    {% if current.scheduled_plan %}<p class="text-sm text-amber-800 mt-1">Passage au plan {{ current.scheduled_plan.name }} programmé à l'échéance.</p>{% endif %}
+    {% if active_plan %}<ul class="mt-3 text-sm text-gray-700 list-disc pl-5 space-y-0.5">{% for f in active_plan.features %}<li>{{ f }}</li>{% endfor %}</ul>{% endif %}
+    {% if current and not current.plan.is_free %}
+    <div class="mt-4 flex flex-wrap gap-2">
+      <form method="post" action="{% url 'dashboard:owner_subscription_action' %}">{% csrf_token %}<input type="hidden" name="action" value="renew">
+        <button class="rounded-xl bg-primary-600 hover:bg-primary-700 text-white text-sm font-bold px-4 py-2">Renouveler (simulation)</button></form>
+      {% if not current.cancel_at_period_end %}
+      <form method="post" action="{% url 'dashboard:owner_subscription_action' %}" onsubmit="return confirm('Désactiver le renouvellement ? Vos avantages restent actifs jusqu’à l’échéance.');">{% csrf_token %}<input type="hidden" name="action" value="cancel">
+        <button class="rounded-xl border border-gray-300 text-sm font-bold px-4 py-2">Annuler le renouvellement</button></form>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+  <div class="bg-white rounded-2xl border border-gray-200 p-5">
+    <h2 class="text-xs font-bold uppercase text-gray-500">Annonces mises en avant</h2>
+    <p class="text-3xl font-extrabold text-gray-900 mt-1">{{ promoted_ids|length }} <span class="text-sm font-semibold text-gray-500">/ {{ active_plan.max_promoted_listings|default:0 }}</span></p>
+    <p class="text-xs text-gray-500 mt-2">Sélection automatique de vos annonces publiées les plus complètes. Propriétaire vérifié requis.</p>
+  </div>
+</section>
+
+{% if pending %}
+<div class="mb-6 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900 flex flex-wrap items-center justify-between gap-3">
+  <span>Demande en attente : plan <strong>{{ pending.plan.name }}</strong> — paiement simulé non finalisé.</span>
+  {% if pending_payment %}<a class="font-bold underline" href="{% url 'dashboard:owner_subscription_payment' pending_payment.reference %}">Reprendre le paiement</a>{% endif %}
+</div>
+{% endif %}
+
+<h2 class="text-lg font-bold text-gray-900 mb-3">Plans</h2>
+<div class="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
+  {% for plan in plans %}
+  <article class="bg-white rounded-2xl border {% if active_plan.pk == plan.pk %}border-primary-600 ring-2 ring-primary-600/20{% else %}border-gray-200{% endif %} p-5 flex flex-col">
+    <h3 class="font-extrabold text-gray-900">{{ plan.name }}</h3>
+    <p class="mt-2"><span class="text-2xl font-extrabold text-primary-600">{{ plan.price_xof|intcomma }} FCFA</span><span class="text-sm text-gray-500"> / {{ plan.period_days }} jours</span></p>
+    {% if plan.is_proposal and not plan.is_free %}<p class="text-[11px] font-semibold text-amber-700">Tarif envisagé, non définitif</p>{% endif %}
+    <ul class="mt-3 text-sm text-gray-700 space-y-1 flex-1">{% for f in plan.features %}<li>✓ {{ f }}</li>{% endfor %}</ul>
+    <form method="post" action="{% url 'dashboard:owner_subscription_action' %}" class="mt-4">{% csrf_token %}
+      <input type="hidden" name="action" value="subscribe"><input type="hidden" name="plan" value="{{ plan.code }}">
+      {% if active_plan.pk == plan.pk %}
+        <button disabled class="w-full rounded-xl bg-gray-100 text-gray-500 font-bold py-2.5 text-sm">Plan actuel</button>
+      {% else %}
+        <button class="w-full rounded-xl {% if plan.is_free %}border border-gray-300{% else %}bg-primary-600 hover:bg-primary-700 text-white{% endif %} font-bold py-2.5 text-sm">{% if plan.is_free %}Passer au gratuit{% elif trial_days and not current %}Essai gratuit {{ trial_days }} j{% else %}Choisir{% endif %}</button>
+      {% endif %}
+    </form>
+  </article>
+  {% endfor %}
+</div>
+{% for plan in upcoming_plans %}<p class="mt-3 text-sm text-gray-500">Niveau supplémentaire envisagé : {{ plan.name }} — tarif et avantages à définir.</p>{% endfor %}
+
+{% if payments %}
+<h2 class="text-lg font-bold text-gray-900 mt-8 mb-3">Transactions fictives</h2>
+<div class="bg-white rounded-2xl border border-gray-200 divide-y divide-gray-100 text-sm">
+  {% for p in payments %}
+  <div class="p-3 flex flex-wrap justify-between gap-2"><span>[DÉMO] {{ p.plan.name }} · {{ p.get_purpose_display }} · {{ p.created_at|date:"d/m/Y H:i" }}</span><span class="font-semibold">{{ p.amount|intcomma }} {{ p.currency }} — {{ p.get_status_display }}</span></div>
+  {% endfor %}
+</div>
+{% endif %}
+{% endif %}
+{% endblock %}

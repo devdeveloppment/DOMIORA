@@ -1,0 +1,27 @@
+{% extends "dashboard/dashboard_base.html" %}
+{% load humanize %}
+{% block title %}Paiement simulé — DOMIORA{% endblock %}
+{% block dashboard_content %}
+<div class="max-w-lg mx-auto space-y-4">
+  {% include "payments/_demo_banner.html" %}
+  <div class="bg-white rounded-2xl border border-gray-200 p-6">
+    <p class="text-xs font-bold uppercase text-gray-400">Transaction fictive · environnement {{ payment.environment }}</p>
+    <h1 class="text-xl font-extrabold text-gray-900 mt-1">{{ payment.get_purpose_display }} — {{ payment.plan.name }}</h1>
+    <p class="text-2xl font-extrabold text-primary-600 mt-2">{{ payment.amount|intcomma }} {{ payment.currency }}</p>
+    <p class="text-xs text-gray-500 mt-1 font-mono break-all">Réf. interne {{ payment.reference }}</p>
+    {% if payment.status != 'pending' %}
+      <p class="mt-4 font-bold">Statut : {{ payment.get_status_display }}</p>
+      <a href="{% url 'dashboard:owner_subscription' %}" class="mt-4 inline-block underline text-primary-600">Retour à l'abonnement</a>
+    {% else %}
+    <form method="post" class="mt-5 grid gap-2">
+      {% csrf_token %}
+      {% for value, label, help in choices %}
+      <button name="outcome" value="{{ value }}" class="text-left rounded-xl border border-gray-200 hover:border-primary-600 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-600">
+        <span class="block font-bold text-sm text-gray-900">{{ label }}</span><span class="block text-xs text-gray-500">{{ help }}</span>
+      </button>
+      {% endfor %}
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

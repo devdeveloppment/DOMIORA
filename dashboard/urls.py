@@ -1,6 +1,7 @@
 from django.urls import path
 from field_verification import views as fv
 from moderation import views as moderation_views
+from owner_subscriptions import views as subscription_views
 
 from . import views, views_client, views_owner, views_admin
 
@@ -76,6 +77,11 @@ urlpatterns = [
     path("verificateur/missions/<int:pk>/", fv.verifier_mission, name="verifier_mission"),
     path("verificateur/missions/<int:pk>/preuves/", fv.verifier_evidence_upload, name="verifier_evidence_upload"),
     path("preuves/<int:pk>/", fv.evidence_file, name="mission_evidence_file"),
+
+    # Abonnements propriétaires / agents (paiements simulés)
+    path("proprietaire/abonnement/", subscription_views.subscription_home, name="owner_subscription"),
+    path("proprietaire/abonnement/action/", subscription_views.subscription_action, name="owner_subscription_action"),
+    path("proprietaire/abonnement/paiement/<uuid:reference>/", subscription_views.subscription_payment, name="owner_subscription_payment"),
 
     # Signalements d'annonces
     path("admin-panel/signalements/", moderation_views.admin_reports, name="admin_listing_reports"),

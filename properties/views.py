@@ -262,7 +262,8 @@ def property_list(request):
     # Recherche textuelle sur titre, ville, adresse et quartier
     q = request.GET.get("q")
     if q:
-        qs = qs.filter(Q(title__icontains=q) | Q(city__icontains=q) | Q(address__icontains=q) | Q(neighborhood__icontains=q))
+        # Pas de recherche sur l'adresse précise : elle est réservée aux clients en relation.
+        qs = qs.filter(Q(title__icontains=q) | Q(city__icontains=q) | Q(neighborhood__icontains=q))
 
     # Recherche géographique par coordonnées GPS et rayon
     lat = request.GET.get("lat")
@@ -285,9 +286,18 @@ def property_list(request):
         except (TypeError, ValueError):
             pass
 
-    # Tri des résultats
-    sort = request.GET.get("sort", "recent")
-    if isinstance(qs, list):
+    # Tri des résultats ("recommended" = score organique + bonus d'abonnement plafonné)
+    from .ranking import rank, sponsored as pick_sponsored
+
+    sort = request.GET.get("sort", "recommended")
+    sponsored_items = []
+    if sort == "recommended":
+        results = list(qs)
+        if (request.GET.get("page") or "1") == "1":
+            sponsored_items = pick_sponsored(results)
+        qs = rank(results)
+        paginator = Paginator(qs, 12)
+    elif isinstance(qs, list):
         # Tri en Python pour les résultats géographiques
         if sort == "price_asc":
             qs.sort(key=lambda item: float(item.price))
@@ -334,6 +344,7 @@ def property_list(request):
     # Contexte du template avec toutes les données nécessaires
     context = {
         "page_obj": page_obj,
+        "sponsored_items": sponsored_items,
         "total_count": paginator.count,
         "property_types": Property.PropertyType.choices,
         "countries": countries,
