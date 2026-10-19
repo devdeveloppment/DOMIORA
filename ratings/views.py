@@ -13,15 +13,18 @@ def create_review(request, owner_id):
     """Create a review for an owner"""
     owner = get_object_or_404(User, pk=owner_id, role=User.Role.OWNER)
 
-    # Un vérificateur de terrain (intervenant mandaté) ou un propriétaire ne note pas un propriétaire.
-    if request.user.role in (User.Role.VERIFIER, User.Role.OWNER) or request.user == owner:
-        messages.error(request, "Seuls les clients peuvent laisser un avis sur un propriétaire.")
+    # Règle : avis réservé aux clients ayant une relation payée, confirmée et achevée.
+    from .eligibility import review_eligibility
+
+    payment, refusal = review_eligibility(request.user, owner)
+    if refusal:
+        messages.error(request, refusal)
         return redirect("properties:list")
 
     # Check if user already reviewed this owner
     if Review.objects.filter(owner=owner, reviewer=request.user).exists():
         messages.warning(request, "Vous avez déjà noté ce propriétaire.")
-        return redirect("properties:detail", slug=owner.properties.first().slug) if owner.properties.exists() else "properties:list"
+        return redirect("ratings:owner_reviews", owner_id=owner.pk)
     
     if request.method == "POST":
         form = ReviewForm(request.POST)
@@ -29,9 +32,11 @@ def create_review(request, owner_id):
             review = form.save(commit=False)
             review.owner = owner
             review.reviewer = request.user
+            review.payment = payment
+            review.is_verified = True
             review.save()
             messages.success(request, "Votre avis a été soumis pour validation.")
-            return redirect("properties:detail", slug=owner.properties.first().slug) if owner.properties.exists() else "properties:list"
+            return redirect("ratings:owner_reviews", owner_id=owner.pk)
     else:
         form = ReviewForm()
     

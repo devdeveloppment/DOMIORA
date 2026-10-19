@@ -248,6 +248,27 @@
   </main>
 
   {% block extra_scripts %}{% endblock %}
+  <script>
+    // Compteur de notifications : interrogation toutes les 30 s (onglet visible uniquement).
+    (function () {
+      var url = "{% url 'notifications:unread_summary' %}";
+      function refresh() {
+        if (document.hidden) return;
+        fetch(url, { credentials: "same-origin", headers: { "Accept": "application/json" } })
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (d) {
+            if (!d) return;
+            document.querySelectorAll("[data-notif-count]").forEach(function (el) {
+              el.textContent = d.unread;
+              el.classList.toggle("hidden", d.unread === 0);
+              el.classList.toggle("grid", d.unread > 0);
+            });
+          }).catch(function () {});
+      }
+      setInterval(refresh, 30000);
+      document.addEventListener("visibilitychange", refresh);
+    })();
+  </script>
   {% include "partials/ai_assistant.html" %}
 </body>
 </html>

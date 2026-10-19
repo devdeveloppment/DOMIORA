@@ -22,6 +22,9 @@ class Review(models.Model):
     responsiveness_rating = models.IntegerField(choices=RATING_CHOICES, null=True, blank=True, help_text="Réactivité")
     
     is_verified = models.BooleanField(default=False, help_text="Transaction vérifiée")
+    # Paiement de mise en relation justifiant l'avis (avis vérifié).
+    payment = models.ForeignKey("payments.PaymentAttempt", on_delete=models.SET_NULL, null=True, blank=True,
+                                related_name="reviews")
     is_approved = models.BooleanField(default=False, help_text="Approuvé par admin")
     
     created_at = models.DateTimeField(auto_now_add=True)

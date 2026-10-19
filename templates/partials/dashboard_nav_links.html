@@ -1,9 +1,7 @@
 <a href="{% if dash_role == 'client' %}{% url 'dashboard:client_notifications' %}{% elif dash_role == 'owner' %}{% url 'dashboard:owner_notifications' %}{% else %}{% url 'notifications:list' %}{% endif %}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition text-sm font-semibold {% if active == 'notifications' %}bg-white/20 text-white{% else %}text-white/70 hover:bg-white/10 hover:text-white{% endif %}">
   <svg class="w-5 h-5 {% if active == 'notifications' %}opacity-100{% else %}opacity-70{% endif %}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
   Notifications
-  {% if unread_notifications_count > 0 %}
-    <span class="ml-auto bg-white text-white/90 text-[10px] font-extrabold rounded-full w-5 h-5 grid place-items-center shadow-sm">{{ unread_notifications_count }}</span>
-  {% endif %}
+  <span data-notif-count class="ml-auto bg-white text-primary-700 text-[10px] font-extrabold rounded-full w-5 h-5 place-items-center shadow-sm {% if unread_notifications_count > 0 %}grid{% else %}hidden{% endif %}">{{ unread_notifications_count }}</span>
 </a>
 
 {% if dash_role == 'client' %}

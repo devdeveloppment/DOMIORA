@@ -7,4 +7,5 @@ urlpatterns = [
     path("", views.notification_list, name="list"),
     path("<int:pk>/lue/", views.mark_read, name="mark_read"),
     path("tout-marquer-lu/", views.mark_all_read, name="mark_all_read"),
+    path("non-lues/", views.unread_summary, name="unread_summary"),
 ]

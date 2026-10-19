@@ -263,7 +263,14 @@ def client_conversation_detail(request, pk):
     from messaging.forms import MessageForm
     
     conversation = get_object_or_404(Conversation, pk=pk, buyer=request.user)
-    
+
+    # Règle métier : échanger exige une relation valide avec ce propriétaire.
+    from payments.relations import has_owner_relation
+
+    if not has_owner_relation(request.user, conversation.owner):
+        messages.error(request, "Une mise en relation avec ce propriétaire est nécessaire.")
+        return redirect("dashboard:client_unlocked")
+
     if request.method == "POST":
         form = MessageForm(request.POST)
         if form.is_valid():

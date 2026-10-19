@@ -34,3 +34,17 @@ def mark_read(request, pk):
 def mark_all_read(request):
     Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
     return redirect("notifications:list")
+
+
+@login_required
+def unread_summary(request):
+    """Compteur de notifications non lues (interrogé périodiquement par l'interface)."""
+    from django.http import JsonResponse
+
+    from .context_processors import unread_notifications
+
+    latest = (Notification.objects.filter(user=request.user, is_read=False)
+              .order_by("-created_at").values("id", "title", "link").first())
+    response = JsonResponse({"unread": unread_notifications(request)["unread_notifications_count"], "latest": latest})
+    response["Cache-Control"] = "private, no-store"
+    return response

@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages as django_messages
+from django.db.models import Q
 from django.http import JsonResponse
 
 from .models import Conversation, Message, VisitRequest, RendezvousRequest
@@ -532,3 +533,21 @@ def propose_rendezvous(request, pk, rendezvous_id):
         "form": form,
         "dash_role": "owner",
     })
+
+
+@login_required
+def conversation_state(request, pk):
+    """
+    Repli « temps réel » par interrogation (pas de WebSocket dans l'infrastructure actuelle).
+    Renvoie l'identifiant du dernier message et le nombre de non-lus ; participants uniquement
+    (404 sinon, même pour un identifiant existant).
+    """
+    from django.http import JsonResponse
+
+    conversation = get_object_or_404(
+        Conversation.objects.filter(Q(buyer=request.user) | Q(owner=request.user)), pk=pk)
+    last = conversation.messages.order_by("-id").values_list("id", flat=True).first() or 0
+    unread = conversation.messages.exclude(sender=request.user).filter(is_read=False).count()
+    response = JsonResponse({"last_message_id": last, "unread": unread})
+    response["Cache-Control"] = "private, no-store"
+    return response

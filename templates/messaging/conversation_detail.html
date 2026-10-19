@@ -150,9 +150,43 @@
   {% endif %}
 </div>
 
+<p id="live-status" class="sr-only" aria-live="polite"></p>
 <script>
   // Auto-scroll to bottom of messages
   const container = document.getElementById('messages-container');
   if (container) container.scrollTop = container.scrollHeight;
+
+  // Mise à jour automatique par interrogation (repli sans WebSocket) : un petit appel JSON
+  // toutes les 5 s quand l'onglet est visible ; la zone des messages n'est rechargée que
+  // si un nouveau message existe. Pause automatique en arrière-plan et après erreurs.
+  (function () {
+    if (!container) return;
+    const stateUrl = "{% url 'messaging:conversation_state' conversation.pk %}";
+    let lastId = {{ conversation.messages.last.id|default:0 }};
+    let failures = 0;
+    async function tick() {
+      if (document.hidden) return;
+      try {
+        const r = await fetch(stateUrl, { headers: { "Accept": "application/json" }, credentials: "same-origin" });
+        if (r.status === 401 || r.status === 403 || r.redirected) { location.reload(); return; }
+        if (!r.ok) throw new Error(r.status);
+        const data = await r.json();
+        failures = 0;
+        if (data.last_message_id > lastId) {
+          const html = await (await fetch(location.href, { credentials: "same-origin" })).text();
+          const fresh = new DOMParser().parseFromString(html, "text/html").getElementById("messages-container");
+          if (fresh) {
+            const atBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 80;
+            container.innerHTML = fresh.innerHTML;
+            if (atBottom) container.scrollTop = container.scrollHeight;
+            document.getElementById("live-status").textContent = "Nouveau message reçu.";
+          }
+          lastId = data.last_message_id;
+        }
+      } catch (e) { failures += 1; }
+    }
+    setInterval(function () { if (failures < 5) tick(); }, 5000);
+    document.addEventListener("visibilitychange", function () { if (!document.hidden) { failures = 0; tick(); } });
+  })();
 </script>
 {% endblock %}
