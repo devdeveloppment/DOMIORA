@@ -22,7 +22,8 @@ class DashboardRoleMiddleware:
             current_path = request.path
 
             # Journalisation utile pour suivre les accès dashboard et la session active.
-            self.logger.info(f"Utilisateur authentifié: {request.user.username}, chemin: {current_path}, clé de session: {request.session.session_key}")
+            # Pas de clé de session ni de nom d'utilisateur dans les journaux.
+            self.logger.debug("Accès dashboard user_id=%s chemin=%s", request.user.pk, current_path)
 
             # Contrôle d'accès par rôle selon le chemin courant.
             if current_path.startswith('/dashboard/admin-panel/'):

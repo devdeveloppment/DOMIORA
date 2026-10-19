@@ -1,0 +1,23 @@
+{% extends "dashboard/dashboard_base.html" %}
+{% block title %}Mes paiements — DOMIORA{% endblock %}
+{% block dashboard_content %}
+<h1 class="text-2xl font-extrabold text-gray-900 mb-6">Mes paiements de mise en relation</h1>
+{% if attempts %}
+<div class="bg-white rounded-2xl border border-gray-200 divide-y divide-gray-100">
+  {% for a in attempts %}
+  <div class="p-4 flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <p class="font-semibold text-gray-900 text-sm">{{ a.property.title|default:"Bien retiré" }}</p>
+      <p class="text-xs text-gray-500">{{ a.created_at|date:"d/m/Y H:i" }} · {{ a.amount }} FCFA{% if a.is_simulation %} · <span class="font-bold text-amber-700">démonstration</span>{% endif %}</p>
+    </div>
+    <div class="flex items-center gap-3">
+      <span class="text-xs font-bold px-2.5 py-1 rounded-full {% if a.status == 'approved' %}bg-emerald-50 text-emerald-700{% elif a.status == 'pending' %}bg-amber-50 text-amber-700{% else %}bg-gray-100 text-gray-600{% endif %}">{{ a.get_status_display }}</span>
+      {% if a.status == "pending" %}<a href="{% url 'payments:return' a.reference %}" class="text-xs font-bold text-primary-600 underline">Reprendre</a>{% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<p class="text-gray-500 text-sm">Aucun paiement pour le moment.</p>
+{% endif %}
+{% endblock %}

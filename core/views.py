@@ -190,20 +190,6 @@ def donate(request):
     from properties.fedapay import generate_fedapay_payment_url
     import uuid
     
-    if request.method == "GET" and request.GET.get('test_trigger') == '1':
-        amount = 2000
-        donation_id = str(uuid.uuid4())
-        payment_url, transaction_id_or_data = generate_fedapay_payment_url(
-            request=request,
-            property_slug=f"donation-{donation_id}",
-            amount=amount,
-            customer_name="Donateur",
-            customer_email="",
-            customer_phone="",
-            is_donation=True
-        )
-        return HttpResponse(f"DATA: {transaction_id_or_data}")
-        
     if request.method == "POST":
         amount = request.POST.get("amount", "2000")
         try:
@@ -231,6 +217,9 @@ def donate(request):
         
         if payment_url:
             return redirect(payment_url)
+        elif transaction_id_or_data == "simulation":
+            messages.info(request, "Mode démonstration : les dons sont désactivés, aucun argent réel n'est encaissé.")
+            return render(request, "core/donate.html")
         else:
             messages.error(request, f"Erreur lors de la génération du lien de paiement. Veuillez réessayer.")
             return render(request, "core/donate.html")

@@ -15,6 +15,14 @@ class UserSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "date_joined"]
 
 
+class PublicUserSerializer(serializers.ModelSerializer):
+    """Profil public : aucune coordonnée privée (e-mail, téléphone, WhatsApp)."""
+    class Meta:
+        model = User
+        fields = ["id", "first_name", "last_name", "avatar", "role"]
+        read_only_fields = fields
+
+
 class SpecialtySerializer(serializers.ModelSerializer):
     class Meta:
         model = Specialty
@@ -22,7 +30,7 @@ class SpecialtySerializer(serializers.ModelSerializer):
 
 
 class AgentSerializer(serializers.ModelSerializer):
-    user = UserSerializer(read_only=True)
+    user = PublicUserSerializer(read_only=True)
     specialties = SpecialtySerializer(many=True, read_only=True)
     full_name = serializers.SerializerMethodField()
 
@@ -53,7 +61,7 @@ class PropertyImageSerializer(serializers.ModelSerializer):
 class PropertySerializer(serializers.ModelSerializer):
     images = PropertyImageSerializer(many=True, read_only=True)
     amenities = AmenitySerializer(many=True, read_only=True)
-    owner = UserSerializer(read_only=True)
+    owner = PublicUserSerializer(read_only=True)
     primary_image = serializers.ReadOnlyField()
     badge_label = serializers.ReadOnlyField()
     owner_verification_label = serializers.ReadOnlyField()

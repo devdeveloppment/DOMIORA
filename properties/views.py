@@ -21,7 +21,6 @@ from django.conf import settings
 # Importations des modèles DOMIORA
 from favorites.models import Favorite
 from rental_requests.forms import PropertyRequestForm
-from .fedapay import generate_fedapay_payment_url, verify_fedapay_payment, verify_fedapay_webhook_signature
 from .models import Property, PropertyUnlock, PropertyView, SearchAlert
 
 # Configuration du logger pour le suivi des erreurs
@@ -417,21 +416,16 @@ def property_detail(request, slug):
         # Single query for favorite check
         is_favorite = Favorite.objects.filter(user=request.user, property=property_obj).exists()
         
-        # Single query for unlock check with owner optimization
-        if property_obj.owner:
-            has_unlocked = PropertyUnlock.objects.filter(
-                user=request.user, 
-                property__owner=property_obj.owner
-            ).exists()
-        else:
-            has_unlocked = PropertyUnlock.objects.filter(
-                user=request.user, 
-                property=property_obj
-            ).exists()
-        
-        # Owners and admins always have access
-        if request.user.role != User.Role.CLIENT:
-            has_unlocked = True
+        from payments.relations import has_owner_relation
+
+        # Accès aux informations réservées : relation payée avec CE propriétaire,
+        # le propriétaire du bien lui-même, ou un administrateur.
+        has_unlocked = (
+            property_obj.owner_id == request.user.pk
+            or request.user.is_superuser
+            or request.user.role == User.Role.ADMIN
+            or has_owner_relation(request.user, property_obj.owner)
+        )
 
     # Optimize similar properties query - simplified logic
     # Use only city and property_type for faster query
@@ -556,255 +550,79 @@ def compare_properties(request):
 
 
 def property_payment_redirect(request, slug):
-    property_obj = get_object_or_404(_public_contactable_properties(), slug=slug)
+    """
+    Initie le paiement des frais de mise en relation avec le propriétaire du bien.
+    Un visiteur crée d'abord son compte client (mot de passe haché, jamais stocké en session).
+    """
+    from accounts.forms import ClientPostPaymentForm
+    from payments.relations import has_owner_relation
+    from payments.services import PaymentNotAllowed, start_contact_payment
+    from payments.providers import ProviderError
 
-    # Permettre aux admins/proprios de tester le flux (commenté la restriction)
-    # if request.user.is_authenticated and request.user.role != User.Role.CLIENT:
-    #     messages.error(request, "Seul un compte client peut effectuer une mise en relation.")
-    #     return redirect("properties:detail", slug=slug)
+    property_obj = get_object_or_404(_public_contactable_properties().select_related("owner"), slug=slug)
 
     if request.user.is_authenticated:
-        # Per-owner unlock: check if user already paid for ANY property of this owner
-        owner = property_obj.owner
-        if owner and PropertyUnlock.objects.filter(user=request.user, property__owner=owner).exists():
+        if request.user.role != User.Role.CLIENT:
+            messages.error(request, "Seul un compte client peut effectuer une mise en relation.")
+            return redirect("properties:detail", slug=slug)
+        if has_owner_relation(request.user, property_obj.owner):
             messages.info(request, "Vous êtes déjà en relation avec ce propriétaire.")
             return redirect("properties:detail", slug=slug)
 
+    form = None
     if request.method == "POST":
-        customer_name = request.POST.get("customer_name", "")
-        customer_email = request.POST.get("customer_email", "")
-        customer_phone = request.POST.get("customer_phone", "")
-        customer_password = request.POST.get("customer_password", "")
+        if not request.user.is_authenticated:
+            form = ClientPostPaymentForm(request.POST)
+            email = (request.POST.get("email") or "").strip()
+            if email and User.objects.filter(email__iexact=email).exists():
+                form.add_error("email", "Un compte existe déjà avec cet e-mail. Connectez-vous pour continuer.")
+            if not form.is_valid():
+                return render(request, "properties/payment_init.html", {"property": property_obj, "form": form})
+            user = form.save()
+            login(request, user, backend="django.contrib.auth.backends.ModelBackend")
+            request.session["dash_role"] = "client"
 
-        if request.user.is_authenticated:
-            customer_name = request.user.get_full_name() or request.user.username
-            customer_email = request.user.email
-            customer_phone = getattr(request.user, "phone", "00000000")
-            customer_password = ""  # Not needed for authenticated users
+        try:
+            attempt, url = start_contact_payment(request, request.user, property_obj)
+        except PaymentNotAllowed as exc:
+            messages.info(request, str(exc))
+            return redirect("properties:detail", slug=slug)
+        except ProviderError:
+            logger.exception("Initialisation du paiement impossible")
+            messages.error(request, "Le service de paiement est momentanément indisponible. Veuillez réessayer.")
+            return redirect("properties:detail", slug=slug)
+        return redirect(url)
 
-        request.session["pending_payment"] = {
-            "email": customer_email,
-            "name": customer_name,
-            "phone": customer_phone,
-            "password": customer_password,
-        }
-
-        payment_url, trans_id = generate_fedapay_payment_url(
-            request,
-            slug,
-            amount=500,
-            customer_name=customer_name,
-            customer_email=customer_email,
-            customer_phone=customer_phone,
-        )
-        
-        # Debug logging
-        logger.info(f"Payment URL generation attempt: payment_url={payment_url}, trans_id={trans_id}")
-        logger.info(f"Customer info: name={customer_name}, email={customer_email}, phone={customer_phone}")
-        
-        if payment_url:
-            return redirect(payment_url)
-        
-        logger.error("Payment URL generation failed - showing error to user")
-        messages.error(request, "Erreur d'initialisation du paiement. Veuillez réessayer ou contacter le support.")
-        return redirect("properties:detail", slug=slug)
-
-    from .fedapay import _get_fedapay_public_key, _get_fedapay_base_url
-    return render(request, "properties/payment_init.html", {
-        "property": property_obj,
-        "fedapay_public_key": _get_fedapay_public_key(),
-        "fedapay_sandbox": getattr(settings, 'FEDAPAY_SANDBOX', True),
-    })
+    if not request.user.is_authenticated:
+        form = ClientPostPaymentForm()
+    return render(request, "properties/payment_init.html", {"property": property_obj, "form": form})
 
 
 def property_payment_confirmation(request, slug):
+    """
+    Ancienne URL de retour. Ne confirme JAMAIS un paiement à partir des paramètres d'URL :
+    elle renvoie vers la vérification serveur de la dernière tentative du client.
+    """
+    from payments.models import PaymentAttempt
+
     property_obj = get_object_or_404(_public_contactable_properties().select_related("owner"), slug=slug)
-
-    # FedaPay envoie dans le callback : ?id=<id>&status=approved&token=<token>
-    # On lit les GET params en priorité, puis la session comme fallback
-    fedapay_id = (
-        request.GET.get("id")
-        or request.GET.get("transaction_id")
-        or request.session.get("fedapay_transaction_id")
+    if not request.user.is_authenticated:
+        return redirect(f"{reverse('accounts:login')}?next={request.path}")
+    attempt = (
+        PaymentAttempt.objects.filter(client=request.user, owner=property_obj.owner)
+        .order_by("-created_at").first()
     )
-    fedapay_status = request.GET.get("status", "")
-
-    logger.info(f"Confirmation paiement: slug={slug}, fedapay_id={fedapay_id}, status_get={fedapay_status}")
-
-    if fedapay_id:
-        # Si FedaPay envoie status=approved dans le GET, on accepte directement,
-        # sinon on vérifie via l'API
-        if fedapay_status == "approved":
-            is_paid = True
-            logger.info("FedaPay: statut 'approved' reçu directement dans le callback GET.")
-        else:
-            is_paid, _ = verify_fedapay_payment(fedapay_id)
-
-        if is_paid:
-            if not request.user.is_authenticated:
-                pending = request.session.get("pending_payment", {})
-                email = pending.get("email")
-                name = pending.get("name", "Client")
-                phone = pending.get("phone", "")
-                password = pending.get("password", "")
-
-                if email:
-                    import random
-                    import string
-
-                    username = f"guest_{name.lower().replace(' ', '_')}_{random.randint(1000, 9999)}"
-                    while User.objects.filter(username=username).exists():
-                        username = f"guest_{name.lower().replace(' ', '_')}_{random.randint(1000, 9999)}"
-
-                    if not password:
-                        password = ''.join(random.choices(string.ascii_letters + string.digits, k=12))
-
-                    user = User.objects.filter(email=email, role=User.Role.CLIENT).first()
-                    if user:
-                        user.set_password(password)
-                        user.save()
-                    else:
-                        user = User.objects.create(
-                            username=username,
-                            email=email,
-                            role=User.Role.CLIENT,
-                            first_name=name.split()[0] if ' ' in name else name,
-                            last_name=name.split()[-1] if ' ' in name else '',
-                            phone=phone,
-                        )
-                        user.set_password(password)
-                        user.save()
-
-                    login(request, user, backend="django.contrib.auth.backends.ModelBackend")
-                    request.session["dash_role"] = "client"
-                    request.session.modified = True
-
-            if request.user.is_authenticated:
-                # Nettoyer la session de paiement
-                for _k in ("fedapay_transaction_id", "pending_transaction_id", "pending_payment"):
-                    request.session.pop(_k, None)
-                request.session["dash_role"] = "client"
-                request.session.modified = True
-
-                owner = property_obj.owner
-                PropertyUnlock.objects.get_or_create(user=request.user, property=property_obj)
-                messages.success(request, "Paiement confirm\u00e9 ! Votre espace client est pr\u00eat. Vous pouvez maintenant contacter le propri\u00e9taire depuis vos mises en relation.")
-
-                if owner:
-                    from notifications.models import Notification
-                    from messaging.models import Conversation, Message
-
-                    conversation, created = Conversation.objects.get_or_create(
-                        buyer=request.user,
-                        owner=owner,
-                        property=property_obj
-                    )
-
-                    if created:
-                        Message.objects.create(
-                            conversation=conversation,
-                            sender=request.user,
-                            body=f"Bonjour, je suis int\u00e9ress\u00e9 par votre bien \u00ab {property_obj.title} \u00bb. J'aimerais avoir plus d'informations.",
-                            message_type=Message.MessageType.TEXT
-                        )
-
-                    Notification.objects.create(
-                        user=owner,
-                        title="Mise en relation d\u00e9bloqu\u00e9e",
-                        message=f"{request.user.get_full_name() or request.user.username} a pay\u00e9 les frais de mise en relation pour \u00ab {property_obj.title} \u00bb.",
-                        notification_type="systeme",
-                        link=f"/dashboard/proprietaire/messagerie/{conversation.pk}/",
-                    )
-
-                return redirect("dashboard:client_unlocked")
-
-    logger.warning(f"Confirmation paiement \u00e9chou\u00e9e: fedapay_id={fedapay_id}, GET={dict(request.GET)}")
-    messages.error(request, "Le paiement n'a pas pu \u00eatre valid\u00e9.")
-    return redirect("properties:detail", slug=slug)
-
+    if attempt is None:
+        messages.error(request, "Aucun paiement en cours pour ce propriétaire.")
+        return redirect("properties:detail", slug=slug)
+    return redirect("payments:return", reference=attempt.reference)
 
 
 @csrf_exempt
 def property_payment_notify(request, slug):
-    """
-    FedaPay webhook pour les notifications de paiement.
-    Vérifie la signature et met à jour le statut PropertyUnlock.
-    """
-    import logging
-    import json
-    
-    logger = logging.getLogger(__name__)
-    
-    # Only accept POST requests
+    """Ancienne URL de notification FedaPay : délègue au webhook sécurisé du module payments."""
+    from payments.views import fedapay_webhook
+
     if request.method != "POST":
         return HttpResponse(status=405)
-    
-    try:
-        # Récupération du corps et de la signature FedaPay
-        payload_raw = request.body.decode('utf-8')
-        signature = request.META.get('HTTP_X_FEDAPAY_SIGNATURE', '')
-        
-        # Parse JSON
-        payload = json.loads(payload_raw)
-        logger.info(f"Notification de paiement FedaPay reçue pour le bien {slug}")
-        
-        if not verify_fedapay_webhook_signature(payload_raw, signature):
-            logger.warning("Signature FedaPay invalide — possible tentative de falsification")
-            return HttpResponse(status=403)
-        
-        # Données de la transaction FedaPay
-        event = payload.get('name', '')  # ex: 'transaction.approved'
-        transaction_data = payload.get('data', {}).get('transaction', {})
-        transaction_id = transaction_data.get('id')
-        status = transaction_data.get('status', '')  # 'approved', 'declined', 'canceled'
-        customer_email = (transaction_data.get('customer') or {}).get('email', '')
-        amount = transaction_data.get('amount')
-        
-        logger.info(f"Notification FedaPay valide: event={event}, id={transaction_id}, statut={status}")
-        
-        # Handle successful payments
-        if status == 'approved' and customer_email:
-            try:
-                # Find user by email
-                user = User.objects.get(email=customer_email, role=User.Role.CLIENT)
-                property_obj = get_object_or_404(_public_contactable_properties(), slug=slug)
-                
-                # Create PropertyUnlock
-                unlock, created = PropertyUnlock.objects.get_or_create(
-                    user=user,
-                    property=property_obj,
-                )
-                
-                if created:
-                    logger.info(f"PropertyUnlock created for user {user.id}, property {property_obj.id}")
-                    
-                    # Notify property owner
-                    if property_obj.owner:
-                        from notifications.models import Notification
-                        Notification.objects.create(
-                            user=property_obj.owner,
-                            title="Mise en relation débloquée",
-                            message=f"{user.get_full_name() or user.email} a débloqué l'accès à « {property_obj.title} ».",
-                            notification_type="transaction",
-                            related_id=unlock.id,
-                            related_model="PropertyUnlock"
-                        )
-                else:
-                    logger.info(f"PropertyUnlock already exists for user {user.id}, property {property_obj.id}")
-                    
-            except User.DoesNotExist:
-                logger.warning(f"User not found for email {customer_email}")
-            except Exception as e:
-                logger.error(f"Error processing successful payment: {str(e)}")
-        
-        elif status == 'failed':
-            logger.warning(f"Payment failed for transaction {transaction_id}")
-        
-        return HttpResponse("OK", status=200)
-        
-    except json.JSONDecodeError:
-        logger.error("Invalid JSON in webhook payload")
-        return HttpResponse(status=400)
-    except Exception as e:
-        logger.error(f"Unexpected error in payment webhook: {str(e)}")
-        return HttpResponse(status=500)
+    return fedapay_webhook(request)

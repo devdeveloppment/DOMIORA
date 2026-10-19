@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Statut du paiement — DOMIORA{% endblock %}
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-10 px-4">
+  <div class="max-w-lg mx-auto space-y-5">
+    {% if attempt.is_simulation %}{% include "payments/_demo_banner.html" %}{% endif %}
+    <div class="bg-white rounded-3xl shadow-xl p-6 sm:p-8 text-center">
+      {% if attempt.status == "pending" %}
+        <h1 class="text-2xl font-extrabold text-gray-900">Paiement en attente</h1>
+        {% if attempt.last_error %}
+        <p class="mt-3 text-sm text-rose-700 bg-rose-50 border border-rose-100 rounded-xl p-3">Vérification impossible pour le moment : {{ attempt.last_error }}. Aucun montant n'est confirmé tant que le fournisseur ne l'a pas validé.</p>
+        {% else %}
+        <p class="mt-3 text-sm text-gray-600">Le fournisseur n'a pas encore confirmé votre paiement. Vous pouvez relancer la vérification ; vous ne serez pas débité deux fois.</p>
+        {% endif %}
+        <form method="post" action="{% url 'payments:recheck' attempt.reference %}" class="mt-6">{% csrf_token %}
+          <button class="w-full rounded-xl bg-primary-600 hover:bg-primary-700 text-white font-bold py-3">Vérifier à nouveau</button>
+        </form>
+        {% if attempt.is_simulation %}<a href="{% url 'payments:simulator' attempt.reference %}" class="block mt-3 text-sm text-primary-600 font-semibold underline">Revenir au simulateur</a>{% endif %}
+      {% elif attempt.status == "declined" %}
+        <h1 class="text-2xl font-extrabold text-gray-900">Paiement refusé</h1>
+        <p class="mt-3 text-sm text-gray-600">Aucune mise en relation n'a été créée. Vous pouvez réessayer avec un autre moyen de paiement.</p>
+      {% elif attempt.status == "canceled" %}
+        <h1 class="text-2xl font-extrabold text-gray-900">Paiement annulé</h1>
+        <p class="mt-3 text-sm text-gray-600">Vous avez annulé le paiement. Aucun montant n'a été prélevé.</p>
+      {% elif attempt.status == "expired" %}
+        <h1 class="text-2xl font-extrabold text-gray-900">Paiement expiré</h1>
+        <p class="mt-3 text-sm text-gray-600">Le délai de paiement est dépassé. Relancez une nouvelle mise en relation.</p>
+      {% else %}
+        <h1 class="text-2xl font-extrabold text-gray-900">{{ attempt.get_status_display }}</h1>
+      {% endif %}
+      {% if attempt.is_terminal and attempt.property %}
+        <a href="{% url 'properties:payment_redirect' attempt.property.slug %}" class="block mt-6 w-full rounded-xl bg-primary-600 hover:bg-primary-700 text-white font-bold py-3">Réessayer</a>
+      {% endif %}
+      {% if attempt.property %}<a href="{{ attempt.property.get_absolute_url }}" class="block mt-3 text-sm text-gray-500 underline">Retour à l'annonce</a>{% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

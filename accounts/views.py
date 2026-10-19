@@ -130,63 +130,15 @@ def register_owner(request):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Client registration AFTER payment (auto-unlock + auto-login)
+# Ancienne inscription « après paiement »
 # ─────────────────────────────────────────────────────────────────────────────
 def register_client_post_payment(request, slug):
-    """Crée le compte client après paiement et débloque immédiatement le bien concerné."""
-    from properties.models import Property, PropertyUnlock
-
-    property_obj = None
-    try:
-        property_obj = Property.objects.select_related("owner").get(slug=slug)
-    except Property.DoesNotExist:
-        pass
-
-    # If already logged in, just create the unlock and show confirmation
-    if request.user.is_authenticated:
-        if property_obj:
-            PropertyUnlock.objects.get_or_create(user=request.user, property=property_obj)
-        return redirect("properties:payment_confirmation", slug=slug)
-
-    if request.method == "POST":
-        form = ClientPostPaymentForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-
-            # Auto-unlock the property for this new client
-            if property_obj:
-                PropertyUnlock.objects.get_or_create(user=user, property=property_obj)
-                # Notify owner
-                if property_obj.owner:
-                    from notifications.models import Notification
-                    Notification.objects.create(
-                        user=property_obj.owner,
-                        title="🔓 Nouvelle mise en relation",
-                        message=f"{user.get_full_name() or user.username} a payé les frais de mise en relation pour « {property_obj.title} ».",
-                        notification_type="systeme",
-                        link="/messagerie/",
-                    )
-
-            # Auto-login the new client
-            login(request, user)
-
-            # Force session role to 'client'
-            request.session['dash_role'] = 'client'
-            request.session.modified = True
-
-            messages.success(
-                request,
-                f"Bienvenue {user.first_name} ! Votre compte a été créé et les coordonnées du propriétaire sont maintenant accessibles."
-            )
-            return redirect("properties:payment_confirmation", slug=slug)
-    else:
-        form = ClientPostPaymentForm()
-
-    return render(request, "accounts/register_client_post_payment.html", {
-        "form": form,
-        "property_slug": slug,
-        "property": property_obj,
-    })
+    """
+    Route historique. Elle créait une relation sans aucune preuve de paiement ;
+    elle renvoie désormais vers le parcours de paiement sécurisé (création du compte
+    puis paiement vérifié côté serveur).
+    """
+    return redirect("properties:payment_redirect", slug=slug)
 
 
 # ─────────────────────────────────────────────────────────────────────────────

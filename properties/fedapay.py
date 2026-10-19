@@ -59,17 +59,11 @@ def generate_fedapay_payment_url(request, property_slug, amount=500,
         )
         description = f"Frais de mise en relation — bien {property_slug}"
 
-    # ===== SIMULATEUR DE PAIEMENT ACTIF POUR LES TESTS / SOUTENANCE =====
-    SIMULATOR_ACTIVE = True
-    if SIMULATOR_ACTIVE:
-        logger.info(f"FedaPay Simulateur : Paiement validé automatiquement pour {property_slug}")
-        simulator_redirect_url = callback_url
-        if "?" in simulator_redirect_url:
-            simulator_redirect_url += f"&id={transaction_id}&status=approved"
-        else:
-            simulator_redirect_url += f"?id={transaction_id}&status=approved"
-        return simulator_redirect_url, transaction_id
-    # ====================================================================
+    # Les frais de mise en relation passent par payments.providers. Ce module ne sert plus
+    # qu'aux dons ; en mode démonstration aucun appel FedaPay n'est effectué.
+    if getattr(settings, "PAYMENT_MODE", "fedapay") == "simulation":
+        logger.info("Mode démonstration : aucun appel FedaPay (don non disponible).")
+        return None, "simulation"
 
     # Préparer le nom du client
     parts = customer_name.split() if customer_name else []

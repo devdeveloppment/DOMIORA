@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     "price_analysis",
     "property_boost",
     "ratings",
+    "payments",
 ]
 
 MIDDLEWARE = [
@@ -89,6 +90,7 @@ TEMPLATES = [
                 "core.context_processors.site_settings",
                 "notifications.context_processors.unread_notifications",
                 "dashboard.context_processors.user_dash_role",
+                "payments.context_processors.payment_settings",
             ],
         },
     },
@@ -331,8 +333,30 @@ LOGGING = {
 # ----------------------------------------------------------------------------
 # Payment Settings
 # ----------------------------------------------------------------------------
+# Héritage : ni PAYMENT_LINK ni PAYMENT_AMOUNT ne sont utilisés par les parcours actifs.
+# PAYMENT_AMOUNT (2000) contredit le tarif réellement appliqué (500 FCFA) — conservé
+# uniquement pour compatibilité ; la source de vérité est CONTACT_FEE_AMOUNT ci-dessous.
 PAYMENT_LINK = "https://neopixel-studio.mymaketou.store/fr/products/domiora/checkout"
-PAYMENT_AMOUNT = 2000  # FCFA
+PAYMENT_AMOUNT = 2000  # FCFA (obsolète)
+
+# Frais de mise en relation client ↔ propriétaire (une seule fois par propriétaire).
+# 500 FCFA est la valeur appliquée jusqu'ici par le code et affichée dans l'interface.
+CONTACT_FEE_AMOUNT = env.int("CONTACT_FEE_AMOUNT", default=500)
+CONTACT_FEE_CURRENCY = "XOF"
+
+# Mode de paiement : "simulation" (démonstration, aucun argent réel, aucun appel FedaPay)
+# ou "fedapay" (fournisseur réel). La simulation est active par défaut uniquement en
+# développement (DEBUG=True). En production elle doit être demandée explicitement ET
+# confirmée par PAYMENT_SIMULATION_ALLOWED_IN_PRODUCTION=True (double verrou).
+PAYMENT_MODE = env("PAYMENT_MODE", default="simulation" if DEBUG else "fedapay")
+if PAYMENT_MODE not in ("simulation", "fedapay"):
+    PAYMENT_MODE = "fedapay"
+if PAYMENT_MODE == "simulation" and not DEBUG and not env.bool(
+    "PAYMENT_SIMULATION_ALLOWED_IN_PRODUCTION", default=False
+):
+    PAYMENT_MODE = "fedapay"
+# Durée de validité d'une tentative de paiement en attente (minutes).
+PAYMENT_ATTEMPT_TTL_MINUTES = env.int("PAYMENT_ATTEMPT_TTL_MINUTES", default=30)
 
 # FedaPay - passerelle de paiement
 # FEDAPAY_SANDBOX=True en dev, False en production

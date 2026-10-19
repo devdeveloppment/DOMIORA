@@ -15,3 +15,10 @@ class IsAgentOwnerOrReadOnly(permissions.BasePermission):
             return True
         owner = getattr(obj, "owner", None)
         return (owner and owner == request.user) or request.user.is_superuser
+
+
+class IsPlatformAdmin(permissions.BasePermission):
+    """Administrateur DOMIORA (rôle admin) ou superutilisateur."""
+    def has_permission(self, request, view):
+        user = request.user
+        return bool(user and user.is_authenticated and (user.is_superuser or getattr(user, "role", "") == "admin"))

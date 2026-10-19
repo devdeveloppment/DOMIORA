@@ -11,25 +11,14 @@ from notifications.models import Notification
 
 
 def _has_paid_for_property(user, property_obj):
-    """Retourne True si l'utilisateur a bien débloqué ce bien ou est autorisé à y accéder."""
-    if not user.is_authenticated:
+    """True si l'utilisateur a une relation valide avec le propriétaire du bien (ou en est le propriétaire)."""
+    from payments.relations import has_owner_relation
+
+    if not user.is_authenticated or not property_obj:
         return False
-
-    # Les rôles autres que client ont toujours accès à la communication.
-    if user.role != User.Role.CLIENT:
+    if property_obj.owner_id == user.pk or user.is_superuser or user.role == User.Role.ADMIN:
         return True
-
-    # Le propriétaire du bien et les administrateurs sont autorisés sans paiement.
-    if property_obj and property_obj.owner == user:
-        return True
-
-    # Si l'utilisateur a déjà payé pour un bien du même propriétaire,
-    # on lui accorde automatiquement l'accès aux autres biens du même promoteur.
-    if property_obj and property_obj.owner:
-        return PropertyUnlock.objects.filter(user=user, property__owner=property_obj.owner).exists()
-    if property_obj:
-        return PropertyUnlock.objects.filter(user=user, property=property_obj).exists()
-    return False
+    return has_owner_relation(user, property_obj.owner)
 
 
 @login_required
@@ -67,7 +56,7 @@ def start_conversation(request, owner_id):
         slug = property_obj.slug if property_obj else ""
         django_messages.error(
             request,
-            "Vous devez effectuer les frais de mise en relation (500 FCFA) avant de contacter ce propriétaire.",
+            "Vous devez effectuer les frais de mise en relation avant de contacter ce propriétaire.",
         )
         if slug:
             return redirect("properties:payment_redirect", slug=slug)
@@ -136,7 +125,7 @@ def conversation_detail(request, pk):
             slug = conversation.property.slug if conversation.property else ""
             django_messages.error(
                 request,
-                "Vous devez effectuer les frais de mise en relation (500 FCFA) pour accéder à cette conversation.",
+                "Vous devez effectuer les frais de mise en relation pour accéder à cette conversation.",
             )
             if slug:
                 return redirect("properties:payment_redirect", slug=slug)

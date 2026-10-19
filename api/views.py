@@ -17,14 +17,14 @@ from .serializers import (
     PropertyImageSerializer, AmenitySerializer, FavoriteSerializer,
     PropertyRequestSerializer, TransactionSerializer, NotificationSerializer,
 )
-from .permissions import IsOwnerOrReadOnly, IsAgentOwnerOrReadOnly
+from .permissions import IsOwnerOrReadOnly, IsPlatformAdmin
 
-from services.n8n_service import send_identity_verification
 from services.email_service import send_identity_verification_email
 from services.ai_assistant import get_assistant_response
 
 
-class PropertyViewSet(viewsets.ModelViewSet):
+class PropertyViewSet(viewsets.ReadOnlyModelViewSet):
+    """Annonces publiques en lecture seule : la création/validation passe par les tableaux de bord."""
     queryset = (
         Property.objects
         .filter(is_published=True, is_validated=True, owner__isnull=False, owner__role=User.Role.OWNER, owner__is_active=True)
@@ -32,7 +32,7 @@ class PropertyViewSet(viewsets.ModelViewSet):
         .select_related("owner")
     )
     serializer_class = PropertySerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsAgentOwnerOrReadOnly]
+    permission_classes = [permissions.AllowAny]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = [
         "property_type", "transaction_type", "status", "country", "city", "bedrooms",
@@ -205,19 +205,25 @@ def verification_submit(request):
     request.user.verification_status = User.VerificationStatus.PENDING_DOCUMENTS
     request.user.save(update_fields=['verification_status'])
     
-    # Send to n8n
-    n8n_response = send_identity_verification(verification)
-    
+    # Plus d'envoi vers n8n (hors périmètre) : les administrateurs sont notifiés dans DOMIORA.
+    for admin_user in User.objects.filter(role=User.Role.ADMIN, is_active=True):
+        Notification.objects.create(
+            user=admin_user,
+            title="Nouvelle demande de vérification d'identité",
+            message=f"{request.user.get_full_name() or request.user.username} a soumis ses documents.",
+            notification_type="systeme",
+            link=f"/dashboard/admin-panel/verifications-identite/{verification.pk}/",
+        )
+
     return Response({
         'message': 'Documents envoyés pour vérification',
         'status': 'pending',
         'verification_id': verification.id,
-        'n8n_sent': n8n_response.get('success', False)
     }, status=status.HTTP_201_CREATED)
 
 
 @api_view(['POST'])
-@permission_classes([permissions.IsAuthenticated])
+@permission_classes([IsPlatformAdmin])
 def verification_resume(request, verification_id):
     """
     Resume verification workflow from n8n
@@ -241,17 +247,8 @@ def verification_resume(request, verification_id):
             status=status.HTTP_400_BAD_REQUEST
         )
     
-    # Find admin user by email
-    admin_user = None
-    if reviewed_by_email:
-        try:
-            admin_user = User.objects.get(email=reviewed_by_email, role=User.Role.ADMIN)
-        except User.DoesNotExist:
-            pass
-    
-    if not admin_user:
-        # Use first admin as fallback
-        admin_user = User.objects.filter(role=User.Role.ADMIN).first()
+    # La décision est attribuée à l'administrateur authentifié qui l'a prise.
+    admin_user = request.user
     
     if decision == 'validated':
         verification.approve(admin_user)
@@ -318,14 +315,17 @@ def chat_assistant(request):
             'properties': result.get('properties', [])
         })
         
-    except Exception as e:
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception("Assistant API error")
         return Response(
-            {'error': str(e)},
+            {'error': "L'assistant est momentanément indisponible."},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
 
 @api_view(['POST'])
+@permission_classes([IsPlatformAdmin])
 def admin_notification_webhook(request):
     """
     Webhook endpoint for n8n to send admin notifications

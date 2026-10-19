@@ -27,7 +27,7 @@ def create_property_request(request):
         move_in_date = data.get("move_in_date", None)
         
         # Vérifier que l'utilisateur a bien débloqué la propriété (payé)
-        property_obj = get_object_or_404(Property, id=property_id)
+        property_obj = get_object_or_404(Property, id=property_id, is_published=True, is_validated=True, owner__isnull=False)
         
         # Pour les utilisateurs non connectés (guest), créer un compte automatiquement
         if not request.user.is_authenticated:
@@ -64,10 +64,7 @@ def create_property_request(request):
                 role=User.Role.CLIENT
             )
             
-            # Auto-unlock the property for this new guest user
-            from properties.models import PropertyUnlock
-            PropertyUnlock.objects.get_or_create(user=guest_user, property=property_obj)
-            
+            # Aucune relation n'est créée ici : la mise en relation exige un paiement vérifié.
             # Auto-login the guest user
             from django.contrib.auth import login
             login(request, guest_user)
@@ -96,8 +93,7 @@ def create_property_request(request):
             notification_type="demande",
             title=f"Nouvelle demande de {property_request.get_request_type_display()}",
             message=f"{user.get_full_name() or user.email} souhaite {property_request.get_request_type_display().lower()} votre bien : {property_obj.title}",
-            related_id=property_request.id,
-            related_model="PropertyRequest"
+            link="/dashboard/proprietaire/",
         )
         
         # Envoyer un email au propriétaire

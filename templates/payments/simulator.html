@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Paiement de démonstration — DOMIORA{% endblock %}
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-10 px-4">
+  <div class="max-w-xl mx-auto space-y-5">
+    {% include "payments/_demo_banner.html" %}
+    <div class="bg-white rounded-3xl shadow-xl p-6 sm:p-8">
+      <p class="text-xs font-bold uppercase tracking-wider text-gray-400">Fournisseur simulé</p>
+      <h1 class="text-2xl font-extrabold text-gray-900 mt-1">Frais de mise en relation</h1>
+      <dl class="mt-5 grid grid-cols-2 gap-3 text-sm">
+        <div class="bg-gray-50 rounded-xl p-3"><dt class="text-gray-500 text-xs">Montant</dt><dd class="font-extrabold text-primary-600 text-lg">{{ attempt.amount }} FCFA</dd></div>
+        <div class="bg-gray-50 rounded-xl p-3"><dt class="text-gray-500 text-xs">Référence</dt><dd class="font-mono text-xs break-all">{{ attempt.provider_transaction_id }}</dd></div>
+        {% if attempt.property %}<div class="bg-gray-50 rounded-xl p-3 col-span-2"><dt class="text-gray-500 text-xs">Bien concerné</dt><dd class="font-semibold">{{ attempt.property.title }}</dd></div>{% endif %}
+      </dl>
+      <p class="text-sm text-gray-600 mt-5">Choisissez le comportement du fournisseur. La décision est enregistrée côté serveur ; DOMIORA vérifie ensuite le résultat comme il le ferait avec FedaPay.</p>
+      <form method="post" action="{% url 'payments:simulator_decide' attempt.reference %}" class="mt-5 grid gap-3">
+        {% csrf_token %}
+        {% for value, label, help in choices %}
+        <button type="submit" name="outcome" value="{{ value }}" class="text-left w-full rounded-xl border border-gray-200 hover:border-primary-600 hover:bg-primary-50 focus:outline-none focus:ring-2 focus:ring-primary-600 px-4 py-3 transition">
+          <span class="block font-bold text-gray-900 text-sm">{{ label }}</span>
+          <span class="block text-xs text-gray-500">{{ help }}</span>
+        </button>
+        {% endfor %}
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
