@@ -91,11 +91,6 @@ class User(AbstractUser):
         """Vérificateur de terrain : contrôle et rapporte, ne valide jamais."""
         return self.role == self.Role.VERIFIER
 
-    @property
-    def is_verified_owner(self):
-        """Source de vérité de la vérification propriétaire : verification_status."""
-        return self.role == self.Role.OWNER and self.verification_status == self.VerificationStatus.APPROVED
-
     def get_absolute_url(self):
         """Retourne l'URL du profil utilisateur"""
         return reverse("accounts:profile")
@@ -115,6 +110,21 @@ class User(AbstractUser):
     def is_verified_owner(self):
         """Vérifie si le propriétaire est vérifié"""
         return self.verification_status == self.VerificationStatus.APPROVED
+
+    @property
+    def verification_is_fresh(self):
+        """
+        Badge « Vérifié DOMIORA » : la vérification est considérée à jour pendant
+        VERIFICATION_FRESHNESS_MONTHS mois après verification_date. Sans date connue
+        (validations antérieures au suivi), elle est considérée à renouveler.
+        """
+        from django.conf import settings as dj_settings
+        from datetime import timedelta
+
+        if not self.is_verified_owner or not self.verification_date:
+            return False
+        months = getattr(dj_settings, "VERIFICATION_FRESHNESS_MONTHS", 12)
+        return timezone.now() - self.verification_date <= timedelta(days=30 * months)
 
     @property
     def average_rating(self):

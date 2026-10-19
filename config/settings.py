@@ -356,6 +356,8 @@ if PAYMENT_MODE == "simulation" and not DEBUG and not env.bool(
     "PAYMENT_SIMULATION_ALLOWED_IN_PRODUCTION", default=False
 ):
     PAYMENT_MODE = "fedapay"
+# Fraîcheur du badge « Vérifié DOMIORA » (mois après la dernière validation).
+VERIFICATION_FRESHNESS_MONTHS = env.int("VERIFICATION_FRESHNESS_MONTHS", default=12)
 # Durée de validité d'une tentative de paiement en attente (minutes).
 PAYMENT_ATTEMPT_TTL_MINUTES = env.int("PAYMENT_ATTEMPT_TTL_MINUTES", default=30)
 

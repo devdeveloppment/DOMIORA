@@ -286,3 +286,41 @@ def blog_detail(request, slug):
     article.save(update_fields=['view_count'])
     articles = BlogPost.objects.filter(status='published').select_related('author').order_by('-published_at')
     return render(request, "core/blog_detail.html", {"article": article, "articles": articles})
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PWA : manifeste, service worker (portée racine) et page hors connexion
+# ─────────────────────────────────────────────────────────────────────────────
+def pwa_manifest(request):
+    from django.templatetags.static import static
+
+    data = {
+        "name": "DOMIORA — Immobilier de confiance",
+        "short_name": "DOMIORA",
+        "lang": "fr",
+        "start_url": "/?source=pwa",
+        "scope": "/",
+        "display": "standalone",
+        "background_color": "#faf7f5",
+        "theme_color": "#5a1a24",
+        "icons": [
+            {"src": static("pwa/icon-192.png"), "sizes": "192x192", "type": "image/png"},
+            {"src": static("pwa/icon-512.png"), "sizes": "512x512", "type": "image/png", "purpose": "any maskable"},
+        ],
+    }
+    return JsonResponse(data, content_type="application/manifest+json")
+
+
+def service_worker(request):
+    from django.contrib.staticfiles import finders
+
+    path = finders.find("pwa/sw.js")
+    with open(path, encoding="utf-8") as fh:
+        response = HttpResponse(fh.read(), content_type="application/javascript")
+    response["Cache-Control"] = "no-cache"
+    response["Service-Worker-Allowed"] = "/"
+    return response
+
+
+def offline(request):
+    return render(request, "core/offline.html")

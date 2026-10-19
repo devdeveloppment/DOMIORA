@@ -1,8 +1,11 @@
-<!DOCTYPE html>
+{% load static %}<!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="{% url 'core:pwa_manifest' %}">
+<meta name="theme-color" content="#5a1a24">
+<link rel="apple-touch-icon" href="{% static 'pwa/icon-192.png' %}">
 <title>{% block title %}{{ site_settings.site_name }} — {{ site_settings.tagline }}{% endblock %}</title>
 <meta name="description" content="{% block description %}DOMIORA, la plateforme n°1 en immobilier. Trouvez, louez ou vendez votre propriété en toute simplicité.{% endblock %}">
 <!-- DNS Prefetch & Preconnect for speed -->
@@ -19,7 +22,6 @@
 <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'" crossorigin="anonymous">
 <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-{% load static %}
 <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
 <link rel="stylesheet" href="{% static 'css/design-system.css' %}">
 <style>
@@ -59,6 +61,11 @@
 <!-- Three.js for 3D effects (disabled for performance) -->
 <!-- <script defer src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script> -->
 <!-- <script defer src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script> -->
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () { navigator.serviceWorker.register("{% url 'core:service_worker' %}").catch(function () {}); });
+  }
+</script>
 </head>
 <body class="bg-gray-50 text-gray-900 antialiased font-sans overflow-x-hidden flex flex-col min-h-screen">
 

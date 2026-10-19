@@ -271,7 +271,9 @@ class Property(models.Model):
         if not self.owner:
             return ""
         if self.owner.is_verified_owner:
-            return "✅ Propriétaire vérifié"
+            if self.owner.verification_is_fresh:
+                return f"✅ Vérifié DOMIORA · {self.owner.verification_date:%m/%Y}"
+            return "✅ Propriétaire vérifié · contrôle à renouveler"
         if self.owner.verification_status in [self.owner.VerificationStatus.PENDING_DOCUMENTS, 
                                             self.owner.VerificationStatus.PENDING_FIELD_VISIT,
                                             self.owner.VerificationStatus.FIELD_VISIT_COMPLETED]:
