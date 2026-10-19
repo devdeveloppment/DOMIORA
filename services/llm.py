@@ -1,7 +1,7 @@
 """
 Couche d'accès aux fournisseurs LLM de DOMIORA.
 
-Même chaîne que l'assistant existant : Mistral, puis Anthropic en secours.
+Chaîne de fournisseurs : Anthropic (Claude) en priorité, puis Mistral en secours.
 Les clés viennent exclusivement des settings (variables d'environnement).
 Si aucun fournisseur ne répond, on retourne une chaîne vide et l'appelant
 utilise sa solution locale.
@@ -10,12 +10,17 @@ import json
 import logging
 import re
 
+import anthropic
 import requests
 from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
 DEFAULT_TIMEOUT = (5, 15)
+# Claude réfléchit avant de répondre : délai de lecture plus large.
+ANTHROPIC_TIMEOUT = anthropic.Timeout(45.0, connect=5.0)
+# Les tokens de réflexion comptent dans max_tokens : marge minimale.
+ANTHROPIC_MIN_MAX_TOKENS = 4000
 
 
 def is_configured():
@@ -29,12 +34,12 @@ def complete(messages, *, max_tokens=600, temperature=0.2, json_mode=False, time
     fournisseur disponible. Retourne (texte, nom_fournisseur) ou ("", None).
     """
     providers = []
+    anthropic_key = getattr(settings, "ANTHROPIC_API_KEY", "")
+    if anthropic_key:
+        providers.append(("Anthropic", lambda: _anthropic(anthropic_key, messages, max_tokens)))
     mistral_key = getattr(settings, "MISTRAL_API_KEY", "")
     if mistral_key:
         providers.append(("Mistral", lambda: _mistral(mistral_key, messages, max_tokens, temperature, json_mode, timeout)))
-    anthropic_key = getattr(settings, "ANTHROPIC_API_KEY", "")
-    if anthropic_key:
-        providers.append(("Anthropic", lambda: _anthropic(anthropic_key, messages, max_tokens, temperature, timeout)))
 
     for name, call in providers:
         try:
@@ -96,21 +101,25 @@ def _mistral(api_key, messages, max_tokens, temperature, json_mode, timeout):
     return (choices[0].get("message", {}).get("content") or "").strip()
 
 
-def _anthropic(api_key, messages, max_tokens, temperature, timeout):
+def _anthropic(api_key, messages, max_tokens):
+    """
+    Appel Claude via le SDK officiel. Le modèle (Claude Sonnet 5.5 par défaut)
+    réfléchit de façon adaptative ; `temperature` n'est pas transmise car les
+    modèles récents refusent les valeurs non par défaut.
+    """
     system = "\n\n".join(m["content"] for m in messages if m["role"] == "system")
     conversation = [m for m in messages if m["role"] in ("user", "assistant")]
-    response = requests.post(
-        "https://api.anthropic.com/v1/messages",
-        headers={"x-api-key": api_key, "anthropic-version": "2023-06-01"},
-        json={
-            "model": getattr(settings, "ANTHROPIC_MODEL", "claude-haiku-4-5"),
-            "system": system,
-            "messages": conversation,
-            "temperature": temperature,
-            "max_tokens": max_tokens,
-        },
-        timeout=timeout,
+    client = anthropic.Anthropic(api_key=api_key, timeout=ANTHROPIC_TIMEOUT, max_retries=1)
+    response = client.beta.messages.create(
+        model=getattr(settings, "ANTHROPIC_MODEL", "claude-sonnet-5-5"),
+        system=system,
+        messages=conversation,
+        max_tokens=max(max_tokens, ANTHROPIC_MIN_MAX_TOKENS),
+        output_config={"effort": getattr(settings, "ANTHROPIC_EFFORT", "low")},
+        # En cas de refus par les filtres de sécurité, l'API relance sur un modèle de secours.
+        betas=["server-side-fallback-2026-07-01"],
+        fallbacks="default",
     )
-    response.raise_for_status()
-    blocks = response.json().get("content", [])
-    return "\n".join(b.get("text", "").strip() for b in blocks if b.get("type") == "text").strip()
+    if response.stop_reason == "refusal":
+        return ""
+    return "\n".join(b.text.strip() for b in response.content if b.type == "text").strip()

@@ -223,7 +223,7 @@ BASE_URL = env("BASE_URL", default="http://127.0.0.1:8000")
 
 # Mistral API configuration for the AI assistant
 MISTRAL_API_KEY = env("MISTRAL_API_KEY", default="")
-MISTRAL_MODEL = env("MISTRAL_MODEL", default="mistral-small-latest")
+MISTRAL_MODEL = env("MISTRAL_MODEL", default="ministral-14b-latest")
 
 # n8n Webhooks
 N8N_IDENTITY_VERIFICATION_WEBHOOK = env(
@@ -297,7 +297,8 @@ SITE_NAME = "DOMIORA"
 
 # Optional secondary provider used when Mistral is unavailable.
 ANTHROPIC_API_KEY = env("ANTHROPIC_API_KEY", default="")
-ANTHROPIC_MODEL = env("ANTHROPIC_MODEL", default="claude-haiku-4-5")
+ANTHROPIC_MODEL = env("ANTHROPIC_MODEL", default="claude-sonnet-5-5")
+ANTHROPIC_EFFORT = env("ANTHROPIC_EFFORT", default="low")
 
 # Limitation des requêtes IA (recherche intelligente, comparateur, assistant)
 AI_RATE_LIMIT = env.int("AI_RATE_LIMIT", default=20)

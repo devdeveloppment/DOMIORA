@@ -11,9 +11,9 @@ from django.urls import reverse
 
 from messaging.models import Conversation
 from properties.models import Property, PropertyUnlock
-from services.ai_assistant import _sanitize_payment_provider_names, handle_assistant_message
+from services.ai_assistant import _sanitize_payment_provider_names, handle_assistant_message, is_advice_question
 from services.assistant_knowledge import GENERIC_HELP
-from services.property_search import NO_EXACT_MESSAGE
+from services.property_search import NO_EXACT_MESSAGE, normalize
 from services.tests_property_search import NO_LLM, SIMPLE_STATIC, make_owner, make_property
 
 User = get_user_model()
@@ -288,29 +288,78 @@ class AssistantEndpointTests(AssistantFixtureMixin, TestCase):
 class AssistantProviderFallbackTests(AssistantFixtureMixin, TestCase):
     QUESTION = "Quelle différence entre une location et un achat ?"
 
+    @staticmethod
+    def claude_message(text, stop_reason="end_turn"):
+        return Mock(stop_reason=stop_reason, content=[Mock(type="text", text=text)])
+
+    @override_settings(MISTRAL_API_KEY="m-key", ANTHROPIC_API_KEY="a-key", ANTHROPIC_MODEL="claude-sonnet-5-5")
+    @patch("services.llm.requests.post")
+    @patch("services.llm.anthropic.Anthropic")
+    def test_claude_answers_general_questions_first(self, client_cls, post):
+        create = client_cls.return_value.beta.messages.create
+        create.return_value = self.claude_message("Réponse Claude.")
+        _, result = handle_assistant_message(self.QUESTION, user=AnonymousUser())
+        self.assertEqual(result["reply"], "Réponse Claude.")
+        self.assertEqual(result["source"], "anthropic")
+        post.assert_not_called()
+        kwargs = create.call_args.kwargs
+        self.assertEqual(kwargs["model"], "claude-sonnet-5-5")
+        self.assertNotIn("temperature", kwargs)
+        self.assertIn("FedaPay", kwargs["system"])
+        self.assertIn("immobilier", kwargs["system"])
+
+    @override_settings(MISTRAL_API_KEY="", ANTHROPIC_API_KEY="a-key")
+    @patch("services.llm.anthropic.Anthropic")
+    def test_advice_question_goes_to_claude_not_search(self, client_cls):
+        client_cls.return_value.beta.messages.create.return_value = self.claude_message("Vérifiez le titre foncier.")
+        _, result = handle_assistant_message(
+            "Quelles vérifications faire avant d'acheter un terrain à Lomé ?", user=AnonymousUser()
+        )
+        self.assertEqual(result["intent"], "general")
+        self.assertEqual(result["source"], "anthropic")
+        self.assertEqual(result["reply"], "Vérifiez le titre foncier.")
+
+    def test_search_and_platform_questions_are_not_advice(self):
+        for message in (
+            "Je cherche un terrain à Lomé",
+            "Avez-vous des appartements disponibles à Lomé ?",
+            "Comment contacter un propriétaire ?",
+            "Pourquoi payer 500 FCFA ?",
+            "Comment publier mon bien ?",
+        ):
+            self.assertFalse(is_advice_question(normalize(message)), message)
+
+    @override_settings(MISTRAL_API_KEY="", ANTHROPIC_API_KEY="")
+    def test_advice_question_falls_back_to_previous_behaviour_without_llm(self):
+        _, result = handle_assistant_message(
+            "Quelles vérifications faire avant d'acheter un terrain à Lomé ?", user=AnonymousUser()
+        )
+        self.assertIn(result["intent"], ("search", "search_question"))
+
     @override_settings(MISTRAL_API_KEY="m-key", ANTHROPIC_API_KEY="a-key")
     @patch("services.llm.requests.post")
-    def test_mistral_answers_general_questions(self, post):
+    @patch("services.llm.anthropic.Anthropic")
+    def test_mistral_is_used_when_claude_fails(self, client_cls, post):
+        client_cls.return_value.beta.messages.create.side_effect = RuntimeError("429")
         post.return_value = provider_response({"choices": [{"message": {"content": "Réponse Mistral."}}]})
         _, result = handle_assistant_message(self.QUESTION, user=AnonymousUser())
         self.assertEqual(result["reply"], "Réponse Mistral.")
         self.assertEqual(result["source"], "mistral")
-        system = post.call_args.kwargs["json"]["messages"][0]["content"]
-        self.assertIn("FedaPay", system)
 
     @override_settings(MISTRAL_API_KEY="m-key", ANTHROPIC_API_KEY="a-key")
     @patch("services.llm.requests.post")
-    def test_anthropic_is_used_when_mistral_is_rate_limited(self, post):
-        rate_limited = Mock()
-        rate_limited.raise_for_status.side_effect = requests.HTTPError("429")
-        post.side_effect = [rate_limited, provider_response({"content": [{"type": "text", "text": "Réponse Anthropic."}]})]
+    @patch("services.llm.anthropic.Anthropic")
+    def test_mistral_is_used_when_claude_refuses(self, client_cls, post):
+        client_cls.return_value.beta.messages.create.return_value = self.claude_message("", stop_reason="refusal")
+        post.return_value = provider_response({"choices": [{"message": {"content": "Réponse Mistral."}}]})
         _, result = handle_assistant_message(self.QUESTION, user=AnonymousUser())
-        self.assertEqual(result["reply"], "Réponse Anthropic.")
-        self.assertEqual(result["source"], "anthropic")
+        self.assertEqual(result["source"], "mistral")
 
     @override_settings(MISTRAL_API_KEY="m-key", ANTHROPIC_API_KEY="a-key")
     @patch("services.llm.requests.post", side_effect=requests.Timeout())
-    def test_local_answer_when_all_providers_fail(self, _post):
+    @patch("services.llm.anthropic.Anthropic")
+    def test_local_answer_when_all_providers_fail(self, client_cls, _post):
+        client_cls.return_value.beta.messages.create.side_effect = RuntimeError("timeout")
         _, result = handle_assistant_message(self.QUESTION, user=AnonymousUser())
         self.assertEqual(result["reply"], GENERIC_HELP)
         self.assertEqual(result["source"], "local")

@@ -256,13 +256,14 @@ def _request_anthropic(api_key, messages):
             "anthropic-version": "2023-06-01",
         },
         json={
-            "model": getattr(settings, "ANTHROPIC_MODEL", "claude-haiku-4-5"),
+            "model": getattr(settings, "ANTHROPIC_MODEL", "claude-sonnet-5-5"),
             "system": system_message,
             "messages": messages[1:],
-            "temperature": 0.4,
-            "max_tokens": 800,
+            # Pas de "temperature" : refusée par les modèles Claude récents.
+            # La réflexion du modèle compte dans max_tokens.
+            "max_tokens": 4000,
         },
-        timeout=(5, 20),
+        timeout=(5, 45),
     )
     response.raise_for_status()
     content = response.json().get("content", [])
@@ -548,6 +549,24 @@ _FAQ_TOPICS = [
     ("how_it_works", r"(comment (ca )?(marche|fonctionne)|c'est quoi domiora|qu'est[- ]ce que domiora|fonctionnement|domiora)"),
     ("find_property", r"(trouver|chercher|rechercher)"),
 ]
+_ADVICE_RE = re.compile(
+    r"^(quel(le)?s? (sont |est )?(les |la |le )?(verifications?|documents?|papiers|demarches?|etapes?|precautions?|pieges?"
+    r"|risques?|frais|conseils?|droits?|obligations?|differences?|avantages?|inconvenients?|criteres?|garanties?"
+    r"|points? (a|de) (verifier|vigilance))"
+    r"|comment (bien )?(acheter|louer|vendre|choisir|negocier|verifier|eviter|calculer|investir|construire|financer"
+    r"|securiser|preparer|reussir|estimer|evaluer|rediger|resilier|obtenir|reconnaitre)"
+    r"|pourquoi|que (dois|faut|doit)|qu'est[- ]ce qu|faut[- ]il|dois[- ]je|doit[- ]on|vaut[- ]il|c'est quoi|a quoi sert"
+    r"|quelle difference|que signifie|explique"
+    r"|est[- ]il (possible|obligatoire|necessaire|conseille|risque|interessant)"
+    r"|est[- ]ce (que c'est |qu'il est )?(mieux|rentable|risque|obligatoire|interessant|possible))"
+)
+# Sujets propres à la plateforme : réponses FAQ vérifiées plutôt que le LLM
+_PLATFORM_RE = re.compile(
+    r"\b(domiora|fedapay|mobile money|mise en relation|mettre en relation|contacter|publier|annonces?|alertes?"
+    r"|comparateur|visite virtuelle|video|inscri\w*|compte|mon bien|mes biens|payer|paiement|paye|500)\b"
+)
+# Demandes portant sur les biens disponibles : recherche
+_LISTING_RE = re.compile(r"\b(disponibles?|avez[- ]vous|vous avez|y a[- ]t[- ]il|trouver|cherche\w*|montre\w*|propose\w*)\b")
 _NON_SEARCH_TOPICS = {"not_published", "why_pay", "payment", "verification", "become_owner", "publish", "ai_search", "alerts"}
 _STRONG_KEYS = (
     "property_kind", "city", "budget_min", "budget_max", "bedrooms", "features",
@@ -616,7 +635,12 @@ def _strong_criteria(message):
     return {k: v for k, v in delta.items() if k in _STRONG_KEYS and v}, flags
 
 
-def detect_intent(message, state):
+def is_advice_question(text):
+    """Question de conseil immobilier (et non recherche de biens ni question sur DOMIORA). `text` est normalisé."""
+    return bool(_ADVICE_RE.search(text)) and not _PLATFORM_RE.search(text) and not _LISTING_RE.search(text)
+
+
+def detect_intent(message, state, allow_advice=True):
     """Retourne (intent, refs, topic). Déterministe : le LLM n'arbitre jamais les actions."""
     text = normalize(message)
     refs = parse_references(text)
@@ -639,6 +663,10 @@ def detect_intent(message, state):
             return "contact", refs, None
     if has_results and (refs["indexes"] or refs["focus"]) and (_SELECT_RE.search(text) or len(text.split()) <= 4):
         return "select", refs, None
+
+    # Questions de conseil immobilier : réponse experte du LLM, pas de recherche de biens
+    if allow_advice and is_advice_question(text):
+        return "advice", refs, None
 
     # Questions sur le fonctionnement de DOMIORA
     topic = next((name for name, pattern in _FAQ_TOPICS if re.search(pattern, text)), None)
@@ -1125,6 +1153,22 @@ def _presented_context(state):
     return "\n".join(lines)
 
 
+def _plain_text(text):
+    """Le widget affiche du texte brut : retire le Markdown que certains modèles ajoutent malgré la consigne."""
+    text = re.sub(r"\*\*(.+?)\*\*|__(.+?)__", lambda m: m.group(1) or m.group(2), text)
+    text = re.sub(r"(?m)^\s{0,3}#{1,6}\s+", "", text)
+    text = re.sub(r"(?m)^(\s*)[*•]\s+", r"\1- ", text)
+    return text.strip()
+
+
+def _complete_sentences(text):
+    """Si la réponse a été coupée (limite de longueur), on s'arrête à la dernière phrase complète."""
+    if not text or text[-1] in ".!?»)…":
+        return text
+    cut = max(text.rfind(". "), text.rfind(".\n"), text.rfind("! "), text.rfind("? "))
+    return text[: cut + 1] if cut > len(text) // 2 else text
+
+
 def _handle_general(message, refs, state, user, use_llm):
     if use_llm and llm_service.is_configured():
         system = knowledge.SYSTEM_PROMPT
@@ -1137,9 +1181,10 @@ def _handle_general(message, refs, state, user, use_llm):
         for item in state["history"][-8:]:
             messages.append({"role": item["role"], "content": item["content"][:1000]})
         messages.append({"role": "user", "content": message[:2000]})
-        text, provider = llm_service.complete(messages, max_tokens=400, temperature=0.4)
+        # Délai de lecture plus large : une réponse détaillée peut prendre plus de 15 s sur l'offre gratuite.
+        text, provider = llm_service.complete(messages, max_tokens=700, temperature=0.4, timeout=(5, 40))
         if text:
-            return _result(text.strip()[:1500], "general", source=provider.lower())
+            return _result(_complete_sentences(_plain_text(text)[:3000]), "general", source=provider.lower())
     return _result(knowledge.GENERIC_HELP, "general", quick_replies=knowledge.DEFAULT_QUICK_REPLIES)
 
 
@@ -1150,6 +1195,13 @@ def handle_assistant_message(message, user=None, state=None, use_llm=True):
     """
     state = _load_state(state)
     intent, refs, topic = detect_intent(message, state)
+
+    if intent == "advice":
+        result = _handle_general(message, refs, state, user, use_llm)
+        if result.get("source") != "local":
+            return _finalize(state, message, result)
+        # LLM indisponible : on retombe sur le comportement déterministe (FAQ, recherche…)
+        intent, refs, topic = detect_intent(message, state, allow_advice=False)
 
     if intent == "reset":
         state = new_assistant_state()
@@ -1177,6 +1229,10 @@ def handle_assistant_message(message, user=None, state=None, use_llm=True):
         }[intent]
         result = handler(message, refs, state, user, use_llm)
 
+    return _finalize(state, message, result)
+
+
+def _finalize(state, message, result):
     result["reply"] = _sanitize_payment_provider_names(result["reply"])
     state["history"] = (
         state["history"]

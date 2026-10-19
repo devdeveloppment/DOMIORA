@@ -18,12 +18,11 @@
       </a>
 
       <!-- Desktop Nav Links -->
-      <nav class="hidden lg:flex items-center gap-6">
+      <nav class="hidden lg:flex items-center gap-6 whitespace-nowrap">
         <a href="{% url 'core:home' %}" class="text-sm font-semibold text-gray-600 hover:text-primary-600 transition">Accueil</a>
         <a href="{% url 'properties:list' %}?transaction=vente" class="text-sm font-semibold text-gray-600 hover:text-primary-600 transition">Acheter</a>
         <a href="{% url 'properties:list' %}?transaction=location" class="text-sm font-semibold text-gray-600 hover:text-primary-600 transition">Louer</a>
         <a href="{% url 'properties:list' %}" class="text-sm font-semibold text-gray-600 hover:text-primary-600 transition">Annonces</a>
-        <a href="{% url 'properties:ai_search' %}" class="text-sm font-semibold text-gray-600 hover:text-primary-600 transition">✨ Recherche IA</a>
         <a href="{% url 'core:services' %}" class="text-sm font-semibold text-gray-600 hover:text-primary-600 transition">Services</a>
         <a href="{% url 'core:about' %}" class="text-sm font-semibold text-gray-600 hover:text-primary-600 transition">À propos</a>
         <a href="{% url 'core:contact' %}" class="text-sm font-semibold text-gray-600 hover:text-primary-600 transition">Contact</a>
