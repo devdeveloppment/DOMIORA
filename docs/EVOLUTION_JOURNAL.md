@@ -186,6 +186,24 @@ d'applications (les scripts de `scripts/legacy/` ne sont pas découverts).
 
 ---
 
+## Phase « fonctionnalités de bout en bout » (2026-10-19)
+
+Détail : `docs/ABONNEMENTS_CLASSEMENT_MESSAGERIE.md`.
+- Incident signalé : lors de l'audit précédent, la commande prévue sur une copie a appliqué les
+  migrations additives à `db.sqlite3` (14:19). Aucune donnée n'a été modifiée par cette opération
+  (vérifié par comparaison avec la sauvegarde initiale). Les mesures utilisent désormais un script
+  qui force explicitement la base visée.
+- 7 comptes approuvés sans preuve (79, 93, 95, 97, 99, 101, 103) → « non vérifié » en local
+  (`reset_unproven_approvals --apply`, journal de retour arrière dans `../domiora_backups/`).
+- Validation d'annonce par l'admin : POST uniquement et propriétaire vérifié obligatoire.
+- Abonnements simulés complets, classement « Recommandés » + « Sponsorisé », messagerie quasi temps
+  réel par interrogation, avis vérifiés, stockage privé des fichiers sensibles, défilé unique sur
+  l'accueil, N+1 supprimé sur la liste (17 → 3 requêtes SQL).
+- Migrations : `owner_subscriptions/0002`, `ratings/0002`, `accounts/0012`, `field_verification/0002`,
+  `properties/0014` (appliquées en local après sauvegarde `../domiora_backups/2026-10-19-phase2/`).
+
+---
+
 ## Liste de tâches
 
 - [x] Étape 0 — audit, sauvegarde, branche

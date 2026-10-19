@@ -102,11 +102,11 @@ def promoted_property_ids_for_owner(owner, now=None):
     return {p.pk for p in props[:max_n]}
 
 
-def rank(properties, now=None):
+def rank(properties, now=None, levels=None):
     """Trie une liste d'annonces par score décroissant ; annote .rank_score et .plan_level."""
     now = now or timezone.now()
     items = list(properties)
-    levels = plan_levels_for([p.owner_id for p in items], now)
+    levels = plan_levels_for([p.owner_id for p in items], now) if levels is None else levels
     for p in items:
         lvl = levels.get(p.owner_id, (0, 0))[0] if _eligible_owner(p) else 0
         p.plan_level = lvl
@@ -115,12 +115,12 @@ def rank(properties, now=None):
     return items
 
 
-def sponsored(properties, now=None, slots=None):
+def sponsored(properties, now=None, slots=None, levels=None):
     """Sélectionne les annonces « Sponsorisé » parmi les résultats fournis (déjà filtrés)."""
     now = now or timezone.now()
     slots = settings.RANKING_SPONSORED_SLOTS if slots is None else slots
     items = list(properties)
-    levels = plan_levels_for([p.owner_id for p in items], now)
+    levels = plan_levels_for([p.owner_id for p in items], now) if levels is None else levels
     if not levels or slots <= 0:
         return []
     by_owner = {}

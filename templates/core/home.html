@@ -242,6 +242,30 @@
   </div>
 </section>
 
+{% if for_sale %}
+<!-- Défilé des biens : une seule fois, puis immobile (aucune boucle) -->
+<section aria-label="Aperçu de biens disponibles" class="w-full bg-white border-b border-gray-100 py-6 overflow-hidden">
+  <style>
+    @keyframes domiora-glide { from { transform: translateX(60%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    .domiora-glide { animation: domiora-glide 1.6s cubic-bezier(.22,.61,.36,1) 0.3s 1 both; }
+    @media (prefers-reduced-motion: reduce) { .domiora-glide { animation: none; } }
+  </style>
+  <ul class="domiora-glide flex gap-4 px-4 sm:px-6 lg:px-8 overflow-x-auto snap-x" role="list">
+    {% for property in for_sale|slice:":6" %}
+    <li class="snap-start shrink-0 w-56">
+      <a href="{{ property.get_absolute_url }}" class="block rounded-xl overflow-hidden border border-gray-100 bg-white hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary-600 transition">
+        <img src="{{ property.primary_image }}" alt="{{ property.title }}" loading="lazy" decoding="async" width="224" height="128" class="w-full h-32 object-cover">
+        <span class="block p-2.5">
+          <span class="block text-sm font-semibold text-gray-900 truncate">{{ property.title }}</span>
+          <span class="block text-xs text-gray-500">{{ property.city }} · <span class="font-bold text-primary-600">{{ property.price_display }}</span></span>
+        </span>
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+
 <!-- Biens Disponibles -->
 <section class="w-full px-4 sm:px-6 lg:px-8 py-20 bg-white">
   <div

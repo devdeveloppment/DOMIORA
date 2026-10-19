@@ -31,3 +31,18 @@ class PwaTests(TestCase):
         resp = self.client.get(reverse("core:about"))
         self.assertContains(resp, 'rel="manifest"')
         self.assertContains(resp, "serviceWorker")
+
+
+@override_settings(STORAGES=SIMPLE_STATIC)
+class HomeGlideTests(TestCase):
+    def test_glide_runs_once_and_respects_reduced_motion(self):
+        from accounts.models import User
+        from payments.tests import make_property
+
+        owner = User.objects.create_user("p", password="x-Pass-123", role=User.Role.OWNER)
+        make_property(owner)
+        body = self.client.get(reverse("core:home")).content.decode()
+        self.assertIn("domiora-glide 1.6s", body)
+        self.assertIn(" 1 both", body)          # une seule itération
+        self.assertNotIn("infinite", body.split("domiora-glide")[1][:200])
+        self.assertIn("prefers-reduced-motion: reduce", body)

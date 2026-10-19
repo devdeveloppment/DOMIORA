@@ -195,7 +195,7 @@ if CLOUDINARY_URL:
     STORAGES["default"] = {"BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage"}
 
 # Fichiers sensibles (core/private_storage.py) : jamais servis par /media/.
-PRIVATE_MEDIA_ROOT = env("PRIVATE_MEDIA_ROOT", default=str(BASE_DIR / "private_media"))
+PRIVATE_MEDIA_ROOT = env("PRIVATE_MEDIA_ROOT", default="") or str(BASE_DIR / "private_media")
 PRIVATE_MEDIA_BACKEND = env("PRIVATE_MEDIA_BACKEND", default="cloudinary" if CLOUDINARY_URL else "filesystem")
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
