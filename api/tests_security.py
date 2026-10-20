@@ -93,3 +93,24 @@ class RoleAccessTests(TestCase):
             "property_id": self.prop.pk, "request_type": "visite", "guest_name": "Ama Koffi",
             "guest_email": "ama@example.tg", "guest_phone": "90000000"})
         self.assertFalse(PropertyUnlock.objects.exists())
+
+
+@override_settings(STORAGES=SIMPLE_STATIC)
+class MobileApiTests(TestCase):
+    def test_app_config_exposes_fee_from_settings(self):
+        data = self.client.get(reverse("app_config")).json()
+        self.assertEqual((data["contact_fee_amount"], data["currency_label"]), (settings.CONTACT_FEE_AMOUNT, "FCFA"))
+
+    def test_token_login_and_me(self):
+        User.objects.create_user("mob", password="x-Pass-123", role=User.Role.CLIENT)
+        token = self.client.post(reverse("api_token_auth"), {"username": "mob", "password": "x-Pass-123"}).json()["token"]
+        me = self.client.get("/api/me/", HTTP_AUTHORIZATION=f"Token {token}").json()
+        self.assertEqual(me["username"], "mob")
+        self.assertIn(self.client.get("/api/me/", HTTP_AUTHORIZATION="Token faux").status_code, (401, 403))
+
+    def test_property_has_server_formatted_price_and_web_url(self):
+        owner = User.objects.create_user("o", password="x-Pass-123", role=User.Role.OWNER)
+        prop = make_property(owner)
+        item = self.client.get(reverse("property-list")).json()["results"][0]
+        self.assertEqual(item["price_display"], prop.price_display)
+        self.assertTrue(item["web_url"].endswith(prop.get_absolute_url()))

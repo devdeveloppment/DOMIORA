@@ -410,3 +410,21 @@ def my_subscription(request):
         "cancel_at_period_end": bool(sub and sub.cancel_at_period_end),
         "scheduled_plan": sub.scheduled_plan.code if sub and sub.scheduled_plan else None,
     })
+
+
+
+@api_view(["GET"])
+@permission_classes([permissions.AllowAny])
+def app_config(request):
+    """Configuration publique pour les clients (application mobile) : aucune règle dupliquée côté client."""
+    from django.conf import settings as dj
+
+    return Response({
+        "contact_fee_amount": dj.CONTACT_FEE_AMOUNT,
+        "currency": "XOF",
+        "currency_label": "FCFA",
+        "payment_simulation": dj.PAYMENT_MODE == "simulation",
+        "subscriptions_enabled": dj.OWNER_SUBSCRIPTIONS_ENABLED,
+        "property_types": [{"value": v, "label": l} for v, l in Property.PropertyType.choices],
+        "transaction_types": [{"value": v, "label": l} for v, l in Property.TransactionType.choices],
+    })

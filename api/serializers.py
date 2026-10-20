@@ -65,6 +65,13 @@ class PropertySerializer(serializers.ModelSerializer):
     primary_image = serializers.ReadOnlyField()
     badge_label = serializers.ReadOnlyField()
     owner_verification_label = serializers.ReadOnlyField()
+    price_display = serializers.ReadOnlyField()
+    web_url = serializers.SerializerMethodField()
+
+    def get_web_url(self, obj):
+        request = self.context.get("request")
+        url = obj.get_absolute_url()
+        return request.build_absolute_uri(url) if request else url
 
     class Meta:
         model = Property
@@ -75,7 +82,8 @@ class PropertySerializer(serializers.ModelSerializer):
             "price", "currency", "country", "city", "latitude", "longitude",
             "bedrooms", "bathrooms", "surface_area", "floors", "year_built", "status",
             "is_featured", "is_published", "views_count", "owner", "images", "amenities",
-            "primary_image", "badge_label", "owner_verification_label", "created_at", "updated_at",
+            "primary_image", "badge_label", "owner_verification_label", "price_display", "web_url",
+            "created_at", "updated_at",
         ]
         read_only_fields = ["id", "slug", "views_count", "created_at", "updated_at"]
 
