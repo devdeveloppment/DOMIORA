@@ -8,6 +8,9 @@
 # reprise au redémarrage (ou relancée depuis le tableau de bord).
 set -o errexit
 
+# Dossiers du broker filesystem (sans Redis) : absents d'un conteneur neuf.
+mkdir -p .celery/broker/out .celery/broker/processed
+
 celery -A config worker --pool=solo --concurrency=1 --loglevel=info &
 
 exec gunicorn config.wsgi:application --bind 0.0.0.0:$PORT

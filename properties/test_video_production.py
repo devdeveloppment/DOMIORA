@@ -195,3 +195,20 @@ class VerifyCommandTests(TransactionTestCase):
         with self.assertRaises(CommandError):
             call_command("verify_virtual_tour", "--skip-infra", stdout=out)
         self.assertIn("REDIS_URL non défini", out.getvalue())
+
+
+class FilesystemBrokerTests(SimpleTestCase):
+    """Sans Redis, la mise en file échouait sur un conteneur neuf : dossiers du broker absents."""
+
+    def test_broker_folders_exist_and_start_script_creates_them(self):
+        import os
+
+        from django.conf import settings
+
+        if settings.CELERY_BROKER_URL == "filesystem://":
+            for folder in settings.CELERY_BROKER_TRANSPORT_OPTIONS.values():
+                self.assertTrue(os.path.isdir(folder), folder)
+        with open(os.path.join(settings.BASE_DIR, "start.sh"), encoding="utf-8") as handle:
+            start = handle.read()
+        self.assertIn("mkdir -p .celery/broker/out .celery/broker/processed", start)
+        self.assertLess(start.index("mkdir -p .celery"), start.index("celery -A config worker"))

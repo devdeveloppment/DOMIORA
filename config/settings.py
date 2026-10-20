@@ -1,6 +1,7 @@
 """
 Django settings for DOMIORA project.
 """
+import os
 from pathlib import Path
 import environ
 
@@ -442,6 +443,10 @@ else:
         "data_folder_out": str(BASE_DIR / ".celery" / "broker" / "out"),
         "data_folder_processed": str(BASE_DIR / ".celery" / "broker" / "processed"),
     }
+    # Le transport filesystem ne crée pas ses dossiers : sans eux, toute mise en file échoue
+    # (FileNotFoundError) et la visite virtuelle passe en erreur, notamment sur un conteneur Render neuf.
+    for _folder in set(CELERY_BROKER_TRANSPORT_OPTIONS.values()):
+        os.makedirs(_folder, exist_ok=True)
 # L'avancement de la génération vidéo est suivi dans le modèle Property (pas dans les résultats Celery).
 CELERY_TASK_IGNORE_RESULT = True
 CELERY_ACCEPT_CONTENT = ['json']
