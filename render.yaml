@@ -46,6 +46,7 @@ services:
   - type: web
     name: domiora-mcp
     env: python
+    plan: free
     buildCommand: pip install -r mcp_server/requirements.txt
     startCommand: uvicorn mcp_server.server:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips='*'
     healthCheckPath: /health
@@ -72,3 +73,7 @@ services:
         value: 30
       - key: MCP_RATE_WINDOW_SECONDS
         value: 60
+
+databases:
+  - name: domiora-db
+    plan: free
