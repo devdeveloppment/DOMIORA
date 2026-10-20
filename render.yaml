@@ -19,10 +19,9 @@ services:
         generateValue: true
       - key: DEBUG
         value: "False"
+      # Base PostgreSQL externe (Neon, Supabase...) : coller l'URL de connexion complète.
       - key: DATABASE_URL
-        fromDatabase:
-          name: domiora-db
-          property: connectionString
+        sync: false
       - key: REDIS_URL
         fromService:
           type: keyvalue
@@ -64,7 +63,3 @@ services:
     maxmemoryPolicy: noeviction
 
   # Serveur MCP (mcp_server/) non déployé pour l'instant : le site n'en dépend pas.
-
-databases:
-  - name: domiora-db
-    plan: free
