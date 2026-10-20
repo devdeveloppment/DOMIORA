@@ -228,7 +228,8 @@ DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="DOMIORA <denistchil@gmai
 ADMIN_NOTIFICATION_EMAIL = env("ADMIN_NOTIFICATION_EMAIL", default="denistchil@gmail.com")
 
 # Base URL for n8n webhooks (use ngrok for localhost)
-BASE_URL = env("BASE_URL", default="http://127.0.0.1:8000")
+# Sur Render, RENDER_EXTERNAL_URL (fournie par la plateforme) sert de valeur par défaut.
+BASE_URL = env("BASE_URL", default=env("RENDER_EXTERNAL_URL", default="http://127.0.0.1:8000"))
 
 # Mistral API configuration for the AI assistant
 MISTRAL_API_KEY = env("MISTRAL_API_KEY", default="")
@@ -280,6 +281,8 @@ REST_FRAMEWORK = {
 # Security (mostly relevant once DEBUG=False in production)
 # ----------------------------------------------------------------------------
 CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])
+if env("RENDER_EXTERNAL_URL", default="") and env("RENDER_EXTERNAL_URL") not in CSRF_TRUSTED_ORIGINS:
+    CSRF_TRUSTED_ORIGINS.append(env("RENDER_EXTERNAL_URL"))
 # Développement uniquement : origines ngrok et locales (jamais de confiance CSRF envers
 # des tunnels tiers en production).
 if DEBUG:

@@ -22,17 +22,8 @@ services:
       # Base PostgreSQL externe (Neon, Supabase...) : coller l'URL de connexion complète.
       - key: DATABASE_URL
         sync: false
-      - key: REDIS_URL
-        fromService:
-          type: keyvalue
-          name: domiora-redis
-          property: connectionString
       - key: CLOUDINARY_URL
         sync: false
-      - key: BASE_URL
-        value: https://domiora.onrender.com
-      - key: CSRF_TRUSTED_ORIGINS
-        value: https://domiora.onrender.com
       # Paiements FedaPay (mode par défaut en production). Laisser FEDAPAY_SANDBOX à True
       # tant que les clés de test sont utilisées.
       - key: FEDAPAY_PUBLIC_KEY
@@ -55,11 +46,6 @@ services:
       - key: VIRTUAL_TOUR_FPS
         value: "20"
 
-  # Broker Celery (Render Key Value / Redis), offre gratuite, accès interne uniquement.
-  - type: keyvalue
-    name: domiora-redis
-    plan: free
-    ipAllowList: []
-    maxmemoryPolicy: noeviction
-
+  # Pas de Redis : Render limite à une instance Key Value gratuite par compte. Celery utilise
+  # le broker filesystem, valable car le worker tourne dans le même conteneur (start.sh).
   # Serveur MCP (mcp_server/) non déployé pour l'instant : le site n'en dépend pas.
