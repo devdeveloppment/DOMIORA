@@ -19,3 +19,6 @@ env/
 # File locale du broker Celery (développement)
 .celery/
 private_media/
+
+# Secrets de migration vers la production
+.env.render
