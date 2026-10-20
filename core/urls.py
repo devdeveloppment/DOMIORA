@@ -7,6 +7,8 @@ urlpatterns = [
     path("", views.home, name="home"),
     path("manifest.webmanifest", views.pwa_manifest, name="pwa_manifest"),
     path("sw.js", views.service_worker, name="service_worker"),
+    # Les navigateurs demandent /favicon.ico d'office : redirection vers l'icône du site (plus de 404).
+    path("favicon.ico", views.favicon),
     path("hors-ligne/", views.offline, name="offline"),
     path("a-propos/", views.about, name="about"),
     path("services/", views.services, name="services"),

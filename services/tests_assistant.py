@@ -294,7 +294,7 @@ class AssistantProviderFallbackTests(AssistantFixtureMixin, TestCase):
 
     @override_settings(MISTRAL_API_KEY="m-key", ANTHROPIC_API_KEY="a-key", ANTHROPIC_MODEL="claude-sonnet-5-5")
     @patch("services.llm.requests.post")
-    @patch("services.llm.anthropic.Anthropic")
+    @patch("anthropic.Anthropic")
     def test_claude_answers_general_questions_first(self, client_cls, post):
         create = client_cls.return_value.beta.messages.create
         create.return_value = self.claude_message("Réponse Claude.")
@@ -309,7 +309,7 @@ class AssistantProviderFallbackTests(AssistantFixtureMixin, TestCase):
         self.assertIn("immobilier", kwargs["system"])
 
     @override_settings(MISTRAL_API_KEY="", ANTHROPIC_API_KEY="a-key")
-    @patch("services.llm.anthropic.Anthropic")
+    @patch("anthropic.Anthropic")
     def test_advice_question_goes_to_claude_not_search(self, client_cls):
         client_cls.return_value.beta.messages.create.return_value = self.claude_message("Vérifiez le titre foncier.")
         _, result = handle_assistant_message(
@@ -338,7 +338,7 @@ class AssistantProviderFallbackTests(AssistantFixtureMixin, TestCase):
 
     @override_settings(MISTRAL_API_KEY="m-key", ANTHROPIC_API_KEY="a-key")
     @patch("services.llm.requests.post")
-    @patch("services.llm.anthropic.Anthropic")
+    @patch("anthropic.Anthropic")
     def test_mistral_is_used_when_claude_fails(self, client_cls, post):
         client_cls.return_value.beta.messages.create.side_effect = RuntimeError("429")
         post.return_value = provider_response({"choices": [{"message": {"content": "Réponse Mistral."}}]})
@@ -348,7 +348,7 @@ class AssistantProviderFallbackTests(AssistantFixtureMixin, TestCase):
 
     @override_settings(MISTRAL_API_KEY="m-key", ANTHROPIC_API_KEY="a-key")
     @patch("services.llm.requests.post")
-    @patch("services.llm.anthropic.Anthropic")
+    @patch("anthropic.Anthropic")
     def test_mistral_is_used_when_claude_refuses(self, client_cls, post):
         client_cls.return_value.beta.messages.create.return_value = self.claude_message("", stop_reason="refusal")
         post.return_value = provider_response({"choices": [{"message": {"content": "Réponse Mistral."}}]})
@@ -357,7 +357,7 @@ class AssistantProviderFallbackTests(AssistantFixtureMixin, TestCase):
 
     @override_settings(MISTRAL_API_KEY="m-key", ANTHROPIC_API_KEY="a-key")
     @patch("services.llm.requests.post", side_effect=requests.Timeout())
-    @patch("services.llm.anthropic.Anthropic")
+    @patch("anthropic.Anthropic")
     def test_local_answer_when_all_providers_fail(self, client_cls, _post):
         client_cls.return_value.beta.messages.create.side_effect = RuntimeError("timeout")
         _, result = handle_assistant_message(self.QUESTION, user=AnonymousUser())

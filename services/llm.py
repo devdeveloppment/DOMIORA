@@ -10,15 +10,14 @@ import json
 import logging
 import re
 
-import anthropic
 import requests
 from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
 DEFAULT_TIMEOUT = (5, 15)
-# Claude réfléchit avant de répondre : délai de lecture plus large.
-ANTHROPIC_TIMEOUT = anthropic.Timeout(45.0, connect=5.0)
+# Claude réfléchit avant de répondre : délai de lecture plus large (secondes : lecture, connexion).
+ANTHROPIC_TIMEOUT = (45.0, 5.0)
 # Les tokens de réflexion comptent dans max_tokens : marge minimale.
 ANTHROPIC_MIN_MAX_TOKENS = 4000
 
@@ -109,7 +108,12 @@ def _anthropic(api_key, messages, max_tokens):
     """
     system = "\n\n".join(m["content"] for m in messages if m["role"] == "system")
     conversation = [m for m in messages if m["role"] in ("user", "assistant")]
-    client = anthropic.Anthropic(api_key=api_key, timeout=ANTHROPIC_TIMEOUT, max_retries=1)
+    # Import à la demande : le SDK est lourd ; chargé au démarrage, il retardait la première requête
+    # au point de dépasser le délai de gunicorn sur l'instance gratuite de Render.
+    import anthropic
+
+    read, connect = ANTHROPIC_TIMEOUT
+    client = anthropic.Anthropic(api_key=api_key, timeout=anthropic.Timeout(read, connect=connect), max_retries=1)
     response = client.beta.messages.create(
         model=getattr(settings, "ANTHROPIC_MODEL", "claude-sonnet-5-5"),
         system=system,

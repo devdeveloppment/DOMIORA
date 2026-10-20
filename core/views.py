@@ -303,3 +303,10 @@ def service_worker(request):
 
 def offline(request):
     return render(request, "core/offline.html")
+
+
+def favicon(request):
+    """/favicon.ico (demandé d'office par les navigateurs) → icône du site, URL calculée à la requête."""
+    from django.contrib.staticfiles.storage import staticfiles_storage
+
+    return redirect(staticfiles_storage.url("pwa/icon-192.png"), permanent=True)

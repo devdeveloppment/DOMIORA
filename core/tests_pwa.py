@@ -57,3 +57,27 @@ class HomeGlideTests(TestCase):
         reduced = "".join(css.split("@media (prefers-reduced-motion: reduce)")[1:])
         self.assertIn(".domiora-marquee__group { animation: none;", reduced)
         self.assertIn(".domiora-skyline__layer { animation: none; }", reduced)
+
+
+@override_settings(STORAGES=SIMPLE_STATIC)
+class StartupRegressionTests(TestCase):
+    def test_favicon_redirects_to_site_icon(self):
+        resp = self.client.get("/favicon.ico")
+        self.assertEqual(resp.status_code, 301)
+        self.assertIn("pwa/icon-192", resp["Location"])
+
+    def test_urls_load_without_heavy_ai_sdk(self):
+        """Le SDK Anthropic n'est importé qu'au premier appel : sinon la 1re requête dépassait le délai gunicorn."""
+        import subprocess
+        import sys
+
+        code = ("import os,sys,django;os.environ['DJANGO_SETTINGS_MODULE']='config.settings';django.setup();"
+                "from django.urls import get_resolver;get_resolver().url_patterns;print('anthropic' in sys.modules)")
+        out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, timeout=120)
+        self.assertEqual(out.stdout.strip().splitlines()[-1], "False", out.stderr[-500:])
+
+    def test_gunicorn_timeout_raised(self):
+        from django.conf import settings
+
+        with open(settings.BASE_DIR / "start.sh", encoding="utf-8") as handle:
+            self.assertIn("--timeout 120", handle.read())

@@ -13,4 +13,6 @@ mkdir -p .celery/broker/out .celery/broker/processed
 
 celery -A config worker --pool=solo --concurrency=1 --loglevel=info &
 
-exec gunicorn config.wsgi:application --bind 0.0.0.0:$PORT
+# --timeout 120 : sur l'instance gratuite (CPU partagé), la première requête après un réveil peut
+# dépasser les 30 s par défaut ; gunicorn tuait alors le processus (erreur 500 au premier chargement).
+exec gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --timeout 120
