@@ -1379,3 +1379,76 @@
 /* ============================================================
    END OF DOMIORA DESIGN SYSTEM
    ============================================================ */
+/* ---------------------------------------------------------------------------
+   Accueil : défilé continu des biens
+   Deux copies identiques de la liste glissent de -100 % de leur largeur : la
+   boucle est sans à-coup quel que soit le nombre de biens. Vitesse constante
+   (~5 s par bien), pause au survol et au focus clavier.
+--------------------------------------------------------------------------- */
+.domiora-marquee {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 4%, #000 96%, transparent);
+          mask-image: linear-gradient(to right, transparent, #000 4%, #000 96%, transparent);
+}
+.domiora-marquee__track { display: flex; width: max-content; }
+.domiora-marquee__group {
+  display: flex;
+  gap: 1rem;
+  padding-right: 1rem;
+  min-width: 100vw;
+  justify-content: space-around;
+  animation: domiora-marquee calc(var(--marquee-items, 6) * 5s) linear infinite;
+  will-change: transform;
+}
+.domiora-marquee:hover .domiora-marquee__group,
+.domiora-marquee:focus-within .domiora-marquee__group { animation-play-state: paused; }
+@keyframes domiora-marquee { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-100%, 0, 0); } }
+
+/* ---------------------------------------------------------------------------
+   Accueil : silhouettes de maisons en arrière-plan du héros (parallaxe lente)
+--------------------------------------------------------------------------- */
+.domiora-skyline {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 45%;
+  overflow: hidden;
+  pointer-events: none;
+  perspective: 900px;
+  perspective-origin: 50% 0%;
+}
+.domiora-skyline__layer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 200%;
+  background-repeat: repeat-x;
+  background-position: left bottom;
+  will-change: transform;
+}
+.domiora-skyline__layer--far {
+  height: 75%;
+  background-size: 25% 100%; /* 4 tuiles sur 200 % : -50 % = 2 tuiles exactes, boucle sans saut */
+  opacity: 0.16;
+  animation: domiora-skyline 160s linear infinite;
+  transform-origin: bottom;
+}
+.domiora-skyline__layer--near {
+  height: 55%;
+  background-size: 25% 100%;
+  opacity: 0.22;
+  animation: domiora-skyline 90s linear infinite;
+}
+@keyframes domiora-skyline { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-50%, 0, 0); } }
+
+@media (max-width: 640px) {
+  .domiora-skyline { height: 30%; }
+  .domiora-skyline__layer { background-size: 50% 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .domiora-marquee { -webkit-mask-image: none; mask-image: none; }
+  .domiora-marquee__track { width: auto; overflow-x: auto; scroll-snap-type: x mandatory; padding: 0 1rem; }
+  .domiora-marquee__group { animation: none; min-width: 0; justify-content: flex-start; }
+  .domiora-marquee__group[aria-hidden="true"] { display: none; }
+  .domiora-skyline__layer { animation: none; }
+}

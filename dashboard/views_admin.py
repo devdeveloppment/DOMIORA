@@ -23,126 +23,46 @@ from notifications.models import Notification
 
 @role_required(User.Role.ADMIN)
 def admin_overview(request):
-    """Vue d'accueil de l'administration : statistiques globales et activité récente."""
-    six_months_ago = timezone.now() - timedelta(days=180)
-    
-    # Only use real transactions for statistics - no demo data
-    monthly = (
-        Transaction.objects.filter(transaction_date__gte=six_months_ago)
-        .annotate(month=TruncMonth("transaction_date"))
-        .values("month")
-        .annotate(total=Sum("amount"), count=Count("id"))
-        .order_by("month")
-    )
-    
-    # Handle case with no real transactions
-    if not monthly:
-        # Create empty chart data for last 6 months
-        chart_labels = []
-        chart_values = []
-        for i in range(6):
-            month = timezone.now() - timedelta(days=30*i)
-            chart_labels.append(month.strftime("%b %Y"))
-            chart_values.append(0)
-        chart_labels.reverse()
-        chart_values.reverse()
-    else:
-        chart_labels = [m["month"].strftime("%b %Y") for m in monthly]
-        chart_values = [float(m["total"] or 0) for m in monthly]
+    """Vue d'accueil de l'administration : indicateurs calculés depuis la base (voir dashboard.metrics)."""
+    from appointments.models import Appointment
+    from . import metrics
 
-    # Unified activity feed (Stripe/Notion-style recent activity stream)
+    period, period_label, start = metrics.resolve_period(request.GET.get("periode"))
+    finance = metrics.finance_summary(start)
+    counts = metrics.platform_counts(start)
+    revenue = metrics.monthly_revenue(6)
+    signups = metrics.monthly_counts(User.objects.all(), "date_joined", 6)
+    listings = metrics.monthly_counts(Property.objects.all(), "created_at", 6)
+
+    # Flux d'activité récente (relations chargées en une requête par source).
     activity = []
     for u in User.objects.order_by("-date_joined")[:6]:
-        activity.append({"icon": "👤", "text": f"{u.get_full_name() or u.username} a créé un compte ({u.get_role_display()})", "time": u.date_joined})
+        activity.append({"icon": "user", "text": f"{u.get_full_name() or u.username} a créé un compte ({u.get_role_display()})", "time": u.date_joined})
     for p in Property.objects.order_by("-created_at")[:6]:
-        activity.append({"icon": "🏠", "text": f"Nouveau bien publié : « {p.title} »", "time": p.created_at})
-    for r in PropertyRequest.objects.order_by("-created_at")[:6]:
-        activity.append({"icon": "📨", "text": f"{r.user.get_full_name() or r.user.username} a fait une demande pour « {r.property.title} »", "time": r.created_at})
-    # Only include real transactions in activity feed
-    for t in Transaction.objects.order_by("-created_at")[:6]:
-        activity.append({"icon": "💰", "text": f"Transaction enregistrée : « {t.property.title} » — ${t.amount:,.0f}".replace(",", " "), "time": t.created_at})
+        activity.append({"icon": "home", "text": f"Nouvelle annonce : « {p.title} »", "time": p.created_at})
+    for r in PropertyRequest.objects.select_related("user", "property").order_by("-created_at")[:6]:
+        activity.append({"icon": "inbox", "text": f"{r.user.get_full_name() or r.user.username} a fait une demande pour « {r.property.title} »", "time": r.created_at})
+    for pay in metrics.contact_fee_payments().select_related("client").order_by("-paid_at")[:6]:
+        tag = " (test)" if pay.is_test else ""
+        activity.append({"icon": "pay", "text": f"Mise en relation payée{tag} : {pay.amount} {pay.currency} par {pay.client.get_full_name() or pay.client.username}", "time": pay.paid_at})
     activity.sort(key=lambda a: a["time"], reverse=True)
-    activity = activity[:10]
 
-    # Property distribution
     prop_distribution = list(Property.objects.values("property_type").annotate(count=Count("id")).order_by("-count")[:5])
     for p in prop_distribution:
         p["label"] = str(p["property_type"]).replace("_", " ").title()
 
-    # Enhanced statistics — all aggregated into minimal DB round-trips
-    from favorites.models import Favorite
-    from properties.models import PropertyUnlock
-    from messaging.models import Message
-
-    today = timezone.now().date()
-
-    # Single aggregate for all Property counts
-    prop_agg = Property.objects.aggregate(
-        total=Count('id'),
-        published=Count('id', filter=Q(is_published=True, is_validated=True)),
-        pending_validation=Count('id', filter=Q(is_validated=False)),
-        for_rent=Count('id', filter=Q(transaction_type='location')),
-        for_sale=Count('id', filter=Q(transaction_type='vente')),
-        sold=Count('id', filter=Q(status='vendu')),
-        rented=Count('id', filter=Q(status='loue')),
-        today_new=Count('id', filter=Q(created_at__date=today)),
-        total_views=Sum('views_count'),
-    )
-
-    # Single aggregate for all User counts
-    user_agg = User.objects.aggregate(
-        clients=Count('id', filter=Q(role=User.Role.CLIENT)),
-        owners=Count('id', filter=Q(role=User.Role.OWNER)),
-        verified_owners=Count('id', filter=Q(role=User.Role.OWNER, verification_status=User.VerificationStatus.APPROVED)),
-        new_owners=Count('id', filter=Q(role=User.Role.OWNER, date_joined__gte=six_months_ago)),
-    )
-
-    # Single aggregate for all Transaction amounts (only real transactions)
-    txn_agg = Transaction.objects.aggregate(
-        total_count=Count('id'),
-        total_revenue=Sum('amount'),
-        total_commission=Sum('commission_amount'),
-    )
-    
-    # Log info about real vs demo data
-    import logging
-    logger = logging.getLogger(__name__)
-    logger.info(f"Real transactions count: {txn_agg['total_count']}")
-    logger.info(f"Real total revenue: {txn_agg['total_revenue']}")
-
-    total_favorites = Favorite.objects.count()
-    total_unlocks = PropertyUnlock.objects.count()
-    total_messages = Message.objects.count()
-    pending_requests_count = PropertyRequest.objects.filter(status='en_attente').count()
-
     context = {
         "dash_role": "admin", "active": "overview",
-        "clients_count": user_agg['clients'],
-        "owners_count": user_agg['owners'],
-        "verified_owners": user_agg['verified_owners'],
-        "new_owners_this_month": user_agg['new_owners'],
-        "properties_count": prop_agg['total'],
-        "today_properties": prop_agg['today_new'],
-        "published_properties_count": prop_agg['published'],
-        "transactions_count": txn_agg['total_count'],
-        "pending_requests_count": pending_requests_count,
-        "for_rent_count": prop_agg['for_rent'],
-        "for_sale_count": prop_agg['for_sale'],
-        "sold_count": prop_agg['sold'],
-        "rented_count": prop_agg['rented'],
-        "pending_validation_count": prop_agg['pending_validation'],
-        "total_revenue": txn_agg['total_revenue'] or 0,
-        "total_commission": txn_agg['total_commission'] or 0,
-        "total_views": prop_agg['total_views'] or 0,
-        "total_favorites": total_favorites,
-        "total_unlocks": total_unlocks,
-        "total_messages": total_messages,
-        "recent_transactions": Transaction.objects.select_related("property", "client").order_by("-transaction_date")[:5] if Transaction.objects.exists() else [],
+        "period": period, "period_label": period_label, "periods": metrics.PERIODS,
+        "finance": finance,
+        "counts": counts,
+        "pending_appointments": Appointment.objects.filter(status="en_attente").count(),
+        "recent_payments": metrics.contact_fee_payments().select_related("client", "owner", "property").order_by("-paid_at")[:6],
         "recent_users": User.objects.order_by("-date_joined")[:5],
-        "chart_labels": json.dumps(chart_labels),
-        "chart_values": json.dumps(chart_values),
+        "chart": {"labels": revenue["labels"], "real": revenue["real"], "test": revenue["test"],
+                  "signups": signups, "listings": listings},
         "prop_distribution": prop_distribution,
-        "activity": activity,
+        "activity": activity[:10],
     }
     return render(request, "dashboard/admin/overview.html", context)
 
@@ -183,7 +103,7 @@ def admin_user_delete(request, pk):
 
 @role_required(User.Role.ADMIN)
 def admin_properties(request):
-    properties = Property.objects.select_related("owner").order_by("-created_at")
+    properties = Property.objects.select_related("owner").prefetch_related("images").order_by("-created_at")
     status = request.GET.get("status")
     if status:
         properties = properties.filter(status=status)
@@ -335,27 +255,23 @@ def admin_settings(request):
 
 @role_required(User.Role.ADMIN)
 def admin_finances(request):
-    """Affiche les éléments financiers du système : revenus et paiements."""
-    from django.db.models import Sum
-    from properties.models import PropertyUnlock
+    """Finances : revenus réels et de test séparés, par source et par période."""
+    from . import metrics
 
-    # Only real transactions contribute to revenue
-    total_revenue = Transaction.objects.aggregate(total=Sum("commission_amount"))["total"] or 0
-    recent_unlocks = PropertyUnlock.objects.select_related("user", "property", "property__owner").order_by("-unlocked_at")[:20]
-
-    # Log real revenue info
-    import logging
-    logger = logging.getLogger(__name__)
-    logger.info(f"Real revenue from transactions: {total_revenue}")
-    logger.info(f"Total paid relations: {PropertyUnlock.objects.count()}")
-
+    period, period_label, start = metrics.resolve_period(request.GET.get("periode"))
+    payments = metrics.contact_fee_payments().select_related("client", "owner", "property").order_by("-paid_at")
+    if start:
+        payments = payments.filter(paid_at__gte=start)
+    subs = metrics.subscription_payments().select_related("owner", "plan").order_by("-paid_at")
+    if start:
+        subs = subs.filter(paid_at__gte=start)
     context = {
-        "dash_role": "admin",
-        "active": "finances",
-        "total_revenue": total_revenue,
-        "total_paid_relations": PropertyUnlock.objects.count(),
-        "recent_unlocks": recent_unlocks,
-        "note": "Statistiques basées uniquement sur les transactions réelles (pas de données de test)"
+        "dash_role": "admin", "active": "finances",
+        "period": period, "period_label": period_label, "periods": metrics.PERIODS,
+        "finance": metrics.finance_summary(start),
+        "chart": metrics.monthly_revenue(12),
+        "payments": payments[:25],
+        "subscription_payments": subs[:25],
     }
     return render(request, "dashboard/admin/finances.html", context)
 
@@ -433,13 +349,128 @@ def admin_owners(request):
 
 @role_required(User.Role.ADMIN)
 def admin_stats(request):
-    """Page des statistiques avancées de l'administration."""
-    return render(request, "dashboard/admin/stats.html", {"dash_role": "admin", "active": "stats"})
+    """Statistiques : entonnoir de conversion, annonces les plus vues, répartition par ville."""
+    from favorites.models import Favorite
+    from messaging.models import ListingInquiry
+    from properties.models import PropertyUnlock, PropertyView
+    from . import metrics
+
+    period, period_label, start = metrics.resolve_period(request.GET.get("periode"))
+
+    def since(qs, field):
+        return qs.filter(**{f"{field}__gte": start}) if start else qs
+
+    views = since(PropertyView.objects.all(), "viewed_at")
+    inquiries = since(ListingInquiry.objects.all(), "created_at")
+    inquiry_agg = inquiries.aggregate(total=Count("id"), answered=Count("id", filter=Q(status="answered")))
+    funnel = [
+        ("Vues d'annonces", views.count()),
+        ("Ajouts en favoris", since(Favorite.objects.all(), "created_at").count()),
+        ("Questions avant relation", inquiry_agg["total"]),
+        ("Mises en relation", since(PropertyUnlock.objects.all(), "unlocked_at").count()),
+    ]
+    top = max((n for _, n in funnel), default=0)
+    funnel = [{"label": label, "count": n, "pct": round(100 * n / top) if top else 0} for label, n in funnel]
+
+    top_ids = list(views.values("property_id").annotate(n=Count("id")).order_by("-n")[:10])
+    props = Property.objects.select_related("owner").in_bulk([row["property_id"] for row in top_ids])
+    top_properties = [{"property": props[row["property_id"]], "views": row["n"]} for row in top_ids if row["property_id"] in props]
+
+    by_city = list(
+        Property.objects.filter(is_published=True, is_validated=True)
+        .values("city").annotate(count=Count("id")).order_by("-count")[:8]
+    )
+    city_max = max((c["count"] for c in by_city), default=0)
+    for c in by_city:
+        c["pct"] = round(100 * c["count"] / city_max) if city_max else 0
+
+    return render(request, "dashboard/admin/stats.html", {
+        "dash_role": "admin", "active": "stats",
+        "period": period, "period_label": period_label, "periods": metrics.PERIODS,
+        "funnel": funnel, "top_properties": top_properties, "by_city": by_city,
+        "inquiries": inquiry_agg,
+        "answer_rate": round(100 * inquiry_agg["answered"] / inquiry_agg["total"]) if inquiry_agg["total"] else None,
+        "chart": {
+            "labels": metrics.month_labels(12),
+            "clients": metrics.monthly_counts(User.objects.filter(role=User.Role.CLIENT), "date_joined", 12),
+            "owners": metrics.monthly_counts(User.objects.filter(role=User.Role.OWNER), "date_joined", 12),
+        },
+    })
+
+
+REPORTS = {
+    "paiements": "Mises en relation payées",
+    "abonnements": "Paiements d'abonnement",
+    "utilisateurs": "Utilisateurs inscrits",
+    "annonces": "Annonces",
+}
+
 
 @role_required(User.Role.ADMIN)
 def admin_reports(request):
-    """Page des rapports et analyses de l'administration."""
-    return render(request, "dashboard/admin/reports.html", {"dash_role": "admin", "active": "reports"})
+    """Rapports : exports CSV par période (ouverture directe dans Excel)."""
+    from . import metrics
+
+    period, period_label, start = metrics.resolve_period(request.GET.get("periode"))
+    return render(request, "dashboard/admin/reports.html", {
+        "dash_role": "admin", "active": "reports",
+        "period": period, "period_label": period_label, "periods": metrics.PERIODS,
+        "reports": REPORTS, "finance": metrics.finance_summary(start),
+    })
+
+
+@role_required(User.Role.ADMIN)
+def admin_report_export(request, kind):
+    """Export CSV (séparateur « ; », UTF-8 avec BOM) d'un rapport sur la période demandée."""
+    import csv
+    from django.http import Http404, HttpResponse
+    from . import metrics
+
+    if kind not in REPORTS:
+        raise Http404
+    period, _, start = metrics.resolve_period(request.GET.get("periode"))
+    response = HttpResponse(content_type="text/csv; charset=utf-8")
+    response["Content-Disposition"] = f'attachment; filename="domiora-{kind}-{period}-{timezone.localdate():%Y%m%d}.csv"'
+    response.write("﻿")
+    writer = csv.writer(response, delimiter=";")
+    fmt = lambda dt: timezone.localtime(dt).strftime("%d/%m/%Y %H:%M") if dt else ""
+
+    if kind == "paiements":
+        qs = metrics.contact_fee_payments().select_related("client", "owner", "property").order_by("-paid_at")
+        if start:
+            qs = qs.filter(paid_at__gte=start)
+        writer.writerow(["Date", "Référence", "Client", "Propriétaire", "Annonce", "Montant", "Devise", "Moyen", "Nature"])
+        for p in qs.iterator():
+            writer.writerow([fmt(p.paid_at), p.reference, p.client.username, p.owner.username,
+                             p.property.title if p.property else "", p.amount, p.currency,
+                             p.get_provider_display(), "Test" if p.is_test else "Réel"])
+    elif kind == "abonnements":
+        qs = metrics.subscription_payments().select_related("owner", "plan").order_by("-paid_at")
+        if start:
+            qs = qs.filter(paid_at__gte=start)
+        writer.writerow(["Date", "Référence", "Propriétaire", "Formule", "Motif", "Montant", "Devise", "Nature"])
+        for p in qs.iterator():
+            writer.writerow([fmt(p.paid_at), p.reference, p.owner.username, p.plan.name, p.get_purpose_display(),
+                             p.amount, p.currency, "Test" if p.is_simulated else "Réel"])
+    elif kind == "utilisateurs":
+        qs = User.objects.order_by("-date_joined")
+        if start:
+            qs = qs.filter(date_joined__gte=start)
+        # Pas d'e-mail ni de téléphone : l'export ne contient aucune coordonnée personnelle.
+        writer.writerow(["Inscription", "Identifiant", "Nom", "Rôle", "Vérification", "Actif"])
+        for u in qs.iterator():
+            writer.writerow([fmt(u.date_joined), u.username, u.get_full_name(), u.get_role_display(),
+                             u.get_verification_status_display(), "Oui" if u.is_active else "Non"])
+    else:
+        qs = Property.objects.select_related("owner").order_by("-created_at")
+        if start:
+            qs = qs.filter(created_at__gte=start)
+        writer.writerow(["Création", "Titre", "Type", "Transaction", "Ville", "Prix", "Propriétaire", "Publiée", "Validée", "Vues"])
+        for p in qs.iterator():
+            writer.writerow([fmt(p.created_at), p.title, p.get_property_type_display(), p.get_transaction_type_display(),
+                             p.city, p.price, p.owner.username if p.owner else "", "Oui" if p.is_published else "Non",
+                             "Oui" if p.is_validated else "Non", p.views_count])
+    return response
 
 
 @role_required(User.Role.ADMIN)

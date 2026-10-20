@@ -160,15 +160,15 @@ class User(AbstractUser):
     def verification_badge_html(self):
         """Retourne le HTML du badge de vérification"""
         if self.is_verified_owner:
-            return '<span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full bg-emerald-100 text-emerald-700">✅ Propriétaire vérifié</span>'
+            return '<span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full bg-emerald-100 text-emerald-700"><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Propriétaire vérifié</span>'
         elif self.verification_status == self.VerificationStatus.PENDING_DOCUMENTS:
-            return '<span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full bg-amber-100 text-amber-700">⚪ Documents en cours d\'analyse</span>'
+            return '<span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full bg-amber-100 text-amber-700"><i class="fa-solid fa-hourglass-half" aria-hidden="true"></i> Documents en cours d\'analyse</span>'
         elif self.verification_status == self.VerificationStatus.PENDING_FIELD_VISIT:
-            return '<span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full bg-blue-100 text-blue-700">📍 Vérification terrain programmée</span>'
+            return '<span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full bg-blue-100 text-blue-700"><i class="fa-solid fa-location-dot" aria-hidden="true"></i> Vérification terrain programmée</span>'
         elif self.verification_status == self.VerificationStatus.FIELD_VISIT_COMPLETED:
-            return '<span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full bg-purple-100 text-purple-700">🔍 Vérification terrain effectuée</span>'
+            return '<span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full bg-purple-100 text-purple-700"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> Vérification terrain effectuée</span>'
         elif self.verification_status == self.VerificationStatus.REJECTED:
-            return '<span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full bg-red-100 text-red-700">❌ Identité rejetée</span>'
+            return '<span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full bg-red-100 text-red-700"><i class="fa-solid fa-circle-xmark" aria-hidden="true"></i> Identité rejetée</span>'
         return ''
 
     def get_published_properties_count(self):

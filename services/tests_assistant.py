@@ -380,3 +380,51 @@ class AssistantProviderFallbackTests(AssistantFixtureMixin, TestCase):
         sent = json.dumps([call.kwargs["json"] for call in post.call_args_list], ensure_ascii=False)
         self.assertNotIn("+22890001122", sent)
         self.assertNotIn("@prive.example", sent)
+
+
+@override_settings(**NO_LLM, STORAGES=SIMPLE_STATIC)
+class AssistantPlatformTopicsTests(TestCase):
+    """Nouveaux sujets : réponses issues du fonctionnement réel, adaptées au rôle."""
+
+    def setUp(self):
+        self.owner = make_owner("proprio_topics")
+        self.client_user = User.objects.create_user("client_topics", password="x-Pass-123", role=User.Role.CLIENT)
+
+    def ask(self, text, user=None):
+        return handle_assistant_message(text, user=user or AnonymousUser(), use_llm=False)[1]
+
+    def test_question_before_payment(self):
+        result = self.ask("Est-ce que je peux poser une question avant de payer ?", self.client_user)
+        self.assertEqual(result["intent"], "faq")
+        self.assertIn("3 questions par jour", result["reply"])
+
+    def test_favorites_not_confused_with_publishing(self):
+        self.assertIn("favoris", self.ask("Comment ajouter un bien en favori ?")["reply"])
+
+    @override_settings(OWNER_SUBSCRIPTIONS_ENABLED=False)
+    def test_subscription_disabled_says_publishing_is_free(self):
+        reply = self.ask("Comment fonctionne l'abonnement ?", self.owner)["reply"]
+        self.assertIn("gratuite", reply)
+        self.assertNotIn("FCFA /", reply)
+
+    @override_settings(OWNER_SUBSCRIPTIONS_ENABLED=True)
+    def test_subscription_lists_only_active_plans_from_database(self):
+        from owner_subscriptions.models import Plan
+
+        Plan.objects.create(code="visible", name="Visibilité Plus", price_xof=4321, is_active=True)
+        Plan.objects.create(code="cache", name="Formule cachée", price_xof=9999, is_active=False)
+        reply = self.ask("Comment fonctionne l'abonnement ?", self.owner)["reply"]
+        self.assertIn("4321 FCFA", reply)
+        self.assertNotIn("Formule cachée", reply)
+
+    def test_listing_advice_for_owner(self):
+        result = self.ask("Comment améliorer mon annonce pour avoir plus de vues ?", self.owner)
+        self.assertIn("photos", result["reply"])
+        self.assertTrue(any("statistiques" in a["label"].lower() for a in result.get("actions", [])))
+
+    def test_role_guidance_matches_role(self):
+        from services.assistant_knowledge import role_guidance
+
+        self.assertIn("PROPRIÉTAIRE", role_guidance(self.owner))
+        self.assertIn("CLIENT", role_guidance(self.client_user))
+        self.assertIn("pas connecté", role_guidance(AnonymousUser()))

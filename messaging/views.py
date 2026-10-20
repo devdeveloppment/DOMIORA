@@ -72,7 +72,7 @@ def start_conversation(request, owner_id):
         Message.objects.create(conversation=conversation, sender=request.user, body=initial_message)
         Notification.objects.create(
             user=owner,
-            title="💬 Nouveau message",
+            title="Nouveau message",
             message=f"{request.user.get_full_name() or request.user.username} vous a envoyé un message pour « {property_obj.title if property_obj else 'un bien'} ».",
             notification_type="systeme",
             link=f"/dashboard/proprietaire/messagerie/{conversation.pk}/",
@@ -191,7 +191,7 @@ def request_visit(request, pk):
             msg = Message.objects.create(
                 conversation=conversation,
                 sender=request.user,
-                body=f"📅 Demande de visite : {visit_request.proposed_date.strftime('%d/%m/%Y à %H:%M')}\n{visit_request.message}",
+                body=f"Demande de visite : {visit_request.proposed_date.strftime('%d/%m/%Y à %H:%M')}\n{visit_request.message}",
                 message_type=Message.MessageType.VISIT_REQUEST,
                 proposed_date=visit_request.proposed_date,
                 visit_request=visit_request
@@ -200,7 +200,7 @@ def request_visit(request, pk):
             # Notify owner
             Notification.objects.create(
                 user=conversation.owner,
-                title="📅 Nouvelle demande de visite",
+                title="Nouvelle demande de visite",
                 message=f"{request.user.get_full_name() or request.user.username} souhaite visiter « {conversation.property.title if conversation.property else 'votre bien'} » le {visit_request.proposed_date.strftime('%d/%m/%Y à %H:%M')}.",
                 notification_type="systeme",
                 link=f"/dashboard/proprietaire/messagerie/{pk}/",
@@ -236,7 +236,7 @@ def accept_visit(request, pk, visit_id):
     Message.objects.create(
         conversation=conversation,
         sender=request.user,
-        body=f"✅ Votre demande de visite pour le {visit_request.proposed_date.strftime('%d/%m/%Y à %H:%M')} a été acceptée.",
+        body=f"Votre demande de visite pour le {visit_request.proposed_date.strftime('%d/%m/%Y à %H:%M')} a été acceptée.",
         message_type=Message.MessageType.VISIT_ACCEPTED,
         proposed_date=visit_request.proposed_date
     )
@@ -244,7 +244,7 @@ def accept_visit(request, pk, visit_id):
     # Notify client
     Notification.objects.create(
         user=conversation.buyer,
-        title="✅ Demande de visite acceptée",
+        title="Demande de visite acceptée",
         message=f"Le propriétaire a accepté votre visite pour « {conversation.property.title if conversation.property else 'le bien'} » le {visit_request.proposed_date.strftime('%d/%m/%Y à %H:%M')}.",
         notification_type="systeme",
         link=f"/dashboard/client/messagerie/{pk}/",
@@ -272,7 +272,7 @@ def refuse_visit(request, pk, visit_id):
     Message.objects.create(
         conversation=conversation,
         sender=request.user,
-        body=f"❌ Votre demande de visite pour le {visit_request.proposed_date.strftime('%d/%m/%Y à %H:%M')} a été refusée.",
+        body=f"Votre demande de visite pour le {visit_request.proposed_date.strftime('%d/%m/%Y à %H:%M')} a été refusée.",
         message_type=Message.MessageType.VISIT_REFUSED,
         proposed_date=visit_request.proposed_date
     )
@@ -280,7 +280,7 @@ def refuse_visit(request, pk, visit_id):
     # Notify client
     Notification.objects.create(
         user=conversation.buyer,
-        title="❌ Demande de visite refusée",
+        title="Demande de visite refusée",
         message=f"Le propriétaire a refusé votre demande de visite pour « {conversation.property.title if conversation.property else 'le bien'} ».",
         notification_type="systeme",
         link=f"/dashboard/client/messagerie/{pk}/",
@@ -313,7 +313,7 @@ def propose_visit(request, pk, visit_id):
                 visit_request.save()
                 
                 # Create message about new proposal
-                message_body = f"📅 Nouvelle proposition : {new_date.strftime('%d/%m/%Y à %H:%M')}"
+                message_body = f"Nouvelle proposition : {new_date.strftime('%d/%m/%Y à %H:%M')}"
                 if response_message:
                     message_body += f"\n{response_message}"
                 
@@ -328,7 +328,7 @@ def propose_visit(request, pk, visit_id):
                 # Notify client
                 Notification.objects.create(
                     user=conversation.buyer,
-                    title="📅 Nouvelle date proposée",
+                    title="Nouvelle date proposée",
                     message=f"Le propriétaire a proposé une nouvelle date pour la visite de « {conversation.property.title if conversation.property else 'le bien'} » : {new_date.strftime('%d/%m/%Y à %H:%M')}.",
                     notification_type="systeme",
                     link=f"/dashboard/client/messagerie/{pk}/",
@@ -377,7 +377,7 @@ def request_rendezvous(request, pk):
             msg = Message.objects.create(
                 conversation=conversation,
                 sender=request.user,
-                body=f"🤝 Demande de rendez-vous : {rendezvous_request.proposed_date.strftime('%d/%m/%Y à %H:%M')}\n{rendezvous_request.message}",
+                body=f"Demande de rendez-vous : {rendezvous_request.proposed_date.strftime('%d/%m/%Y à %H:%M')}\n{rendezvous_request.message}",
                 message_type=Message.MessageType.RENDEZVOUS_REQUEST,
                 proposed_date=rendezvous_request.proposed_date,
                 rendezvous_request=rendezvous_request
@@ -386,7 +386,7 @@ def request_rendezvous(request, pk):
             # Notify owner
             Notification.objects.create(
                 user=conversation.owner,
-                title="🤝 Nouvelle demande de rendez-vous",
+                title="Nouvelle demande de rendez-vous",
                 message=f"{request.user.get_full_name() or request.user.username} souhaite prendre rendez-vous pour « {conversation.property.title if conversation.property else 'votre bien'} » le {rendezvous_request.proposed_date.strftime('%d/%m/%Y à %H:%M')}.",
                 notification_type="systeme",
                 link=f"/dashboard/proprietaire/messagerie/{pk}/",
@@ -422,7 +422,7 @@ def accept_rendezvous(request, pk, rendezvous_id):
     Message.objects.create(
         conversation=conversation,
         sender=request.user,
-        body=f"✅ Votre demande de rendez-vous pour le {rendezvous_request.proposed_date.strftime('%d/%m/%Y à %H:%M')} a été acceptée.",
+        body=f"Votre demande de rendez-vous pour le {rendezvous_request.proposed_date.strftime('%d/%m/%Y à %H:%M')} a été acceptée.",
         message_type=Message.MessageType.RENDEZVOUS_ACCEPTED,
         proposed_date=rendezvous_request.proposed_date
     )
@@ -430,7 +430,7 @@ def accept_rendezvous(request, pk, rendezvous_id):
     # Notify client
     Notification.objects.create(
         user=conversation.buyer,
-        title="✅ Demande de rendez-vous acceptée",
+        title="Demande de rendez-vous acceptée",
         message=f"Le propriétaire a accepté votre rendez-vous pour « {conversation.property.title if conversation.property else 'le bien'} » le {rendezvous_request.proposed_date.strftime('%d/%m/%Y à %H:%M')}.",
         notification_type="systeme",
         link=f"/dashboard/client/messagerie/{pk}/",
@@ -458,7 +458,7 @@ def refuse_rendezvous(request, pk, rendezvous_id):
     Message.objects.create(
         conversation=conversation,
         sender=request.user,
-        body=f"❌ Votre demande de rendez-vous pour le {rendezvous_request.proposed_date.strftime('%d/%m/%Y à %H:%M')} a été refusée.",
+        body=f"Votre demande de rendez-vous pour le {rendezvous_request.proposed_date.strftime('%d/%m/%Y à %H:%M')} a été refusée.",
         message_type=Message.MessageType.RENDEZVOUS_REFUSED,
         proposed_date=rendezvous_request.proposed_date
     )
@@ -466,7 +466,7 @@ def refuse_rendezvous(request, pk, rendezvous_id):
     # Notify client
     Notification.objects.create(
         user=conversation.buyer,
-        title="❌ Demande de rendez-vous refusée",
+        title="Demande de rendez-vous refusée",
         message=f"Le propriétaire a refusé votre rendez-vous pour « {conversation.property.title if conversation.property else 'le bien'} ».",
         notification_type="systeme",
         link=f"/dashboard/client/messagerie/{pk}/",
@@ -499,7 +499,7 @@ def propose_rendezvous(request, pk, rendezvous_id):
                 rendezvous_request.save()
                 
                 # Create message about new proposal
-                message_body = f"📅 Nouvelle proposition : {new_date.strftime('%d/%m/%Y à %H:%M')}"
+                message_body = f"Nouvelle proposition : {new_date.strftime('%d/%m/%Y à %H:%M')}"
                 if response_message:
                     message_body += f"\n{response_message}"
                 
@@ -514,7 +514,7 @@ def propose_rendezvous(request, pk, rendezvous_id):
                 # Notify client
                 Notification.objects.create(
                     user=conversation.buyer,
-                    title="📅 Nouvelle date proposée",
+                    title="Nouvelle date proposée",
                     message=f"Le propriétaire a proposé une nouvelle date pour le rendez-vous de « {conversation.property.title if conversation.property else 'le bien'} » : {new_date.strftime('%d/%m/%Y à %H:%M')}.",
                     notification_type="systeme",
                     link=f"/dashboard/client/messagerie/{pk}/",

@@ -280,21 +280,21 @@ class Property(models.Model):
             return ""
         if self.owner.is_verified_owner:
             if self.owner.verification_is_fresh:
-                return f"✅ Vérifié DOMIORA · {self.owner.verification_date:%m/%Y}"
-            return "✅ Propriétaire vérifié · contrôle à renouveler"
+                return f"Vérifié DOMIORA · {self.owner.verification_date:%m/%Y}"
+            return "Propriétaire vérifié · contrôle à renouveler"
         if self.owner.verification_status in [self.owner.VerificationStatus.PENDING_DOCUMENTS, 
                                             self.owner.VerificationStatus.PENDING_FIELD_VISIT,
                                             self.owner.VerificationStatus.FIELD_VISIT_COMPLETED]:
-            return "⚪ Vérification en cours"
+            return "Vérification en cours"
         return ""
 
     @property
     def verification_badge_html(self):
         """Return HTML for verification badge"""
         if self.is_validated:
-            return '<span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full bg-emerald-100 text-emerald-700">✔️ Annonce vérifiée</span>'
+            return '<span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full bg-emerald-100 text-emerald-700"><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Annonce vérifiée</span>'
         elif self.validation_status == self.ValidationStatus.PENDING:
-            return '<span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full bg-amber-100 text-amber-700">⏳ En attente</span>'
+            return '<span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full bg-amber-100 text-amber-700"><i class="fa-solid fa-hourglass-half" aria-hidden="true"></i> En attente</span>'
         return ''
 
     @property
@@ -309,11 +309,11 @@ class Property(models.Model):
         """Return list of automatic status badges"""
         badges = []
         if self.is_new:
-            badges.append(('🟢 Nouvelle annonce', 'bg-green-100 text-green-700'))
+            badges.append(('Nouvelle annonce', 'bg-green-100 text-green-700', 'fa-bolt'))
         if self.views_count > 100:
-            badges.append(('🔥 Très consultée', 'bg-orange-100 text-orange-700'))
+            badges.append(('Très consultée', 'bg-orange-100 text-orange-700', 'fa-fire'))
         if self.favorites_count > 10:
-            badges.append(('⭐ Populaire', 'bg-purple-100 text-purple-700'))
+            badges.append(('Populaire', 'bg-purple-100 text-purple-700', 'fa-star'))
         return badges
 
     @property

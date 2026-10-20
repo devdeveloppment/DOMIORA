@@ -3,7 +3,7 @@
 {% block content %}
 <section class="bg-primary-700 py-12">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <h1 class="text-3xl font-extrabold font-display text-white">⚖ Comparateur de biens</h1>
+    <h1 class="text-3xl font-extrabold font-display text-white"><i class="fa-solid fa-scale-balanced" aria-hidden="true"></i> Comparateur de biens</h1>
     <p class="text-white/50 mt-1">Comparez jusqu'à 3 propriétés côte à côte pour faire le meilleur choix.</p>
   </div>
 </section>
@@ -14,7 +14,7 @@
   <div x-data="compareAnalysis('{% for p in properties %}{{ p.pk }}{% if not forloop.last %},{% endif %}{% endfor %}')" class="mb-8 bg-white rounded-2xl shadow-card border border-gray-100 p-5">
     <div class="flex flex-wrap items-center justify-between gap-3">
       <div>
-        <h2 class="font-bold text-gray-900">✨ Analyse IA de la comparaison</h2>
+        <h2 class="font-bold text-gray-900"><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> Analyse IA de la comparaison</h2>
         <p class="text-xs text-gray-500">Basée uniquement sur les informations renseignées dans les annonces.</p>
       </div>
       <button type="button" @click="run()" :disabled="loading" class="bg-primary-600 hover:bg-primary-700 disabled:bg-gray-300 text-white text-sm font-semibold rounded-full px-5 py-2.5 transition" x-text="loading ? 'Analyse en cours…' : (data ? 'Relancer l’analyse' : 'Analyser avec l’IA')"></button>
@@ -74,7 +74,7 @@
         <tr>
           <td class="px-4 py-3 font-semibold text-gray-500">{{ amenity }}</td>
           {% for p in properties %}
-          <td class="px-4 py-3">{% if amenity in p.amenity_names %}<span class="text-emerald-500 font-bold">✓</span>{% else %}<span class="text-gray-300">—</span>{% endif %}</td>
+          <td class="px-4 py-3">{% if amenity in p.amenity_names %}<span class="text-emerald-500 font-bold"><i class="fa-solid fa-check" aria-hidden="true"></i></span>{% else %}<span class="text-gray-300">—</span>{% endif %}</td>
           {% endfor %}
         </tr>
         {% endfor %}

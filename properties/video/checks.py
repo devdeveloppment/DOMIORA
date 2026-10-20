@@ -2,7 +2,8 @@
 Contrôles Django (`manage.py check`) de la configuration de production des visites virtuelles.
 
 En production (DEBUG=False), la génération exige :
-- REDIS_URL : broker partagé entre le service web et le worker Celery ;
+- REDIS_URL si le worker Celery tourne dans un service séparé (sans Redis, le broker filesystem
+  ne fonctionne que si le worker tourne dans le même conteneur que le site, cas de start.sh) ;
 - CLOUDINARY_URL : stockage durable des vidéos (le disque Render est éphémère).
 """
 from django.conf import settings
@@ -16,9 +17,9 @@ def virtual_tour_production_checks(app_configs, **kwargs):
     messages = []
     if not getattr(settings, "REDIS_URL", ""):
         messages.append(Warning(
-            "REDIS_URL n'est pas défini : les visites virtuelles ne seront jamais générées en production "
-            "(le broker filesystem n'est pas partagé entre le service web et le worker).",
-            hint="Définir REDIS_URL (Render Key Value) sur le service web et sur le worker Celery.",
+            "REDIS_URL n'est pas défini : broker filesystem utilisé. Les visites virtuelles ne sont générées que si "
+            "le worker Celery tourne dans le même conteneur que le site (start.sh).",
+            hint="Pour un worker séparé, définir REDIS_URL (Render Key Value) sur le service web et sur le worker.",
             id="domiora.W001",
         ))
     if not getattr(settings, "CLOUDINARY_URL", None):

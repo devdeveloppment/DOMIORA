@@ -60,17 +60,14 @@ def owner_overview(request):
     rented_count = property_stats['rented_count']
     published_count = property_stats['published_count']
 
-    views_chart = (
-        PropertyView.objects.filter(property__owner=request.user, viewed_at__gte=six_months_ago)
-        .select_related('property')
-        .annotate(month=TruncMonth("viewed_at"))
-        .values("month")
-        .annotate(total=Count("id"))
-        .order_by("month")
-    )
-    chart_labels = [item["month"].strftime("%b %Y") for item in views_chart]
-    chart_values = [item["total"] for item in views_chart]
-    
+    from . import metrics
+
+    chart = {
+        "labels": metrics.month_labels(6),
+        "views": metrics.monthly_counts(PropertyView.objects.filter(property__owner=request.user), "viewed_at", 6),
+        "favorites": metrics.monthly_counts(Favorite.objects.filter(property__owner=request.user), "created_at", 6),
+        "relations": metrics.monthly_counts(PropertyUnlock.objects.filter(property__owner=request.user), "unlocked_at", 6),
+    }
     context = {
         "dash_role": "owner",
         "active": "overview",
@@ -90,8 +87,7 @@ def owner_overview(request):
         "sold_count": sold_count,
         "rented_count": rented_count,
         "recent_properties": properties.order_by("-created_at")[:5],
-        "chart_labels": json.dumps(chart_labels),
-        "chart_values": json.dumps(chart_values),
+        "chart": chart,
     }
     return render(request, "dashboard/owner/overview.html", context)
 
@@ -432,7 +428,40 @@ def owner_published_properties(request):
 
 @role_required(User.Role.OWNER)
 def owner_stats(request):
-    return render(request, "dashboard/owner/stats.html", {"dash_role": "owner", "active": "stats"})
+    """Performance par annonce sur la période : vues, favoris, mises en relation, conversations."""
+    from favorites.models import Favorite
+    from messaging.models import Conversation
+    from properties.models import PropertyUnlock, PropertyView
+    from . import metrics
+
+    period, period_label, start = metrics.resolve_period(request.GET.get("periode"))
+
+    def per_property(qs, date_field):
+        if start:
+            qs = qs.filter(**{f"{date_field}__gte": start})
+        return dict(qs.values_list("property_id").annotate(n=Count("id")))
+
+    mine = {"property__owner": request.user}
+    views = per_property(PropertyView.objects.filter(**mine), "viewed_at")
+    favorites = per_property(Favorite.objects.filter(**mine), "created_at")
+    relations = per_property(PropertyUnlock.objects.filter(**mine), "unlocked_at")
+    conversations = per_property(Conversation.objects.filter(owner=request.user), "created_at")
+
+    rows = []
+    for prop in Property.objects.filter(owner=request.user).order_by("-created_at"):
+        v = views.get(prop.pk, 0)
+        r = relations.get(prop.pk, 0)
+        rows.append({
+            "property": prop, "views": v, "favorites": favorites.get(prop.pk, 0), "relations": r,
+            "conversations": conversations.get(prop.pk, 0),
+            "conversion": round(100 * r / v, 1) if v else None,
+        })
+    totals = {k: sum(row[k] for row in rows) for k in ("views", "favorites", "relations", "conversations")}
+    return render(request, "dashboard/owner/stats.html", {
+        "dash_role": "owner", "active": "stats",
+        "period": period, "period_label": period_label, "periods": metrics.PERIODS,
+        "rows": rows, "totals": totals,
+    })
 
 @role_required(User.Role.OWNER)
 def owner_settings(request):
@@ -489,7 +518,7 @@ def owner_conversation_detail(request, pk):
             # Notify client
             Notification.objects.create(
                 user=conversation.buyer,
-                title="💬 Nouveau message",
+                title="Nouveau message",
                 message=msg.body[:120],
                 notification_type="systeme",
                 link=f"/dashboard/client/messagerie/{pk}/",

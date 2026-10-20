@@ -1,0 +1,43 @@
+{% extends "dashboard/dashboard_base.html" %}
+{% block title %}Signalement #{{ report.pk }} — {{ site_settings.site_name }}{% endblock %}
+{% block dashboard_content %}
+<div class="w-full max-w-3xl">
+  <a href="{% url 'dashboard:client_reports' %}" class="text-sm text-gray-500 hover:text-gray-700">← Mes signalements</a>
+  <div class="flex flex-wrap items-center gap-3 mt-2 mb-6">
+    <h1 class="text-2xl font-bold font-display text-gray-900">Signalement #{{ report.pk }}</h1>
+    {% include "moderation/_status_badge.html" %}
+  </div>
+
+  <section class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sm:p-6 text-sm space-y-2 mb-6">
+    <p><span class="text-gray-500">Type :</span> {{ report.get_category_display }}</p>
+    {% if report.property %}<p><span class="text-gray-500">Annonce :</span> <a href="{{ report.property.get_absolute_url }}" hx-boost="false" class="font-semibold text-primary-700 hover:underline">{{ report.property.title }}</a></p>{% endif %}
+    {% if report.reported_owner %}<p><span class="text-gray-500">Propriétaire :</span> {{ report.reported_owner.get_full_name|default:report.reported_owner.username }}</p>{% endif %}
+    <p><span class="text-gray-500">Motif :</span> <strong>{{ report.get_reason_display }}</strong></p>
+    {% if report.details %}<p class="whitespace-pre-line rounded-xl bg-gray-50 p-3">{{ report.details }}</p>{% endif %}
+    {% if report.attachment %}<p><a href="{% url 'dashboard:report_attachment' report.pk %}" target="_blank" rel="noopener" class="font-semibold text-primary-700 hover:underline">Voir la pièce jointe</a></p>{% endif %}
+  </section>
+
+  {% if report.public_message %}
+  <section class="rounded-2xl border border-primary-100 bg-primary-50 p-5 mb-6">
+    <h2 class="text-sm font-bold text-primary-900 mb-1">Message de l'équipe DOMIORA</h2>
+    <p class="text-sm text-primary-900 whitespace-pre-line">{{ report.public_message }}</p>
+  </section>
+  {% endif %}
+
+  <section class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sm:p-6">
+    <h2 class="font-bold text-gray-900 mb-4">Suivi</h2>
+    <ol class="relative border-l border-gray-200 ml-2 space-y-5">
+      {% for e in events %}
+      <li class="ml-5">
+        <span class="absolute -left-1.5 mt-1.5 h-3 w-3 rounded-full {% if e.action == 'created' %}bg-sky-500{% elif e.action == 'message' %}bg-primary-600{% else %}bg-amber-500{% endif %}"></span>
+        <p class="text-sm font-semibold text-gray-900">
+          {% if e.action == 'created' %}Signalement envoyé{% elif e.action == 'status' %}Statut : {% for value, label in report.Status.choices %}{% if value == e.to_status %}{{ label }}{% endif %}{% endfor %}{% else %}Message de l'équipe{% endif %}
+        </p>
+        <p class="text-xs text-gray-500">{{ e.created_at|date:"d/m/Y H:i" }}</p>
+      </li>
+      {% endfor %}
+    </ol>
+  </section>
+  <p class="text-xs text-gray-500 mt-4">L'administration examine les faits avant toute décision. Les échanges internes de l'équipe ne sont pas affichés.</p>
+</div>
+{% endblock %}

@@ -70,10 +70,18 @@ def start_contact_payment(request, client, property_obj):
         attempt = PaymentAttempt.objects.create(
             client=client, owner=owner, property=property_obj, provider=provider.name,
             amount=settings.CONTACT_FEE_AMOUNT, currency=settings.CONTACT_FEE_CURRENCY,
+            is_test=is_test_payment(provider.name),
         )
     url = provider.start(request, attempt)
     logger.info("Paiement %s initié (%s) client=%s owner=%s", attempt.reference, provider.name, client.pk, owner.pk)
     return attempt, url
+
+
+def is_test_payment(provider_name):
+    """Simulation ou FedaPay en sandbox : paiement de test, exclu des revenus réels."""
+    if provider_name == PaymentAttempt.Provider.SIMULATION:
+        return True
+    return bool(getattr(settings, "FEDAPAY_SANDBOX", True))
 
 
 def _record_event(attempt, event_key, source, reported_status, note=""):

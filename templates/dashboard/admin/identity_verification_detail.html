@@ -249,7 +249,7 @@
         <div class="mt-3 pt-3 border-t border-purple-200">
           <p class="text-xs text-purple-600 font-semibold">Bien vérifié</p>
           <p class="text-sm {% if verification.property_verified %}text-emerald-600 font-bold{% else %}text-rose-600 font-bold{% endif %}">
-            {% if verification.property_verified %}✓ Oui{% else %}✗ Non{% endif %}
+            {% if verification.property_verified %}<i class="fa-solid fa-check" aria-hidden="true"></i> Oui{% else %}<i class="fa-solid fa-xmark" aria-hidden="true"></i> Non{% endif %}
           </p>
           {% if verification.property_verification_notes %}
           <p class="text-xs text-purple-600 font-semibold mt-2">Notes sur le bien</p>

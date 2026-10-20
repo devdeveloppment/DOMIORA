@@ -52,7 +52,7 @@
     <h3 class="font-extrabold text-gray-900">{{ plan.name }}</h3>
     <p class="mt-2"><span class="text-2xl font-extrabold text-primary-600">{{ plan.price_xof|intcomma }} FCFA</span><span class="text-sm text-gray-500"> / {{ plan.period_days }} jours</span></p>
     {% if plan.is_proposal and not plan.is_free %}<p class="text-[11px] font-semibold text-amber-700">Tarif envisagé, non définitif</p>{% endif %}
-    <ul class="mt-3 text-sm text-gray-700 space-y-1 flex-1">{% for f in plan.features %}<li>✓ {{ f }}</li>{% endfor %}</ul>
+    <ul class="mt-3 text-sm text-gray-700 space-y-1 flex-1">{% for f in plan.features %}<li><i class="fa-solid fa-check" aria-hidden="true"></i> {{ f }}</li>{% endfor %}</ul>
     <form method="post" action="{% url 'dashboard:owner_subscription_action' %}" class="mt-4">{% csrf_token %}
       <input type="hidden" name="action" value="subscribe"><input type="hidden" name="plan" value="{{ plan.code }}">
       {% if active_plan.pk == plan.pk %}

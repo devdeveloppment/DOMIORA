@@ -11,15 +11,15 @@
   <!-- Background Image -->
   <div class="absolute inset-0 z-0">
     {% if request_get.transaction == 'vente' %}
-    <img src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80" 
+    <img src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80" srcset="https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&q=80&w=800 800w, https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&q=80&w=1280 1280w, https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80 1920w" sizes="100vw" decoding="async" fetchpriority="high" 
          alt="Acheter un bien" 
          class="w-full h-full object-cover">
     {% elif request_get.transaction == 'location' %}
-    <img src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80" 
+    <img src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80" srcset="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?ixlib=rb-4.0.3&auto=format&fit=crop&q=80&w=800 800w, https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?ixlib=rb-4.0.3&auto=format&fit=crop&q=80&w=1280 1280w, https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80 1920w" sizes="100vw" decoding="async" fetchpriority="high" 
          alt="Louer un bien" 
          class="w-full h-full object-cover">
     {% else %}
-    <img src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80" 
+    <img src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80" srcset="https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&q=80&w=800 800w, https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&q=80&w=1280 1280w, https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80 1920w" sizes="100vw" decoding="async" fetchpriority="high" 
          alt="Toutes les propriétés" 
          class="w-full h-full object-cover">
     {% endif %}
@@ -40,7 +40,7 @@
       <input type="text" name="q" value="{{ request_get.q }}" placeholder="Cherchez une ville, un quartier ou un bien" class="w-full max-w-2xl rounded-full px-4 py-3 text-sm bg-white/95 shadow-sm border border-white/20 focus:outline-none focus:ring-2 focus:ring-primary-400 glass">
       <button type="submit" class="ml-2 rounded-full bg-primary-600 hover:bg-primary-700 text-white px-4 py-3 font-semibold btn-premium btn-premium-primary">Rechercher</button>
     </form>
-    <a href="{% url 'properties:ai_search' %}" class="inline-flex items-center gap-1.5 mt-4 text-sm font-semibold text-white/90 hover:text-white underline underline-offset-4 transition">✨ Ou décrivez votre recherche avec l'IA</a>
+    <a href="{% url 'properties:ai_search' %}" class="inline-flex items-center gap-1.5 mt-4 text-sm font-semibold text-white/90 hover:text-white underline underline-offset-4 transition"><svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg> Ou décrivez votre recherche avec l'IA</a>
   </div>
 </section>
 
@@ -50,7 +50,7 @@
     <aside class="lg:col-span-1">
       <form method="get" class="glass-premium bg-white/80 bg-white/80 backdrop-blur-xl rounded-2xl shadow-card border border-gray-100 border-gray-100 p-5 sticky top-24 space-y-5" data-slide-left>
         <div class="flex items-center justify-between">
-          <h3 class="font-bold flex items-center gap-2">⚙ Filtres</h3>
+          <h3 class="font-bold flex items-center gap-2"><svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg> Filtres</h3>
           <a href="{% url 'properties:list' %}" class="text-xs text-primary-600 hover:underline transition">Réinitialiser</a>
         </div>
 
@@ -177,9 +177,9 @@
             </select>
           </form>
           <div class="flex border border-gray-200 rounded-full overflow-hidden text-sm">
-            <a href="?{{ request_get.urlencode }}&view=grid" class="px-3 py-2 transition-all duration-300 {% if view_mode == 'grid' %}bg-primary-600 text-white{% else %}hover:bg-gray-100 hover:bg-gray-100{% endif %}">▦</a>
-            <a href="?{{ request_get.urlencode }}&view=list" class="px-3 py-2 transition-all duration-300 {% if view_mode == 'list' %}bg-primary-600 text-white{% else %}hover:bg-gray-100 hover:bg-gray-100{% endif %}">☰</a>
-            <a href="?{{ request_get.urlencode }}&view=map" class="px-3 py-2 transition-all duration-300 {% if view_mode == 'map' %}bg-primary-600 text-white{% else %}hover:bg-gray-100 hover:bg-gray-100{% endif %}"></a>
+            <a href="?{{ request_get.urlencode }}&view=grid" class="inline-flex items-center px-3 py-2 transition-all duration-300 {% if view_mode == 'grid' %}bg-primary-600 text-white{% else %}hover:bg-gray-100 hover:bg-gray-100{% endif %}" aria-label="Affichage grille" title="Grille"><svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg></a>
+            <a href="?{{ request_get.urlencode }}&view=list" class="inline-flex items-center px-3 py-2 transition-all duration-300 {% if view_mode == 'list' %}bg-primary-600 text-white{% else %}hover:bg-gray-100 hover:bg-gray-100{% endif %}" aria-label="Affichage liste" title="Liste"><svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg></a>
+            <a href="?{{ request_get.urlencode }}&view=map" class="inline-flex items-center px-3 py-2 transition-all duration-300 {% if view_mode == 'map' %}bg-primary-600 text-white{% else %}hover:bg-gray-100 hover:bg-gray-100{% endif %}" aria-label="Affichage carte" title="Carte"><svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg></a>
           </div>
         </div>
       </div>

@@ -2,7 +2,7 @@
   <h2 class="font-bold text-gray-900 mb-3">Checklist</h2>
   <ul class="space-y-2 text-sm">
     {% for item in mission.checklist %}
-    <li class="flex gap-2"><span aria-hidden="true">{% if item.checked %}✅{% else %}⬜{% endif %}</span><span><span class="sr-only">{% if item.checked %}Contrôlé :{% else %}Non contrôlé :{% endif %}</span>{{ item.label }}{% if item.note %}<span class="block text-xs text-gray-500">{{ item.note }}</span>{% endif %}</span></li>
+    <li class="flex gap-2"><span aria-hidden="true">{% if item.checked %}<i class="fa-solid fa-circle-check" aria-hidden="true"></i>{% else %}<i class="fa-regular fa-square" aria-hidden="true"></i>{% endif %}</span><span><span class="sr-only">{% if item.checked %}Contrôlé :{% else %}Non contrôlé :{% endif %}</span>{{ item.label }}{% if item.note %}<span class="block text-xs text-gray-500">{{ item.note }}</span>{% endif %}</span></li>
     {% endfor %}
   </ul>
   {% if mission.observations %}<h3 class="font-bold text-sm mt-4">Observations</h3><p class="text-sm text-gray-700 whitespace-pre-line">{{ mission.observations }}</p>{% endif %}

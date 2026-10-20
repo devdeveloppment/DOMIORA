@@ -52,6 +52,8 @@ class PaymentAttempt(models.Model):
     simulated_outcome = models.CharField(max_length=20, choices=SimulatedOutcome.choices, blank=True, default="")
     last_error = models.CharField(max_length=255, blank=True)
     relation_granted = models.BooleanField(default=False)
+    # Paiement de test (simulation ou FedaPay sandbox) : jamais compté comme revenu encaissé.
+    is_test = models.BooleanField(default=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     confirmed_at = models.DateTimeField(null=True, blank=True)

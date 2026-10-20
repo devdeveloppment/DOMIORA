@@ -3,166 +3,166 @@
 {% block title %}Dashboard Administrateur — {{ site_settings.site_name }}{% endblock %}
 
 {% block dashboard_content %}
-<div class="w-full animate-fade-in-up">
-  <!-- Header -->
-  <div class="flex items-center justify-between mb-6 animate-fade-in-scale stagger-1">
-    <h1 class="text-2xl font-bold font-display text-gray-900">Dashboard Administrateur</h1>
-    <a href="{% url 'dashboard:admin_property_create' %}" class="text-sm font-semibold text-primary-600 hover:text-primary-800 transition">Nouvelle Propriété →</a>
-  </div>
-
-  <!-- KPIs Principaux -->
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-    <!-- Revenue -->
-    <div class="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm card-hover animate-fade-in-scale stagger-2">
-      <p class="text-xs font-semibold text-gray-400 mb-2">Revenus</p>
-      <h2 class="text-3xl font-extrabold text-gray-900">{{ total_revenue|floatformat:0|intcomma }}<span class="text-lg font-bold ml-1">FCFA</span></h2>
-      <p class="text-xs text-gray-400 mt-2 font-medium">Total global</p>
-      <p class="text-xs text-emerald-600 mt-1 font-medium">✓ Données réelles</p>
+<div class="w-full">
+  <!-- En-tête -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold font-display text-gray-900">Dashboard Administrateur</h1>
+      <p class="text-sm text-gray-500 mt-0.5">Chiffres calculés depuis la base de données · {{ period_label|lower }}</p>
     </div>
-
-    <!-- Utilisateurs -->
-    <div class="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm card-hover animate-fade-in-scale stagger-3">
-      <p class="text-xs font-semibold text-gray-400 mb-2">Utilisateurs</p>
-      <h2 class="text-3xl font-extrabold text-gray-900">{{ clients_count|add:owners_count }}</h2>
-      <p class="text-xs text-gray-400 mt-2 font-medium">{{ owners_count }} propriétaires</p>
-    </div>
-
-    <!-- Propriétés -->
-    <div class="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm card-hover animate-fade-in-scale stagger-4">
-      <p class="text-xs font-semibold text-gray-400 mb-2">Propriétés Publiées</p>
-      <h2 class="text-3xl font-extrabold text-gray-900">{{ published_properties_count }}</h2>
-      <p class="text-xs text-gray-400 mt-2 font-medium">{{ properties_count }} au total</p>
-    </div>
-
-    <!-- Propriétaires vérifiés -->
-    <div class="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm card-hover animate-fade-in-scale stagger-5">
-      <p class="text-xs font-semibold text-gray-400 mb-2">Vues Globales</p>
-      <h2 class="text-3xl font-extrabold text-gray-900">{{ total_views|intcomma }}</h2>
-      <p class="text-xs font-bold text-accent-600 mt-2 flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 15l7-7 7 7"></path></svg> Site actif</p>
+    <div class="flex items-center gap-4">
+      {% include "dashboard/partials/period_filter.html" %}
+      <a href="{% url 'dashboard:admin_property_create' %}" class="hidden sm:inline text-sm font-semibold text-primary-600 hover:text-primary-800 transition">Nouvelle propriété →</a>
     </div>
   </div>
 
-  <!-- Graphiques et Répartition -->
+  <!-- Indicateurs clés -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
+    <a href="{% url 'dashboard:admin_finances' %}?periode={{ period }}" class="bg-white rounded-2xl border border-gray-100 p-4 sm:p-5 shadow-sm hover:shadow-md transition">
+      <p class="text-xs font-semibold text-gray-500 mb-2">Revenus encaissés</p>
+      <p class="text-2xl sm:text-3xl font-extrabold text-gray-900">{{ finance.real_total|intcomma }}<span class="text-sm font-bold ml-1">FCFA</span></p>
+      <p class="text-xs text-gray-500 mt-2">Mises en relation + abonnements réels</p>
+      <p class="text-xs font-semibold text-amber-700 mt-1">Test : {{ finance.test_total|intcomma }} FCFA (non encaissé)</p>
+    </a>
+    <a href="{% url 'dashboard:admin_users' %}" class="bg-white rounded-2xl border border-gray-100 p-4 sm:p-5 shadow-sm hover:shadow-md transition">
+      <p class="text-xs font-semibold text-gray-500 mb-2">Utilisateurs</p>
+      <p class="text-2xl sm:text-3xl font-extrabold text-gray-900">{{ counts.clients|add:counts.owners|intcomma }}</p>
+      <p class="text-xs text-gray-500 mt-2">{{ counts.clients }} clients · {{ counts.owners }} propriétaires</p>
+      <p class="text-xs font-semibold text-emerald-700 mt-1">+{{ counts.new_users }} sur la période</p>
+    </a>
+    <a href="{% url 'dashboard:admin_properties' %}" class="bg-white rounded-2xl border border-gray-100 p-4 sm:p-5 shadow-sm hover:shadow-md transition">
+      <p class="text-xs font-semibold text-gray-500 mb-2">Annonces publiées</p>
+      <p class="text-2xl sm:text-3xl font-extrabold text-gray-900">{{ counts.published }}</p>
+      <p class="text-xs text-gray-500 mt-2">{{ counts.properties }} au total · {{ counts.for_rent }} location · {{ counts.for_sale }} vente</p>
+      {% if counts.pending_validation %}<p class="text-xs font-semibold text-amber-700 mt-1">{{ counts.pending_validation }} en attente de validation</p>{% endif %}
+    </a>
+    <div class="bg-white rounded-2xl border border-gray-100 p-4 sm:p-5 shadow-sm">
+      <p class="text-xs font-semibold text-gray-500 mb-2">Vues des annonces</p>
+      <p class="text-2xl sm:text-3xl font-extrabold text-gray-900">{{ counts.total_views|intcomma }}</p>
+      <p class="text-xs text-gray-500 mt-2">Cumul depuis la publication</p>
+    </div>
+  </div>
+
+  <!-- Activité à traiter -->
+  <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 mb-6">
+    {% with c=counts %}
+    <div class="rounded-xl bg-gray-50 border border-gray-100 px-4 py-3"><p class="text-xs text-gray-500">Mises en relation payées</p><p class="text-lg font-bold text-gray-900">{{ finance.contact_real.count|add:finance.contact_test.count }} <span class="text-xs font-medium text-gray-500">dont {{ finance.contact_test.count }} test</span></p></div>
+    <div class="rounded-xl bg-gray-50 border border-gray-100 px-4 py-3"><p class="text-xs text-gray-500">Demandes en attente</p><p class="text-lg font-bold text-gray-900">{{ c.requests_pending }} <span class="text-xs font-medium text-gray-500">/ {{ c.requests_period }} sur la période</span></p></div>
+    <div class="rounded-xl bg-gray-50 border border-gray-100 px-4 py-3"><p class="text-xs text-gray-500">Rendez-vous en attente</p><p class="text-lg font-bold text-gray-900">{{ pending_appointments }} <span class="text-xs font-medium text-gray-500">/ {{ c.appointments_period }} sur la période</span></p></div>
+    <a href="{% url 'dashboard:admin_listing_reports' %}" class="rounded-xl border px-4 py-3 {% if c.reports_active %}bg-rose-50 border-rose-200{% else %}bg-gray-50 border-gray-100{% endif %}"><p class="text-xs text-gray-500">Signalements à traiter</p><p class="text-lg font-bold {% if c.reports_active %}text-rose-700{% else %}text-gray-900{% endif %}">{{ c.reports_active }} <span class="text-xs font-medium text-gray-500">/ {{ c.reports_period }} sur la période</span></p></a>
+    <div class="rounded-xl bg-gray-50 border border-gray-100 px-4 py-3"><p class="text-xs text-gray-500">Abonnements actifs</p><p class="text-lg font-bold text-gray-900">{{ c.active_subscriptions }} <span class="text-xs font-medium text-gray-500">· {{ c.verified_owners }} proprio. vérifiés</span></p></div>
+    {% endwith %}
+  </div>
+
+  <!-- Graphiques -->
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-    <!-- Chart Principal -->
-    <div class="lg:col-span-2 bg-white rounded-2xl border border-gray-100 p-6 shadow-sm card-hover animate-fade-in-up" style="animation-delay: 0.6s">
-      <div class="flex items-center justify-between mb-8">
-        <h2 class="font-bold text-gray-900 text-lg">Évolution des revenus (6 mois)</h2>
-        <select class="text-sm border-gray-200 rounded-lg text-gray-500 font-medium py-1.5 pl-3 pr-8 focus:ring-primary-600 focus:border-primary-600">
-          <option>Ce semestre</option>
-          <option>Cette année</option>
-        </select>
+    <div class="lg:col-span-2 bg-white rounded-2xl border border-gray-100 p-5 sm:p-6 shadow-sm">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="font-bold text-gray-900 text-lg">Revenus par mois</h2>
+        <span class="text-xs text-gray-500">6 derniers mois civils</span>
       </div>
-      <div class="h-80 w-full relative">
-        <canvas id="revenueChart"></canvas>
-      </div>
+      <div class="h-72 w-full relative"><canvas id="revenueChart" aria-label="Revenus réels et de test par mois" role="img"></canvas></div>
+      <p id="revenueEmpty" class="hidden text-sm text-gray-500 text-center -mt-40 mb-32">Aucun paiement enregistré sur ces 6 mois.</p>
     </div>
-
-    <!-- Répartition -->
-    <div class="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm flex flex-col card-hover animate-fade-in-up" style="animation-delay: 0.7s">
-      <h2 class="font-bold text-gray-900 text-lg mb-6">Répartition par type</h2>
+    <div class="bg-white rounded-2xl border border-gray-100 p-5 sm:p-6 shadow-sm flex flex-col">
+      <h2 class="font-bold text-gray-900 text-lg mb-5">Répartition par type</h2>
       <div class="space-y-4 flex-1">
         {% for p in prop_distribution %}
         <div>
-          <div class="flex justify-between text-sm mb-1">
-            <span class="font-bold text-gray-900 capitalize">{{ p.label }}</span>
-            <span class="text-gray-500 font-medium">{{ p.count }}</span>
-          </div>
-          <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
-            <div class="bg-primary-600 h-2 rounded-full" style="width: {% widthratio p.count properties_count 100 %}%"></div>
-          </div>
+          <div class="flex justify-between text-sm mb-1"><span class="font-semibold text-gray-900">{{ p.label }}</span><span class="text-gray-500">{{ p.count }}</span></div>
+          <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden"><div class="bg-primary-600 h-2 rounded-full" style="width: {% widthratio p.count counts.properties 100 %}%"></div></div>
         </div>
         {% empty %}
-        <p class="text-sm text-gray-400 text-center py-4">Aucune donnée disponible.</p>
+        <p class="text-sm text-gray-500 text-center py-4">Aucune annonce pour le moment.</p>
         {% endfor %}
       </div>
     </div>
   </div>
 
-  <!-- Transactions récentes -->
-  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden card-hover animate-fade-in-up" style="animation-delay: 0.8s">
-    <div class="flex items-center justify-between p-6 border-b border-gray-50">
-      <h2 class="font-bold text-gray-900 text-lg">Transactions Récentes</h2>
-      <a href="{% url 'dashboard:admin_transactions' %}" class="text-sm font-semibold text-primary-600 hover:text-primary-800 transition">Voir tout →</a>
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+    <div class="lg:col-span-2 bg-white rounded-2xl border border-gray-100 p-5 sm:p-6 shadow-sm">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="font-bold text-gray-900 text-lg">Croissance</h2>
+        <span class="hidden sm:inline text-xs text-gray-500">Inscriptions et nouvelles annonces par mois</span>
+      </div>
+      <div class="h-56 w-full relative"><canvas id="growthChart" aria-label="Inscriptions et annonces par mois" role="img"></canvas></div>
     </div>
-    <div>
-      {% for t in recent_transactions %}
-      <div class="flex items-center justify-between p-4 border-b border-gray-50 hover:bg-gray-50 transition animate-slide-in-left" style="animation-delay: {{ forloop.counter0|add:9 }}00ms">
-        <div>
-          <h3 class="font-bold text-gray-900 text-sm truncate max-w-[300px]">{{ t.property.title }}</h3>
-          <p class="text-xs text-gray-500 font-medium mt-0.5">{{ t.client.get_full_name|default:t.client.username }}</p>
-        </div>
-        <div class="text-right">
-          <p class="text-sm font-bold text-green-600">+ {{ t.amount|floatformat:0|intcomma }} FCFA</p>
-          <p class="text-xs text-gray-400 mt-0.5">{{ t.transaction_date|date:"d M Y" }}</p>
-        </div>
-      </div>
-      {% empty %}
-      <div class="p-8 text-center">
-        <p class="text-sm text-gray-400 mb-2">Aucune transaction réelle enregistrée.</p>
-        <p class="text-xs text-emerald-600 font-medium">✓ Les statistiques afficheront les transactions réelles uniquement</p>
-      </div>
-      {% endfor %}
+    <div class="bg-white rounded-2xl border border-gray-100 p-5 sm:p-6 shadow-sm">
+      <h2 class="font-bold text-gray-900 text-lg mb-4">Activité récente</h2>
+      <ul class="space-y-3">
+        {% for a in activity %}
+        <li class="flex gap-3 text-sm">
+          <span class="mt-1.5 h-2 w-2 shrink-0 rounded-full {% if a.icon == 'pay' %}bg-amber-500{% elif a.icon == 'home' %}bg-primary-600{% elif a.icon == 'inbox' %}bg-sky-500{% else %}bg-emerald-500{% endif %}"></span>
+          <div class="min-w-0"><p class="text-gray-800 leading-snug">{{ a.text }}</p><p class="text-xs text-gray-500">{{ a.time|naturaltime }}</p></div>
+        </li>
+        {% empty %}
+        <li class="text-sm text-gray-500">Aucune activité.</li>
+        {% endfor %}
+      </ul>
     </div>
   </div>
 
+  <!-- Derniers paiements -->
+  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+    <div class="flex items-center justify-between p-5 sm:p-6 border-b border-gray-100">
+      <h2 class="font-bold text-gray-900 text-lg">Dernières mises en relation payées</h2>
+      <a href="{% url 'dashboard:admin_finances' %}" class="text-sm font-semibold text-primary-600 hover:text-primary-800 transition">Finances →</a>
+    </div>
+    {% for pay in recent_payments %}
+    <div class="flex items-center justify-between gap-3 px-5 sm:px-6 py-3 border-b border-gray-50 last:border-0">
+      <div class="min-w-0">
+        <p class="font-semibold text-gray-900 text-sm truncate">{{ pay.property.title|default:"Annonce supprimée" }}</p>
+        <p class="text-xs text-gray-500 truncate">{{ pay.client.get_full_name|default:pay.client.username }} → {{ pay.owner.get_full_name|default:pay.owner.username }}</p>
+      </div>
+      <div class="text-right shrink-0">
+        <p class="text-sm font-bold {% if pay.is_test %}text-amber-700{% else %}text-emerald-700{% endif %}">{{ pay.amount|intcomma }} {{ pay.currency }}</p>
+        <p class="text-xs text-gray-500">{% if pay.is_test %}Test · {% endif %}{{ pay.paid_at|date:"d M Y" }}</p>
+      </div>
+    </div>
+    {% empty %}
+    <p class="p-8 text-center text-sm text-gray-500">Aucune mise en relation payée pour le moment.</p>
+    {% endfor %}
+  </div>
 </div>
+{{ chart|json_script:"admin-chart-data" }}
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
-  const revenueChartCtx = document.getElementById('revenueChart');
-  if (revenueChartCtx) {
-    const baseLabels = {{ chart_labels|safe }}.length ? {{ chart_labels|safe }} : ['Jan', 'Fev', 'Mar', 'Avr', 'Mai', 'Juin'];
-    const baseData = {{ chart_values|safe }}.length ? {{ chart_values|safe }} : [150000, 200000, 180000, 350000, 250000, 450000];
-    
-    // Read DOMIORA design system colors from CSS variables
-    const rootStyles = getComputedStyle(document.documentElement);
-    const colorPrimary = rootStyles.getPropertyValue('--color-primary').trim() || '#71212d';
-    const colorTooltipBg = rootStyles.getPropertyValue('--color-text').trim() || '#1f2937';
-    const colorGrid = '#f3f4f6';
-    const colorTicks = '#9ca3af';
-
-    new Chart(revenueChartCtx, {
+  (function () {
+    const data = JSON.parse(document.getElementById('admin-chart-data').textContent);
+    if (typeof Chart === 'undefined') return;
+    const css = getComputedStyle(document.documentElement);
+    const primary = css.getPropertyValue('--color-primary').trim() || '#71212d';
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    Chart.defaults.font.family = 'Inter, system-ui, sans-serif';
+    Chart.defaults.color = '#6b7280';
+    const base = {
+      responsive: true, maintainAspectRatio: false, animation: reduce ? false : { duration: 500 },
+      interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, boxHeight: 10, usePointStyle: true } } },
+      scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { color: '#f3f4f6' }, ticks: { precision: 0, maxTicksLimit: 6 } } },
+    };
+    const fmt = (v) => new Intl.NumberFormat('fr-FR').format(v) + ' FCFA';
+    new Chart(document.getElementById('revenueChart'), {
       type: 'bar',
-      data: {
-        labels: baseLabels,
-        datasets: [{
-          label: 'Revenus (FCFA)',
-          data: baseData,
-          backgroundColor: colorPrimary,
-          borderRadius: 4,
-          barPercentage: 0.5,
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            backgroundColor: colorTooltipBg,
-            titleFont: { size: 13, family: 'Inter' },
-            bodyFont: { size: 13, family: 'Inter' },
-            padding: 10,
-            cornerRadius: 8,
-            displayColors: false,
-          }
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            grid: { color: colorGrid, drawBorder: false },
-            ticks: { color: colorTicks, font: { family: 'Inter', size: 11 }, maxTicksLimit: 6 }
-          },
-          x: {
-            grid: { display: false, drawBorder: false },
-            ticks: { color: colorTicks, font: { family: 'Inter', size: 11 } }
-          }
-        }
-      }
+      data: { labels: data.labels, datasets: [
+        { label: 'Encaissé (réel)', data: data.real, backgroundColor: primary, borderRadius: 4, stack: 'r' },
+        { label: 'Test (non encaissé)', data: data.test, backgroundColor: '#f59e0b', borderRadius: 4, stack: 'r' },
+      ] },
+      options: { ...base, plugins: { ...base.plugins, tooltip: { callbacks: { label: (c) => `${c.dataset.label} : ${fmt(c.parsed.y)}` } } },
+                 scales: { ...base.scales, x: { ...base.scales.x, stacked: true }, y: { ...base.scales.y, stacked: true } } },
     });
-  }
+    if (![...data.real, ...data.test].some(Boolean)) document.getElementById('revenueEmpty').classList.remove('hidden');
+    new Chart(document.getElementById('growthChart'), {
+      type: 'line',
+      data: { labels: data.labels, datasets: [
+        { label: 'Inscriptions', data: data.signups, borderColor: '#10b981', backgroundColor: '#10b981', cubicInterpolationMode: 'monotone' },
+        { label: 'Nouvelles annonces', data: data.listings, borderColor: primary, backgroundColor: primary, cubicInterpolationMode: 'monotone' },
+      ] },
+      options: base,
+    });
+  })();
 </script>
 {% endblock %}

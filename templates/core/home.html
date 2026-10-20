@@ -12,12 +12,18 @@
   <!-- Background Image & Overlay -->
   <div class="absolute inset-0 z-0">
     <img
-      src="https://images.unsplash.com/photo-1613490493576-7fde63acd811?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80"
+      src="https://images.unsplash.com/photo-1613490493576-7fde63acd811?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80" srcset="https://images.unsplash.com/photo-1613490493576-7fde63acd811?ixlib=rb-4.0.3&auto=format&fit=crop&q=80&w=800 800w, https://images.unsplash.com/photo-1613490493576-7fde63acd811?ixlib=rb-4.0.3&auto=format&fit=crop&q=80&w=1280 1280w, https://images.unsplash.com/photo-1613490493576-7fde63acd811?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80 1920w" sizes="100vw"
       alt="Villa de luxe ultra-réaliste"
       class="w-full h-full object-cover"
       fetchpriority="high"
       decoding="async"
     />
+    <!-- Arrière-plan animé : deux plans de maisons qui glissent lentement (profondeur par parallaxe).
+         Purement décoratif, sous le voile sombre : le contraste du texte reste inchangé. -->
+    <div class="domiora-skyline" aria-hidden="true">
+      <div class="domiora-skyline__layer domiora-skyline__layer--far" style="background-image: url('{% static 'images/skyline-far.svg' %}')"></div>
+      <div class="domiora-skyline__layer domiora-skyline__layer--near" style="background-image: url('{% static 'images/skyline-near.svg' %}')"></div>
+    </div>
     <div
       class="absolute inset-0 bg-gradient-to-r from-black/60 via-black/50 to-black/60"
     ></div>
@@ -46,21 +52,21 @@
       </p>
 
       <!-- Search Form -->
-      <div class="mt-10 bg-white rounded-[16px] shadow-2xl p-4">
-        <!-- Optional tabs for Buy/Rent etc as per mockup screenshot description could go here, but using the provided form -->
-        <div class="flex gap-6 mb-4 px-2 text-sm font-bold text-gray-600">
-          <span
-            class="text-primary-600 border-b-2 border-primary-600 pb-2 cursor-pointer"
-            >À vendre</span
-          >
-          <span class="hover:text-primary-600 cursor-pointer">À louer</span>
-          <span class="hover:text-primary-600 cursor-pointer">Terrain</span>
-          <span class="hover:text-primary-600 cursor-pointer">Commercial</span>
+      <div class="mt-10 bg-white rounded-[16px] shadow-2xl p-4" x-data="{ tab: 'vente' }">
+        <!-- Onglets : À vendre / À louer filtrent la transaction ; Terrain / Commercial présélectionnent le type -->
+        <div class="flex gap-4 sm:gap-6 mb-4 px-2 text-sm font-bold text-gray-600" role="tablist" aria-label="Type de recherche">
+          {% for key, label in search_tabs %}
+          <button type="button" role="tab" class="whitespace-nowrap pb-2 border-b-2 transition"
+                  :aria-selected="(tab === '{{ key }}').toString()"
+                  :class="tab === '{{ key }}' ? 'text-primary-600 border-primary-600' : 'border-transparent hover:text-primary-600'"
+                  @click="tab = '{{ key }}'; $refs.type.value = ['terrain', 'commercial'].includes(tab) ? tab : ''">{{ label }}</button>
+          {% endfor %}
         </div>
         <form
           action="{% url 'properties:list' %}"
           class="grid gap-3 sm:grid-cols-[2fr_1fr_1fr_auto] items-center"
         >
+          <input type="hidden" name="transaction" :value="['vente', 'location'].includes(tab) ? tab : ''" :disabled="!['vente', 'location'].includes(tab)" value="vente">
           <div class="relative">
             <svg
               class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2"
@@ -85,6 +91,8 @@
           <div class="relative">
             <select
               name="type"
+              x-ref="type"
+              aria-label="Type de bien"
               class="w-full bg-gray-50 border border-gray-200 text-sm text-gray-700 rounded-xl px-4 py-3 outline-none appearance-none pr-8 focus:border-primary-600 focus:ring-1 focus:ring-primary-600 transition"
             >
               <option value="">Type de bien</option>
@@ -243,26 +251,25 @@
 </section>
 
 {% if for_sale %}
-<!-- Défilé des biens : une seule fois, puis immobile (aucune boucle) -->
-<section aria-label="Aperçu de biens disponibles" class="w-full bg-white border-b border-gray-100 py-6 overflow-hidden">
-  <style>
-    @keyframes domiora-glide { from { transform: translateX(60%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-    .domiora-glide { animation: domiora-glide 1.6s cubic-bezier(.22,.61,.36,1) 0.3s 1 both; }
-    @media (prefers-reduced-motion: reduce) { .domiora-glide { animation: none; } }
-  </style>
-  <ul class="domiora-glide flex gap-4 px-4 sm:px-6 lg:px-8 overflow-x-auto snap-x" role="list">
-    {% for property in for_sale|slice:":6" %}
-    <li class="snap-start shrink-0 w-56">
-      <a href="{{ property.get_absolute_url }}" class="block rounded-xl overflow-hidden border border-gray-100 bg-white hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary-600 transition">
-        <img src="{{ property.primary_image }}" alt="{{ property.title }}" loading="lazy" decoding="async" width="224" height="128" class="w-full h-32 object-cover">
-        <span class="block p-2.5">
-          <span class="block text-sm font-semibold text-gray-900 truncate">{{ property.title }}</span>
-          <span class="block text-xs text-gray-500">{{ property.city }} · <span class="font-bold text-primary-600">{{ property.price_display }}</span></span>
-        </span>
-      </a>
-    </li>
+<!-- Défilé continu des biens : boucle fluide, pause au survol / au clavier, statique si mouvement réduit -->
+<section aria-label="Aperçu de biens disponibles" class="domiora-marquee w-full bg-white border-b border-gray-100 py-6" style="--marquee-items: {{ for_sale|length }}">
+  <div class="domiora-marquee__track">
+    {% for copy in "12" %}
+    <ul class="domiora-marquee__group" role="list" {% if not forloop.first %}aria-hidden="true"{% endif %}>
+      {% for property in for_sale %}
+      <li class="shrink-0 w-56">
+        <a href="{{ property.get_absolute_url }}" {% if not forloop.parentloop.first %}tabindex="-1"{% endif %} class="block rounded-xl overflow-hidden border border-gray-100 bg-white hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary-600 transition">
+          <img src="{{ property.primary_image }}" alt="{% if forloop.parentloop.first %}{{ property.title }}{% endif %}" loading="lazy" decoding="async" width="224" height="128" class="w-full h-32 object-cover bg-gray-100">
+          <span class="block p-2.5">
+            <span class="block text-sm font-semibold text-gray-900 truncate">{{ property.title }}</span>
+            <span class="block text-xs text-gray-500">{{ property.city }} · <span class="font-bold text-primary-600">{{ property.price_display }}</span></span>
+          </span>
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
     {% endfor %}
-  </ul>
+  </div>
 </section>
 {% endif %}
 

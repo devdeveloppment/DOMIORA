@@ -12,8 +12,10 @@ from notifications.models import Notification
 
 @role_required(User.Role.CLIENT)
 def client_overview(request):
-    from properties.models import PropertyUnlock, PropertyView
+    from properties.models import PropertyUnlock, PropertyView, SearchAlert
     from messaging.models import Message
+    from payments.models import PaymentAttempt
+    from moderation.models import ListingReport
     
     # Check if user has made at least one payment (unlocked a property)
     has_paid = PropertyUnlock.objects.filter(user=request.user).exists()
@@ -30,7 +32,7 @@ def client_overview(request):
     unlocked_count = PropertyUnlock.objects.filter(user=request.user).count()
     
     # Viewed properties history
-    viewed_properties = PropertyView.objects.filter(user=request.user).select_related("property").order_by("-viewed_at")[:6]
+    viewed_properties = PropertyView.objects.filter(user=request.user).select_related("property").prefetch_related("property__images").order_by("-viewed_at")[:6]
     
     # Messages count
     messages_count = Message.objects.filter(conversation__buyer=request.user).count()
@@ -51,12 +53,18 @@ def client_overview(request):
         "accepted_count": requests_agg["accepted"],
         "rejected_count": requests_agg["rejected"],
         "recent_requests": requests[:5],
-        "recent_favorites": Favorite.objects.filter(user=request.user).select_related("property")[:4],
+        "recent_favorites": Favorite.objects.filter(user=request.user).select_related("property").prefetch_related("property__images")[:3],
         "viewed_properties": viewed_properties,
         "messages_count": messages_count,
         "notifications_count": notifications_count,
         "profile_url": request.user.get_absolute_url(),
         "dash_role": "client",
+        "unlocked_count": unlocked_count,
+        "saved_searches": SearchAlert.objects.filter(user=request.user, is_active=True).order_by("-created_at")[:4],
+        "recent_reports": ListingReport.objects.filter(reporter=request.user).select_related("property", "reported_owner")[:3],
+        "active_reports_count": ListingReport.objects.filter(reporter=request.user, status__in=ListingReport.ACTIVE_STATUSES).count(),
+        "recent_payments": PaymentAttempt.objects.filter(client=request.user)
+        .select_related("owner", "property").order_by("-created_at")[:5],
     }
     return render(request, "dashboard/client/overview.html", context)
 
@@ -283,7 +291,7 @@ def client_conversation_detail(request, pk):
             # Notify owner
             Notification.objects.create(
                 user=conversation.owner,
-                title="💬 Nouveau message",
+                title="Nouveau message",
                 message=msg.body[:120],
                 notification_type="systeme",
                 link=f"/dashboard/proprietaire/messagerie/{pk}/",

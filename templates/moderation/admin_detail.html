@@ -1,28 +1,73 @@
 {% extends "dashboard/dashboard_base.html" %}
 {% block title %}Signalement #{{ report.pk }} — DOMIORA{% endblock %}
 {% block dashboard_content %}
-<a href="{% url 'dashboard:admin_listing_reports' %}" class="text-sm text-gray-500 underline">← Signalements</a>
-<h1 class="text-2xl font-extrabold text-gray-900 mt-2 mb-6">Signalement #{{ report.pk }} <span class="text-sm font-bold px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 align-middle">{{ report.get_status_display }}</span></h1>
+<a href="{% url 'dashboard:admin_listing_reports' %}" class="text-sm text-gray-500 hover:text-gray-700">← Signalements</a>
+<div class="flex flex-wrap items-center gap-3 mt-2 mb-6">
+  <h1 class="text-2xl font-bold font-display text-gray-900">Signalement #{{ report.pk }}</h1>
+  {% include "moderation/_status_badge.html" %}
+  <span class="text-xs font-semibold text-gray-500">{{ report.get_category_display }}</span>
+</div>
+
 <div class="grid lg:grid-cols-3 gap-5">
-  <div class="lg:col-span-2 bg-white rounded-2xl border border-gray-200 p-5 text-sm space-y-2">
-    <p><span class="text-gray-500">Annonce :</span> <a class="underline text-primary-600" href="{% url 'dashboard:admin_property_edit' report.property.pk %}">{{ report.property.title }}</a> {% if report.property.is_published %}(publiée){% else %}(dépubliée){% endif %}</p>
-    <p><span class="text-gray-500">Propriétaire :</span> {{ report.property.owner.get_full_name|default:report.property.owner.username }}</p>
-    <p><span class="text-gray-500">Signalé par :</span> {{ report.reporter.get_full_name|default:report.reporter.username|default:"compte supprimé" }} · {{ report.created_at|date:"d/m/Y H:i" }}</p>
-    <p><span class="text-gray-500">Motif :</span> <strong>{{ report.get_reason_display }}</strong></p>
-    {% if report.details %}<p class="whitespace-pre-line bg-gray-50 rounded-xl p-3">{{ report.details }}</p>{% endif %}
-    {% if others %}<p class="pt-2 text-amber-800">Autres signalements sur cette annonce : {{ others|length }}</p>{% endif %}
-    {% if report.handled_by %}<p class="pt-2 text-gray-500">Traité par {{ report.handled_by.get_full_name|default:report.handled_by.username }} le {{ report.handled_at|date:"d/m/Y H:i" }}{% if report.listing_unpublished %} — annonce dépubliée{% endif %}</p>{% endif %}
+  <div class="lg:col-span-2 space-y-5">
+    <section class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 text-sm space-y-2">
+      {% if report.property %}
+      <p><span class="text-gray-500">Annonce :</span> <a class="font-semibold text-primary-700 hover:underline" href="{% url 'dashboard:admin_property_edit' report.property.pk %}">{{ report.property.title }}</a> {% if report.property.is_published %}<span class="text-emerald-700">(publiée)</span>{% else %}<span class="text-gray-500">(non publiée)</span>{% endif %}</p>
+      {% elif report.category == 'listing' %}<p class="text-gray-500">Annonce supprimée depuis le signalement.</p>{% endif %}
+      {% if report.reported_owner %}<p><span class="text-gray-500">Propriétaire visé :</span> {{ report.reported_owner.get_full_name|default:report.reported_owner.username }} · vérification : {{ report.reported_owner.get_verification_status_display }}</p>{% endif %}
+      <p><span class="text-gray-500">Signalé par :</span> {{ report.reporter.get_full_name|default:report.reporter.username|default:"compte supprimé" }} · {{ report.created_at|date:"d/m/Y H:i" }}</p>
+      <p><span class="text-gray-500">Motif :</span> <strong>{{ report.get_reason_display }}</strong></p>
+      {% if report.details %}<p class="whitespace-pre-line bg-gray-50 rounded-xl p-3">{{ report.details }}</p>{% endif %}
+      {% if report.attachment %}<p><a href="{% url 'dashboard:report_attachment' report.pk %}" target="_blank" rel="noopener" class="font-semibold text-primary-700 hover:underline">Ouvrir la pièce jointe</a></p>{% endif %}
+      {% if report.listing_unpublished %}<p class="text-rose-700 font-semibold">Annonce dépubliée suite à ce signalement.</p>{% endif %}
+    </section>
+
+    {% if others %}
+    <section class="bg-amber-50 border border-amber-200 rounded-2xl p-5 text-sm">
+      <h2 class="font-bold text-amber-900 mb-2">Autres signalements sur la même annonce ou le même propriétaire ({{ others|length }})</h2>
+      <ul class="space-y-1">
+        {% for o in others %}<li><a href="{% url 'dashboard:admin_listing_report' o.pk %}" class="text-amber-900 hover:underline">#{{ o.pk }} · {{ o.get_reason_display }} · {{ o.get_status_display }} · {{ o.created_at|date:"d/m/Y" }}</a></li>{% endfor %}
+      </ul>
+    </section>
+    {% endif %}
+
+    <section class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+      <h2 class="font-bold text-gray-900 mb-4">Historique</h2>
+      <ol class="space-y-3 text-sm">
+        {% for e in events %}
+        <li class="flex gap-3">
+          <span class="mt-1.5 h-2 w-2 shrink-0 rounded-full {% if e.action == 'note' %}bg-gray-400{% elif e.action == 'message' %}bg-primary-600{% elif e.action == 'unpublished' %}bg-rose-600{% else %}bg-amber-500{% endif %}"></span>
+          <div class="min-w-0">
+            <p class="text-gray-900"><strong>{{ e.get_action_display }}</strong>{% if e.action == 'status' %} : {{ e.from_status }} → {{ e.to_status }}{% endif %}{% if not e.is_public %} <span class="text-xs text-gray-500">(interne)</span>{% endif %}</p>
+            {% if e.note %}<p class="whitespace-pre-line text-gray-700">{{ e.note }}</p>{% endif %}
+            <p class="text-xs text-gray-500">{{ e.actor.get_full_name|default:e.actor.username|default:"système" }} · {{ e.created_at|date:"d/m/Y H:i" }}</p>
+          </div>
+        </li>
+        {% endfor %}
+      </ol>
+    </section>
   </div>
-  <form method="post" class="bg-white rounded-2xl border border-gray-200 p-5 space-y-3" onsubmit="return confirm('Confirmer ?');">
+
+  <form method="post" class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4 h-fit">
     {% csrf_token %}
-    <label for="admin_note" class="block font-bold text-gray-900">Note interne</label>
-    <textarea id="admin_note" name="admin_note" rows="4" class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm">{{ report.admin_note }}</textarea>
-    <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="unpublish" class="h-4 w-4"> Dépublier l'annonce (avec « Mesure prise »)</label>
-    <div class="grid gap-2">
-      <button name="action" value="reviewing" class="rounded-xl border border-gray-300 font-bold py-2.5 text-sm">Mettre en examen</button>
-      <button name="action" value="dismissed" class="rounded-xl border border-gray-300 font-bold py-2.5 text-sm">Classer sans suite</button>
-      <button name="action" value="action_taken" class="rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold py-2.5 text-sm">Mesure prise</button>
+    <div>
+      <label for="admin_note" class="block font-bold text-gray-900 text-sm mb-1">Note interne</label>
+      <textarea id="admin_note" name="admin_note" rows="3" maxlength="2000" class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm" placeholder="Visible uniquement par l'administration"></textarea>
     </div>
+    <div>
+      <label for="public_message" class="block font-bold text-gray-900 text-sm mb-1">Message à l'auteur</label>
+      <textarea id="public_message" name="public_message" rows="3" maxlength="1000" class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm" placeholder="Visible par l'auteur du signalement (facultatif)"></textarea>
+    </div>
+    {% if report.property and not report.listing_unpublished %}
+    <label class="flex items-start gap-2 text-sm"><input type="checkbox" name="unpublish" class="h-4 w-4 mt-0.5"> <span>Dépublier l'annonce <span class="text-gray-500">(uniquement avec « Mesure prise », après examen des faits)</span></span></label>
+    {% endif %}
+    <div class="grid gap-2">
+      <button name="action" value="" class="rounded-xl border border-gray-300 font-bold py-2.5 text-sm hover:bg-gray-50">Enregistrer la note / le message</button>
+      <button name="action" value="reviewing" class="rounded-xl border border-gray-300 font-bold py-2.5 text-sm hover:bg-gray-50">Mettre en examen</button>
+      <button name="action" value="dismissed" class="rounded-xl border border-gray-300 font-bold py-2.5 text-sm hover:bg-gray-50" onclick="return confirm('Classer ce signalement sans suite ?');">Classer sans suite</button>
+      <button name="action" value="action_taken" class="rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold py-2.5 text-sm" onclick="return confirm('Confirmer la décision « Mesure prise » ?');">Mesure prise</button>
+    </div>
+    <p class="text-xs text-gray-500">Aucune décision n'est automatique. La suspension d'un propriétaire se fait séparément, depuis la gestion des utilisateurs.</p>
   </form>
 </div>
 {% endblock %}

@@ -50,6 +50,15 @@ Fonctionnement réel de DOMIORA (n'invente rien au-delà) :
 - Propriétaires : inscription en tant que propriétaire, puis vérification d'identité (pièce d'identité). Un agent peut effectuer une vérification sur le terrain et rédiger un rapport ; la décision finale appartient à l'administrateur.
 - Seuls les propriétaires vérifiés peuvent publier ; la publication d'une annonce est gratuite et chaque annonce est validée par l'administrateur avant d'être visible.
 - FedaPay est le seul moyen de paiement de DOMIORA.
+- Avant la mise en relation, un client connecté peut poser une question courte sur une annonce (3 par jour maximum,
+  10 à 500 caractères) ; numéros, e-mails, liens et messageries externes y sont refusés. Le propriétaire répond depuis
+  « Questions » dans son espace ; le client retrouve les réponses dans « Questions » de son espace client.
+- Favoris : un client connecté peut ajouter des biens en favoris et les retrouver dans son espace client.
+- Espace client : favoris, mises en relation, demandes, messagerie, questions, notifications, historique.
+- Espace propriétaire : mes biens (statut de validation de chaque annonce), statistiques par annonce (vues, favoris,
+  mises en relation), questions reçues, messagerie, vérification d'identité, abonnement.
+- Les abonnements propriétaires sont facultatifs : publier reste gratuit. Ils améliorent la visibilité (classement
+  « Recommandés », emplacements « Sponsorisé »). Pendant la phase de démonstration, leurs paiements sont simulés.
 
 Règles strictes :
 - Tu n'inventes JAMAIS de bien, de prix, de disponibilité, de propriétaire, de transaction ou de fonctionnalité.
@@ -61,6 +70,36 @@ Règles strictes :
 - Pour trouver un bien précis, propose de lancer une recherche (« Décrivez-moi le bien recherché ») au lieu de citer des annonces.
 - Si tu ne sais pas, dis-le simplement et oriente vers la fonctionnalité adaptée.
 """
+
+
+ROLE_GUIDANCE = {
+    "owner": (
+        "L'utilisateur est PROPRIÉTAIRE. Aide-le à publier et à améliorer ses annonces : photos nettes et lumineuses de "
+        "chaque pièce (la première est la photo de couverture), titre précis (type, nombre de chambres, quartier), "
+        "description honnête (état, charges, équipements, accès, eau et électricité), prix cohérent avec le quartier, "
+        "réponses rapides aux questions et aux demandes de visite. Rappelle que chaque annonce est validée par "
+        "l'administrateur et que seule une identité vérifiée permet de publier."
+    ),
+    "client": (
+        "L'utilisateur est CLIENT. Aide-le à préciser ses critères (ville, quartier, budget, chambres, location ou "
+        "achat), à comparer les biens, à préparer une visite et à éviter les arnaques (ne jamais payer de caution "
+        "avant d'avoir visité et vérifié les documents)."
+    ),
+    "admin": (
+        "L'utilisateur est ADMINISTRATEUR. Tu peux expliquer le fonctionnement de la plateforme, mais tu n'as accès à "
+        "aucune donnée interne : oriente-le vers son tableau de bord (finances, validations, vérifications)."
+    ),
+    "visiteur": (
+        "L'utilisateur n'est pas connecté. Il peut consulter les annonces ; pour les favoris, les questions et la mise en "
+        "relation, il doit créer un compte client."
+    ),
+}
+
+
+def role_guidance(user):
+    """Consignes adaptées au rôle de l'utilisateur (jamais de données d'autres comptes)."""
+    role = getattr(user, "role", None) if user and getattr(user, "is_authenticated", False) else "visiteur"
+    return ROLE_GUIDANCE.get(role, ROLE_GUIDANCE["visiteur"])
 
 
 def _url(name, *args):
@@ -166,6 +205,67 @@ def faq_answer(topic, user=None):
             "Depuis la liste des annonces, appliquez vos filtres puis enregistrez une alerte : vous serez notifié dès qu'un bien "
             "correspondant est publié (compte connecté requis).",
             [_action("Parcourir les annonces", "properties:list")],
+        )
+    if topic == "question_before":
+        actions = []
+        if is_owner:
+            actions = [_action("Questions reçues", "dashboard:owner_inquiries")]
+        elif user and user.is_authenticated:
+            actions = [_action("Mes questions", "dashboard:client_inquiries")]
+        return (
+            "Oui : avant de payer la mise en relation, vous pouvez poser une question courte au propriétaire depuis la page de "
+            "l'annonce (compte client requis, 3 questions par jour au maximum). Pour votre sécurité, les numéros, e-mails, liens "
+            "et messageries externes sont refusés. La réponse du propriétaire apparaît dans « Questions » de votre espace.",
+            actions,
+        )
+    if topic == "subscription":
+        from owner_subscriptions.models import Plan
+        from owner_subscriptions.services import subscriptions_enabled
+
+        if not subscriptions_enabled():
+            return (
+                "La publication d'une annonce sur DOMIORA est gratuite. Les abonnements propriétaires ne sont pas proposés "
+                "pour le moment.",
+                [],
+            )
+        plans = [p for p in Plan.objects.filter(is_active=True).order_by("order") if p.price_xof is not None]
+        lines = "\n".join(f"- {p.name} : {p.price_xof} FCFA / {p.period_days} jours" for p in plans)
+        text = (
+            "Les abonnements sont facultatifs : publier reste gratuit. Ils améliorent la visibilité de vos annonces "
+            "(classement « Recommandés », emplacements « Sponsorisé »). Pendant la phase de démonstration, les paiements "
+            "d'abonnement sont simulés."
+        )
+        if lines:
+            text += "\nFormules proposées actuellement :\n" + lines
+        return text, ([_action("Mon abonnement", "dashboard:owner_subscription")] if is_owner else [])
+    if topic == "favorites":
+        return (
+            "Cliquez sur le cœur d'une annonce pour l'ajouter à vos favoris (compte client requis). Vous les retrouvez dans "
+            "« Favoris » de votre espace client ; le propriétaire voit seulement combien de personnes suivent son bien.",
+            [_action("Mes favoris", "dashboard:client_favorites")] if user and user.is_authenticated and not is_owner else [],
+        )
+    if topic == "improve_listing":
+        return (
+            "Pour une annonce plus attractive :\n"
+            "- des photos nettes et lumineuses de chaque pièce, la plus belle en premier ;\n"
+            "- un titre précis : type de bien, nombre de chambres, quartier ;\n"
+            "- une description honnête : état, équipements, eau et électricité, accès, charges ;\n"
+            "- un prix cohérent avec le quartier ;\n"
+            "- des réponses rapides aux questions et aux demandes de visite.\n"
+            "Vos statistiques par annonce (vues, favoris, mises en relation) montrent ce qui fonctionne.",
+            [_action("Mes statistiques", "dashboard:owner_stats")] if is_owner else [],
+        )
+    if topic == "dashboard":
+        if is_owner:
+            return (
+                "Votre espace propriétaire regroupe vos biens et leur statut de validation, les statistiques par annonce, "
+                "les questions reçues, la messagerie avec les clients en relation, la vérification d'identité et l'abonnement.",
+                [_action("Mon espace", "dashboard:owner_overview")],
+            )
+        return (
+            "Votre espace client regroupe vos favoris, vos mises en relation, vos demandes, la messagerie, vos questions et "
+            "vos notifications.",
+            [_action("Mon espace", "dashboard:client_overview")] if user and user.is_authenticated else [],
         )
     if topic == "identity":
         return (

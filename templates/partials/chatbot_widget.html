@@ -100,7 +100,7 @@
                   <template x-if="card.reasons && card.reasons.length">
                     <ul class="px-3 pb-2 space-y-0.5 text-[11px]">
                       <template x-for="reason in card.reasons.slice(0, 4)" :key="reason.text">
-                        <li class="flex gap-1.5"><span class="font-bold" :class="reasonClass(reason.status)" x-text="reason.symbol"></span><span class="text-gray-600" x-text="reason.text"></span></li>
+                        <li class="flex gap-1.5"><i class="fa-solid w-4 text-center mt-0.5" aria-hidden="true" :class="[reasonClass(reason.status), { ok: 'fa-check', near: 'fa-circle-half-stroke', fail: 'fa-xmark', unknown: 'fa-circle-question' }[reason.status]]"></i><span class="text-gray-600" x-text="reason.text"></span></li>
                       </template>
                     </ul>
                   </template>

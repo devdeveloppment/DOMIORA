@@ -21,7 +21,7 @@
             {% for i in "54321" %}
             <label class="flex items-center justify-center w-10 h-10 rounded-full border-2 border-gray-200 cursor-pointer hover:bg-primary-50 hover:border-primary-600 transition">
               <input type="radio" name="rating" value="{{ i|length }}" class="sr-only">
-              <span class="text-lg">{{ i|length }}★</span>
+              <span class="text-lg">{{ i|length }}<i class="fa-solid fa-star" aria-hidden="true"></i></span>
             </label>
             {% endfor %}
           </div>
@@ -41,7 +41,7 @@
               {% for i in "54321" %}
               <label class="flex items-center justify-center w-8 h-8 rounded-full border-2 border-gray-200 cursor-pointer hover:bg-primary-50 hover:border-primary-600 transition">
                 <input type="radio" name="communication_rating" value="{{ i|length }}" class="sr-only">
-                <span class="text-sm">{{ i|length }}★</span>
+                <span class="text-sm">{{ i|length }}<i class="fa-solid fa-star" aria-hidden="true"></i></span>
               </label>
               {% endfor %}
             </div>
@@ -52,7 +52,7 @@
               {% for i in "54321" %}
               <label class="flex items-center justify-center w-8 h-8 rounded-full border-2 border-gray-200 cursor-pointer hover:bg-primary-50 hover:border-primary-600 transition">
                 <input type="radio" name="professionalism_rating" value="{{ i|length }}" class="sr-only">
-                <span class="text-sm">{{ i|length }}★</span>
+                <span class="text-sm">{{ i|length }}<i class="fa-solid fa-star" aria-hidden="true"></i></span>
               </label>
               {% endfor %}
             </div>
@@ -63,7 +63,7 @@
               {% for i in "54321" %}
               <label class="flex items-center justify-center w-8 h-8 rounded-full border-2 border-gray-200 cursor-pointer hover:bg-primary-50 hover:border-primary-600 transition">
                 <input type="radio" name="responsiveness_rating" value="{{ i|length }}" class="sr-only">
-                <span class="text-sm">{{ i|length }}★</span>
+                <span class="text-sm">{{ i|length }}<i class="fa-solid fa-star" aria-hidden="true"></i></span>
               </label>
               {% endfor %}
             </div>

@@ -22,14 +22,14 @@ def send_identity_verification_email(user, verification_status, rejection_reason
     dashboard_url = f"{settings.BASE_URL}/dashboard/proprietaire/"
     
     if verification_status == 'approved':
-        subject = '✅ Votre identité a été validée - DOMIORA'
+        subject = 'Votre identité a été validée - DOMIORA'
         template = 'accounts/emails/identity_verified.html'
         context = {
             'user': user,
             'dashboard_url': dashboard_url
         }
     else:
-        subject = '❌ Votre identité a été refusée - DOMIORA'
+        subject = 'Votre identité a été refusée - DOMIORA'
         template = 'accounts/emails/identity_rejected.html'
         context = {
             'user': user,

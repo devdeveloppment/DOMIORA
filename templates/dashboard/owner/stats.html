@@ -1,17 +1,59 @@
 {% extends "dashboard/dashboard_base.html" %}
-
-{% block title %}Statistiques Détaillées — {{ site_settings.site_name }}{% endblock %}
+{% block title %}Statistiques — {{ site_settings.site_name }}{% endblock %}
 
 {% block dashboard_content %}
 <div class="w-full">
-  <div class="flex items-center justify-between mb-6">
-    <h1 class="text-2xl font-bold font-display text-gray-900">Statistiques Détaillées</h1>
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold font-display text-gray-900">Statistiques par annonce</h1>
+      <p class="text-sm text-gray-500 mt-0.5">{{ period_label }}</p>
+    </div>
+    {% include "dashboard/partials/period_filter.html" %}
   </div>
 
-  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center min-h-[400px] flex flex-col justify-center items-center">
-    <svg class="w-16 h-16 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-    <h2 class="text-xl font-bold text-gray-900 mb-2">Analyse avancée en préparation</h2>
-    <p class="text-gray-500 max-w-md mx-auto">Cette page vous permettra bientôt d'analyser en profondeur les performances de vos annonces (taux de clic, évolution des favoris, etc.).</p>
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
+    <div class="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm"><p class="text-xs font-semibold text-gray-500">Vues</p><p class="text-2xl font-extrabold text-gray-900 mt-1">{{ totals.views }}</p></div>
+    <div class="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm"><p class="text-xs font-semibold text-gray-500">Favoris</p><p class="text-2xl font-extrabold text-gray-900 mt-1">{{ totals.favorites }}</p></div>
+    <div class="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm"><p class="text-xs font-semibold text-gray-500">Mises en relation</p><p class="text-2xl font-extrabold text-gray-900 mt-1">{{ totals.relations }}</p></div>
+    <div class="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm"><p class="text-xs font-semibold text-gray-500">Conversations</p><p class="text-2xl font-extrabold text-gray-900 mt-1">{{ totals.conversations }}</p></div>
   </div>
+
+  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-gray-50 text-xs uppercase text-gray-500">
+          <tr>
+            <th class="px-4 py-3 text-left">Annonce</th>
+            <th class="px-4 py-3 text-left">État</th>
+            <th class="px-4 py-3 text-right">Vues</th>
+            <th class="px-4 py-3 text-right">Favoris</th>
+            <th class="px-4 py-3 text-right">Relations</th>
+            <th class="px-4 py-3 text-right">Conversations</th>
+            <th class="px-4 py-3 text-right" title="Mises en relation / vues">Conversion</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          {% for row in rows %}
+          <tr class="hover:bg-gray-50">
+            <td class="px-4 py-3"><a href="{% url 'dashboard:owner_property_edit' row.property.pk %}" class="font-semibold text-gray-900 hover:text-primary-700">{{ row.property.title|truncatechars:50 }}</a><p class="text-xs text-gray-500">{{ row.property.city }}</p></td>
+            <td class="px-4 py-3 whitespace-nowrap">
+              {% if row.property.is_published and row.property.is_validated %}<span class="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-800">En ligne</span>
+              {% elif not row.property.is_validated %}<span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">En validation</span>
+              {% else %}<span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-700">Masquée</span>{% endif %}
+            </td>
+            <td class="px-4 py-3 text-right">{{ row.views }}</td>
+            <td class="px-4 py-3 text-right">{{ row.favorites }}</td>
+            <td class="px-4 py-3 text-right">{{ row.relations }}</td>
+            <td class="px-4 py-3 text-right">{{ row.conversations }}</td>
+            <td class="px-4 py-3 text-right">{% if row.conversion is not None %}{{ row.conversion }} %{% else %}—{% endif %}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="7" class="px-4 py-10 text-center text-gray-500">Vous n'avez pas encore d'annonce. <a href="{% url 'dashboard:owner_property_create' %}" class="font-semibold text-primary-600">Publier un bien</a></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <p class="text-xs text-gray-500 mt-3">Vues comptées par visite enregistrée sur la période. Le compteur cumulé de l'accueil inclut aussi les vues antérieures.</p>
 </div>
 {% endblock %}

@@ -58,129 +58,65 @@
   </div>
   {% endif %}
 
-  <!-- KPIs -->
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-    <!-- Annonces -->
-    <div class="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm card-hover animate-fade-in-scale stagger-2">
-      <p class="text-xs font-semibold text-gray-400 mb-2">Annonces</p>
-      <h2 class="text-3xl font-extrabold text-gray-900">{{ properties_count }}</h2>
-      <p class="text-xs text-gray-400 mt-2 font-medium">Total</p>
+  <!-- Indicateurs -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
+    <a href="{% url 'dashboard:owner_properties' %}" class="bg-white rounded-2xl border border-gray-100 p-4 sm:p-5 shadow-sm hover:shadow-md transition">
+      <p class="text-xs font-semibold text-gray-500 mb-2">Annonces</p>
+      <p class="text-2xl sm:text-3xl font-extrabold text-gray-900">{{ properties_count }}</p>
+      <p class="text-xs text-gray-500 mt-2">{{ published_count }} publiée(s) · {{ validated_count }} validée(s)</p>
+      {% if pending_validation_count %}<p class="text-xs font-semibold text-amber-700 mt-1">{{ pending_validation_count }} en attente de validation</p>{% endif %}
+    </a>
+    <div class="bg-white rounded-2xl border border-gray-100 p-4 sm:p-5 shadow-sm">
+      <p class="text-xs font-semibold text-gray-500 mb-2">Vues</p>
+      <p class="text-2xl sm:text-3xl font-extrabold text-gray-900">{{ total_views }}</p>
+      <p class="text-xs text-gray-500 mt-2">Cumul sur toutes vos annonces</p>
     </div>
-    <!-- Vues -->
-    <div class="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm card-hover animate-fade-in-scale stagger-3">
-      <p class="text-xs font-semibold text-gray-400 mb-2">Vues</p>
-      <h2 class="text-3xl font-extrabold text-gray-900">{{ total_views }}</h2>
-      <p class="text-xs font-bold text-accent-600 mt-2 flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 15l7-7 7 7"></path></svg> +12%</p>
+    <div class="bg-white rounded-2xl border border-gray-100 p-4 sm:p-5 shadow-sm">
+      <p class="text-xs font-semibold text-gray-500 mb-2">Favoris</p>
+      <p class="text-2xl sm:text-3xl font-extrabold text-gray-900">{{ total_favorites }}</p>
+      <p class="text-xs text-gray-500 mt-2">Clients qui suivent vos biens</p>
     </div>
-    <!-- Favoris -->
-    <div class="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm card-hover animate-fade-in-scale stagger-4">
-      <p class="text-xs font-semibold text-gray-400 mb-2">Favoris</p>
-      <h2 class="text-3xl font-extrabold text-gray-900">{{ total_favorites }}</h2>
-      <p class="text-xs font-bold text-accent-600 mt-2 flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 15l7-7 7 7"></path></svg> +8%</p>
-    </div>
-    <!-- Mises en relation -->
-    <div class="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm card-hover animate-fade-in-scale stagger-5">
-      <p class="text-xs font-semibold text-gray-400 mb-2">Mises en relation</p>
-      <h2 class="text-3xl font-extrabold text-gray-900">{{ paid_contacts }}</h2>
-      <p class="text-xs text-gray-400 mt-2 font-medium">Clients payés</p>
-    </div>
+    <a href="{% url 'dashboard:owner_messaging' %}" class="bg-white rounded-2xl border border-gray-100 p-4 sm:p-5 shadow-sm hover:shadow-md transition">
+      <p class="text-xs font-semibold text-gray-500 mb-2">Mises en relation</p>
+      <p class="text-2xl sm:text-3xl font-extrabold text-gray-900">{{ paid_contacts }}</p>
+      <p class="text-xs text-gray-500 mt-2">{{ total_messages }} message(s) échangé(s)</p>
+    </a>
   </div>
 
-  <!-- Graph -->
-  <div class="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm card-hover animate-fade-in-up" style="animation-delay: 0.6s">
-    <div class="flex items-center justify-between mb-8">
-      <h2 class="font-bold text-gray-900 text-lg">Vues de vos annonces</h2>
-      <select class="text-sm border-gray-200 rounded-lg text-gray-500 font-medium py-1.5 pl-3 pr-8 focus:ring-primary-600 focus:border-primary-600">
-        <option>Cette semaine</option>
-        <option>Ce mois</option>
-        <option>Cette année</option>
-      </select>
+  <!-- Graphique -->
+  <div class="bg-white rounded-2xl border border-gray-100 p-5 sm:p-6 shadow-sm">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="font-bold text-gray-900 text-lg">Performance de vos annonces</h2>
+      <a href="{% url 'dashboard:owner_stats' %}" class="text-sm font-semibold text-primary-600 hover:text-primary-800">Détail par annonce →</a>
     </div>
-    <div class="h-80 w-full relative">
-      <canvas id="ownerViewsChart"></canvas>
-    </div>
+    <div class="h-72 w-full relative"><canvas id="ownerViewsChart" role="img" aria-label="Vues, favoris et mises en relation par mois"></canvas></div>
+    <p class="text-xs text-gray-500 mt-3">6 derniers mois civils · données enregistrées sur DOMIORA</p>
   </div>
 </div>
+{{ chart|json_script:"owner-chart-data" }}
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
-  const ownerViewsChart = document.getElementById('ownerViewsChart');
-  if (ownerViewsChart) {
-    // Injecting mockup dummy data to mimic the 3 lines if there's only 1 real dataset
-    const baseLabels = {{ chart_labels|safe }}.length ? {{ chart_labels|safe }} : ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
-    const baseData = {{ chart_values|safe }}.length ? {{ chart_values|safe }} : [50, 120, 80, 150, 110, 200, 170];
-    const data2 = baseData.map(v => Math.max(0, v - 40));
-    const data3 = baseData.map(v => Math.max(0, v - 80));
-
-    // Read DOMIORA design system colors from CSS variables
-    const rootStyles = getComputedStyle(document.documentElement);
-    const colorPrimary = rootStyles.getPropertyValue('--color-primary').trim() || '#71212d';
-    const colorAccent = rootStyles.getPropertyValue('--color-accent').trim() || '#d4af37';
-    const colorSuccess = '#10b981';
-    const colorTooltipBg = rootStyles.getPropertyValue('--color-text').trim() || '#1f2937';
-    const colorGrid = '#f3f4f6';
-    const colorTicks = '#9ca3af';
-
-    new Chart(ownerViewsChart, {
+  (function () {
+    if (typeof Chart === 'undefined') return;
+    const d = JSON.parse(document.getElementById('owner-chart-data').textContent);
+    const css = getComputedStyle(document.documentElement);
+    const primary = css.getPropertyValue('--color-primary').trim() || '#71212d';
+    const accent = css.getPropertyValue('--color-accent').trim() || '#d4af37';
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const line = (label, data, color) => ({ label, data, borderColor: color, backgroundColor: color, borderWidth: 2, cubicInterpolationMode: 'monotone', pointRadius: 3 });
+    new Chart(document.getElementById('ownerViewsChart'), {
       type: 'line',
-      data: {
-        labels: baseLabels,
-        datasets: [
-          {
-            label: 'Vues (Total)',
-            data: baseData,
-            borderColor: colorPrimary,
-            backgroundColor: 'transparent',
-            borderWidth: 2,
-            tension: 0.4,
-            pointBackgroundColor: '#fff',
-            pointBorderColor: colorPrimary,
-            pointBorderWidth: 2,
-            pointRadius: 4,
-            pointHoverRadius: 6
-          },
-          {
-            label: 'Favoris',
-            data: data2,
-            borderColor: colorAccent,
-            backgroundColor: 'transparent',
-            borderWidth: 2,
-            tension: 0.4,
-            pointRadius: 0,
-            pointHoverRadius: 4
-          }
-        ]
-      },
+      data: { labels: d.labels, datasets: [line('Vues', d.views, primary), line('Favoris', d.favorites, accent), line('Mises en relation', d.relations, '#10b981')] },
       options: {
-        responsive: true,
-        maintainAspectRatio: false,
+        responsive: true, maintainAspectRatio: false, animation: reduce ? false : { duration: 500 },
         interaction: { mode: 'index', intersect: false },
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            backgroundColor: colorTooltipBg,
-            titleFont: { size: 13, family: 'Inter' },
-            bodyFont: { size: 13, family: 'Inter' },
-            padding: 10,
-            cornerRadius: 8,
-            displayColors: false
-          }
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            grid: { color: colorGrid, drawBorder: false },
-            ticks: { color: colorTicks, font: { family: 'Inter', size: 11 }, maxTicksLimit: 5 }
-          },
-          x: {
-            grid: { display: false, drawBorder: false },
-            ticks: { color: colorPrimary, font: { family: 'Inter', size: 11 } }
-          }
-        }
-      }
+        plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 10 } } },
+        scales: { x: { grid: { display: false } }, y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: '#f3f4f6' } } },
+      },
     });
-  }
+  })();
 </script>
 {% endblock %}

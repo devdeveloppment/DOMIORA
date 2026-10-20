@@ -61,6 +61,7 @@ def home(request):
     context = {
         "featured": featured,
         "for_sale": for_sale,
+        "search_tabs": [("vente", "À vendre"), ("location", "À louer"), ("terrain", "Terrain"), ("commercial", "Commercial")],
         "recently_sold": recently_sold,
         "testimonials": testimonials,
         "stats": stats,

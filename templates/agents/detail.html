@@ -28,7 +28,7 @@
         
         <div class="flex flex-wrap items-center justify-center md:justify-start gap-3">
           {% if agent.is_verified %}
-          <span class="text-xs bg-emerald-500/20 text-emerald-300 font-bold px-4 py-1.5 rounded-full border border-emerald-500/30">✓ Vérifié</span>
+          <span class="text-xs bg-emerald-500/20 text-emerald-300 font-bold px-4 py-1.5 rounded-full border border-emerald-500/30"><i class="fa-solid fa-check" aria-hidden="true"></i> Vérifié</span>
           {% endif %}
           <span class="text-xs bg-white/10 text-white font-bold px-4 py-1.5 rounded-full backdrop-blur-sm">Membre depuis {{ agent.created_at|date:"F Y" }}</span>
         </div>
@@ -52,7 +52,7 @@
         <div>
           <p class="text-xs uppercase text-gray-500 font-bold mb-1">Évaluation</p>
           <div class="flex items-center justify-center gap-2">
-            <span class="text-accent">★</span>
+            <span class="text-accent"><i class="fa-solid fa-star" aria-hidden="true"></i></span>
             <span class="text-3xl font-extrabold text-gray-900">{{ agent.rating|floatformat:1|default:"0.0" }}</span>
           </div>
         </div>

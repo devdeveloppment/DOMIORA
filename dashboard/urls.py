@@ -68,6 +68,7 @@ urlpatterns = [
     path("admin-panel/verifications-identite/<int:pk>/action/", views_admin.admin_identity_verification_action, name="admin_identity_verification_action"),
     path("admin-panel/statistiques/", views_admin.admin_stats, name="admin_stats"),
     path("admin-panel/rapports/", views_admin.admin_reports, name="admin_reports"),
+    path("admin-panel/rapports/export/<str:kind>/", views_admin.admin_report_export, name="admin_report_export"),
     path("admin-panel/parametres/", views_admin.admin_settings, name="admin_settings"),
 
     # Missions de vérification terrain (admin : décision finale ; vérificateur : contrôle et rapport)
@@ -97,4 +98,8 @@ urlpatterns = [
     # Signalements d'annonces
     path("admin-panel/signalements/", moderation_views.admin_reports, name="admin_listing_reports"),
     path("admin-panel/signalements/<int:pk>/", moderation_views.admin_report_detail, name="admin_listing_report"),
+    path("signalements/<int:pk>/piece-jointe/", moderation_views.report_attachment, name="report_attachment"),
+    path("client/signalements/", moderation_views.client_reports, name="client_reports"),
+    path("client/signalements/nouveau/", moderation_views.client_report_new, name="client_report_new"),
+    path("client/signalements/<int:pk>/", moderation_views.client_report_detail, name="client_report_detail"),
 ]

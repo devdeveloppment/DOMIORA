@@ -1,0 +1,2 @@
+<span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold whitespace-nowrap
+  {% if report.status == 'open' %}bg-sky-100 text-sky-800{% elif report.status == 'reviewing' %}bg-amber-100 text-amber-800{% elif report.status == 'action_taken' %}bg-emerald-100 text-emerald-800{% else %}bg-gray-100 text-gray-700{% endif %}">{{ report.get_status_display }}</span>

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 220" preserveAspectRatio="none" fill="#ffffff">
+  <!-- Plan lointain : immeubles et maisons, silhouette continue (bords gauche/droit raccordables) -->
+  <path d="M0 220V150h40v-40h30v40h20V90l35-25 35 25v130h10V120h60v-30h20v30h40v100h10v-70l45-35 45 35v70h15V70h50v150h10v-90h30v-25l25-20 25 20v115h20v-60h40v-40h25v100h15v-80l40-30 40 30v80h20V100h35v120h15v-50h5v50z"/>
+  <g fill="#000" opacity=".55">
+    <rect x="102" y="110" width="10" height="12"/><rect x="128" y="110" width="10" height="12"/><rect x="102" y="140" width="10" height="12"/><rect x="128" y="140" width="10" height="12"/>
+    <rect x="198" y="135" width="9" height="10"/><rect x="218" y="135" width="9" height="10"/><rect x="238" y="135" width="9" height="10"/><rect x="198" y="165" width="9" height="10"/><rect x="238" y="165" width="9" height="10"/>
+    <rect x="452" y="85" width="9" height="10"/><rect x="474" y="85" width="9" height="10"/><rect x="452" y="110" width="9" height="10"/><rect x="474" y="110" width="9" height="10"/><rect x="452" y="135" width="9" height="10"/><rect x="474" y="135" width="9" height="10"/>
+    <rect x="735" y="120" width="9" height="10"/><rect x="752" y="120" width="9" height="10"/><rect x="735" y="145" width="9" height="10"/>
+  </g>
+</svg>

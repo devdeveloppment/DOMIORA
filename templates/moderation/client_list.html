@@ -1,0 +1,31 @@
+{% extends "dashboard/dashboard_base.html" %}
+{% block title %}Mes signalements — {{ site_settings.site_name }}{% endblock %}
+{% block dashboard_content %}
+<div class="w-full">
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold font-display text-gray-900">Mes signalements</h1>
+      <p class="text-sm text-gray-500 mt-0.5">Suivez le traitement de vos signalements par l'équipe DOMIORA.</p>
+    </div>
+    <a href="{% url 'dashboard:client_report_new' %}" class="inline-flex items-center justify-center rounded-xl bg-primary-600 hover:bg-primary-700 px-4 py-2.5 text-sm font-bold text-white transition">Nouveau signalement</a>
+  </div>
+
+  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm divide-y divide-gray-100">
+    {% for r in reports %}
+    <a href="{% url 'dashboard:client_report_detail' r.pk %}" class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-4 sm:p-5 hover:bg-gray-50 transition">
+      <div class="min-w-0">
+        <p class="font-semibold text-gray-900 text-sm truncate">#{{ r.pk }} · {{ r.get_category_display }}{% if r.property %} — {{ r.property.title }}{% elif r.reported_owner %} — {{ r.reported_owner.get_full_name|default:r.reported_owner.username }}{% endif %}</p>
+        <p class="text-xs text-gray-500 mt-0.5">{{ r.get_reason_display }} · envoyé le {{ r.created_at|date:"d/m/Y" }}{% if r.updated_at|date:"YmdHi" != r.created_at|date:"YmdHi" %} · mis à jour le {{ r.updated_at|date:"d/m/Y" }}{% endif %}</p>
+      </div>
+      {% include "moderation/_status_badge.html" with report=r %}
+    </a>
+    {% empty %}
+    <div class="p-8 text-center">
+      <p class="text-gray-600">Vous n'avez fait aucun signalement.</p>
+      <p class="text-sm text-gray-500 mt-1">Une annonce vous semble suspecte, ou on vous demande de l'argent hors de DOMIORA ? Signalez-le.</p>
+    </div>
+    {% endfor %}
+  </div>
+  <p class="text-xs text-gray-500 mt-4">Un signalement n'entraîne aucune sanction automatique : l'administration examine les faits avant toute décision. Le propriétaire concerné ne connaît pas votre identité.</p>
+</div>
+{% endblock %}

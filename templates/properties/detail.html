@@ -60,10 +60,10 @@
               {% if property.verification_badge_html %}
                 {{ property.verification_badge_html|safe }}
               {% endif %}
-              {% for badge_text, badge_class in property.status_badges %}
+              {% for badge_text, badge_class, badge_icon in property.status_badges %}
               <span
                 class="text-[10px] font-bold px-4 py-1.5 rounded-full {{ badge_class }}"
-                >{{ badge_text }}</span
+                ><i class="fa-solid {{ badge_icon }}" aria-hidden="true"></i> {{ badge_text }}</span
               >
               {% endfor %}
             </div>
@@ -772,7 +772,7 @@
               <div
                 class="flex items-center gap-1 text-xs text-yellow-500 font-bold mt-1"
               >
-                <span>★ 4.8</span>
+                <span><i class="fa-solid fa-star" aria-hidden="true"></i> 4.8</span>
                 <span class="text-gray-400 font-normal">(23 avis)</span>
               </div>
             </div>

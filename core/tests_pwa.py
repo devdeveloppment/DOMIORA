@@ -35,14 +35,25 @@ class PwaTests(TestCase):
 
 @override_settings(STORAGES=SIMPLE_STATIC)
 class HomeGlideTests(TestCase):
-    def test_glide_runs_once_and_respects_reduced_motion(self):
+    def test_marquee_loops_accessibly_and_respects_reduced_motion(self):
+        """Défilé continu : une copie visible, une copie décorative (aria-hidden, hors tabulation)."""
+        from django.conf import settings
+
         from accounts.models import User
         from payments.tests import make_property
 
         owner = User.objects.create_user("p", password="x-Pass-123", role=User.Role.OWNER)
-        make_property(owner)
+        prop = make_property(owner)
         body = self.client.get(reverse("core:home")).content.decode()
-        self.assertIn("domiora-glide 1.6s", body)
-        self.assertIn(" 1 both", body)          # une seule itération
-        self.assertNotIn("infinite", body.split("domiora-glide")[1][:200])
-        self.assertIn("prefers-reduced-motion: reduce", body)
+        self.assertEqual(body.count('class="domiora-marquee__group"'), 2)
+        self.assertEqual(body.count('class="domiora-marquee__group" role="list" aria-hidden="true"'), 1)
+        marquee = body.split('class="domiora-marquee__track"')[1].split("</section>")[0]
+        self.assertEqual(marquee.count(f'alt="{prop.title}"'), 1)  # la copie n'est pas annoncée deux fois
+        self.assertIn('tabindex="-1"', body)
+        with open(settings.BASE_DIR / "static/css/design-system.css", encoding="utf-8") as handle:
+            css = handle.read()
+        self.assertIn("domiora-marquee calc(var(--marquee-items, 6) * 5s) linear infinite", css)
+        self.assertIn("animation-play-state: paused", css)
+        reduced = css.split("@media (prefers-reduced-motion: reduce)")[-1]
+        self.assertIn(".domiora-marquee__group { animation: none;", reduced)
+        self.assertIn(".domiora-skyline__layer { animation: none; }", reduced)

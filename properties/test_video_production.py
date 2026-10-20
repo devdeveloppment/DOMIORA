@@ -36,7 +36,7 @@ class ProductionSettingsTests(SimpleTestCase):
         self.assertEqual(checks.virtual_tour_production_checks(None), [])
 
     def test_render_blueprint(self):
-        """render.yaml (offre gratuite) : DEBUG=False, worker Celery dans le conteneur web, Redis gratuit,
+        """render.yaml (offre gratuite) : DEBUG=False, worker Celery dans le conteneur web, sans Redis,
         CLOUDINARY_URL déclarée sans valeur, aucune offre payante ni aucun secret."""
         from django.conf import settings
 
@@ -51,12 +51,14 @@ class ProductionSettingsTests(SimpleTestCase):
         web = services["domiora"]
         self.assertIn('key: DEBUG\n        value: "False"', web)
         self.assertIn("key: CLOUDINARY_URL\n        sync: false", web)
-        self.assertIn("key: REDIS_URL\n        fromService:\n          type: keyvalue\n          name: domiora-redis", web)
+        # Pas de Redis (une seule instance Key Value gratuite par compte) : broker filesystem,
+        # valable car le worker Celery tourne dans le même conteneur (start.sh).
+        self.assertNotIn("REDIS_URL", web)
         self.assertIn("startCommand: bash start.sh", web)
         self.assertIn("celery -A config worker --pool=solo", start)
         self.assertIn("exec gunicorn config.wsgi:application", start)
         self.assertNotIn("domiora-worker", services)  # pas de Background Worker payant
-        self.assertTrue(services["domiora-redis"].startswith("keyvalue"))
+        self.assertNotIn("domiora-redis", services)
         plans = {line.split("plan:", 1)[1].strip() for line in content.splitlines() if line.strip().startswith("plan:")}
         self.assertEqual(plans, {"free"})
         self.assertNotIn("cloudinary://", content)

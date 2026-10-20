@@ -534,6 +534,7 @@ _BYE_RE = re.compile(r"\b(au revoir|a bientot|bye|bonne journee|bonne soiree)\b"
 _HUMAN_RE = re.compile(r"\b(es[- ]tu|etes[- ]vous|tu es|vous etes) (un |une )?(humain|robot|ia|vrai|personne|bot)\b|\bqui (es[- ]tu|etes[- ]vous)\b")
 
 _FAQ_TOPICS = [
+    ("favorites", r"(favori)"),
     ("not_published", r"(pas (encore )?(publie|en ligne|visible)|n'est pas (encore )?(publie|visible|en ligne)|toujours en attente|pas apparu)"),
     ("why_pay", r"pourquoi .*(payer|frais|paie|500)"),
     ("payment", r"(fedapay|moyens? de paiement|comment (je )?pa(yer|ie)|mobile money|payer par|paiement)"),
@@ -545,6 +546,10 @@ _FAQ_TOPICS = [
     ("compare", r"(comparateur|comment comparer)"),
     ("alerts", r"(alerte)"),
     ("visit", r"(visite|visiter|rendez-vous)"),
+    ("question_before", r"(poser une question|question (au|avant)|avant (de )?(payer|la mise en relation))"),
+    ("subscription", r"(abonnement|formule|sponsoris|mettre en avant|booster|plus de visibilite)"),
+    ("improve_listing", r"(ameliorer|optimiser|rendre .*attracti|plus de (vues|contacts|clients)|mieux (vendre|louer))"),
+    ("dashboard", r"(mon espace|tableau de bord|dashboard|mon compte)"),
     ("contact", r"(contacter|joindre|mise en relation|mettre en relation|coordonnees|numero|telephone)"),
     ("how_it_works", r"(comment (ca )?(marche|fonctionne)|c'est quoi domiora|qu'est[- ]ce que domiora|fonctionnement|domiora)"),
     ("find_property", r"(trouver|chercher|rechercher)"),
@@ -563,11 +568,13 @@ _ADVICE_RE = re.compile(
 # Sujets propres à la plateforme : réponses FAQ vérifiées plutôt que le LLM
 _PLATFORM_RE = re.compile(
     r"\b(domiora|fedapay|mobile money|mise en relation|mettre en relation|contacter|publier|annonces?|alertes?"
-    r"|comparateur|visite virtuelle|video|inscri\w*|compte|mon bien|mes biens|payer|paiement|paye|500)\b"
+    r"|comparateur|visite virtuelle|video|inscri\w*|compte|mon bien|mes biens|payer|paiement|paye|500"
+    r"|abonnement|favoris?|tableau de bord|mon espace|sponsoris\w*|ameliorer|optimiser)\b"
 )
 # Demandes portant sur les biens disponibles : recherche
 _LISTING_RE = re.compile(r"\b(disponibles?|avez[- ]vous|vous avez|y a[- ]t[- ]il|trouver|cherche\w*|montre\w*|propose\w*)\b")
-_NON_SEARCH_TOPICS = {"not_published", "why_pay", "payment", "verification", "become_owner", "publish", "ai_search", "alerts"}
+_NON_SEARCH_TOPICS = {"not_published", "why_pay", "payment", "verification", "become_owner", "publish", "ai_search", "alerts",
+                      "question_before", "subscription", "favorites", "improve_listing", "dashboard"}
 _STRONG_KEYS = (
     "property_kind", "city", "budget_min", "budget_max", "bedrooms", "features",
     "transaction_type", "surface_min", "surface_max", "bathrooms_min",
@@ -1175,8 +1182,7 @@ def _handle_general(message, refs, state, user, use_llm):
         context = _presented_context(state)
         if context:
             system += "\nBiens actuellement présentés à l'utilisateur (seules données de biens que tu peux citer) :\n" + context
-        role = getattr(user, "role", None) if user and user.is_authenticated else "visiteur"
-        system += f"\nRôle de l'utilisateur : {role}."
+        system += "\n" + knowledge.role_guidance(user)
         messages = [{"role": "system", "content": system}]
         for item in state["history"][-8:]:
             messages.append({"role": item["role"], "content": item["content"][:1000]})

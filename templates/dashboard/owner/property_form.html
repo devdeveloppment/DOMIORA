@@ -83,7 +83,7 @@
       <div class="relative group">
         <img src="{{ img.image.url }}" class="w-full h-20 object-cover rounded-lg">
         <span class="absolute top-1 left-1 bg-black/60 text-white text-[10px] font-bold px-1.5 rounded">{{ forloop.counter }}</span>
-        <button form="delete-img-{{ img.pk }}" type="submit" class="absolute top-1 right-1 bg-black/60 text-white text-xs w-5 h-5 rounded-full opacity-0 group-hover:opacity-100 transition" title="Supprimer">✕</button>
+        <button form="delete-img-{{ img.pk }}" type="submit" class="absolute top-1 right-1 bg-black/60 text-white text-xs w-5 h-5 rounded-full opacity-0 group-hover:opacity-100 transition" title="Supprimer"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
         <div class="absolute bottom-1 inset-x-1 flex justify-between opacity-0 group-hover:opacity-100 transition">
           {% if not forloop.first %}<button form="move-img-{{ img.pk }}-up" type="submit" class="bg-black/60 text-white text-xs w-5 h-5 rounded-full" title="Avancer">←</button>{% else %}<span></span>{% endif %}
           {% if not forloop.last %}<button form="move-img-{{ img.pk }}-down" type="submit" class="bg-black/60 text-white text-xs w-5 h-5 rounded-full" title="Reculer">→</button>{% endif %}

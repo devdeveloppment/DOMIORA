@@ -1,80 +1,140 @@
 {% extends "dashboard/dashboard_base.html" %}
+{% load humanize %}
 {% block title %}Finances — {{ site_settings.site_name }}{% endblock %}
 
 {% block dashboard_content %}
-<div class="rounded-3xl border border-gray-200 dashboard-hero p-6 shadow-lg mb-8">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
   <div>
-    <p class="text-xs font-semibold uppercase tracking-[0.2em] text-primary-600 mb-1">Finances</p>
-    <h1 class="text-3xl font-extrabold text-gray-900">Finances & mises en relation</h1>
-    <p class="mt-2 text-sm text-gray-600">Suivez les revenus générés par les commissions et les contacts débloqués.</p>
+    <h1 class="text-2xl font-bold font-display text-gray-900">Finances</h1>
+    <p class="text-sm text-gray-500 mt-0.5">Revenus DOMIORA · {{ period_label|lower }}</p>
+  </div>
+  {% include "dashboard/partials/period_filter.html" %}
+</div>
+
+<div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 mb-6 text-sm text-amber-900">
+  <strong>Phase de démonstration.</strong> Les paiements simulés, les paiements FedaPay en mode sandbox et les abonnements simulés sont comptés à part comme <em>tests</em> : ils ne sont jamais additionnés aux revenus encaissés.
+</div>
+
+<!-- Synthèse -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+  <div class="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+    <p class="text-xs font-semibold text-gray-500 mb-2">Revenus encaissés (réels)</p>
+    <p class="text-3xl font-extrabold text-emerald-700">{{ finance.real_total|intcomma }} <span class="text-base">FCFA</span></p>
+    <p class="text-xs text-gray-500 mt-2">{{ finance.contact_real.count }} mise(s) en relation · {{ finance.subs_real.count }} abonnement(s)</p>
+  </div>
+  <div class="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+    <p class="text-xs font-semibold text-gray-500 mb-2">Montants de test (non encaissés)</p>
+    <p class="text-3xl font-extrabold text-amber-700">{{ finance.test_total|intcomma }} <span class="text-base">FCFA</span></p>
+    <p class="text-xs text-gray-500 mt-2">{{ finance.contact_test.count }} mise(s) en relation · {{ finance.subs_test.count }} abonnement(s)</p>
+  </div>
+  <div class="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+    <p class="text-xs font-semibold text-gray-500 mb-2">Transactions immobilières déclarées</p>
+    <p class="text-3xl font-extrabold text-gray-900">{{ finance.deals.count }}</p>
+    <p class="text-xs text-gray-500 mt-2">Volume {{ finance.deals.volume|floatformat:0|intcomma }} FCFA · commissions {{ finance.deals.commission|floatformat:0|intcomma }} FCFA</p>
+    <p class="text-xs text-gray-500">Ventes/locations entre parties : pas un revenu DOMIORA.</p>
   </div>
 </div>
 
-<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-    <p class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Revenus totaux</p>
-    <h3 class="text-3xl font-extrabold text-gray-900">{{ total_revenue|floatformat:0 }} FCFA</h3>
-    <p class="text-sm text-gray-500 mt-2">Basé sur les commissions enregistrées dans DOMIORA.</p>
-    <p class="text-xs text-emerald-600 mt-1 font-medium">✓ Données réelles uniquement (pas de données de test)</p>
-  </div>
-  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-    <p class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Mises en relation payées</p>
-    <h3 class="text-3xl font-extrabold text-gray-900">{{ total_paid_relations }}</h3>
-    <p class="text-sm text-gray-500 mt-2">Nombre de contacts propriétaires débloqués par les clients.</p>
-    <p class="text-xs text-emerald-600 mt-1 font-medium">✓ Statistiques synchronisées avec les transactions réelles</p>
-  </div>
-</div>
-
-{% if note %}
-<div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 mb-8">
-  <div class="flex items-start">
-    <div class="flex-shrink-0">
-      <svg class="h-5 w-5 text-emerald-600" viewBox="0 0 20 20" fill="currentColor">
-        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-      </svg>
-    </div>
-    <div class="ml-3">
-      <p class="text-sm text-emerald-800 font-medium">{{ note }}</p>
-    </div>
-  </div>
-</div>
-{% endif %}
-
-<div class="bg-white rounded-2xl shadow-card border border-gray-100 overflow-hidden">
-  <div class="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
-    <h2 class="text-lg font-bold text-gray-900">Historique des mises en relation</h2>
-  </div>
+<!-- Détail par source -->
+<div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-6">
   <div class="overflow-x-auto">
-    <table class="w-full text-sm text-left">
-      <thead class="text-xs text-gray-500 uppercase bg-gray-50 font-semibold">
-        <tr>
-          <th class="px-6 py-4">Client</th>
-          <th class="px-6 py-4">Propriété</th>
-          <th class="px-6 py-4">Propriétaire</th>
-          <th class="px-6 py-4">Débloqué le</th>
-        </tr>
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50 text-xs uppercase text-gray-500">
+        <tr><th class="px-5 py-3 text-left">Source</th><th class="px-5 py-3 text-right">Réel</th><th class="px-5 py-3 text-right">Test</th></tr>
       </thead>
       <tbody class="divide-y divide-gray-100">
-        {% for unlock in recent_unlocks %}
-        <tr class="hover:bg-gray-50 transition">
-          <td class="px-6 py-4 font-medium text-gray-900">{{ unlock.user.get_full_name|default:unlock.user.username }}</td>
-          <td class="px-6 py-4 text-gray-600">{{ unlock.property.title }}</td>
-          <td class="px-6 py-4 text-gray-600">
-            {% if unlock.property.owner %}
-              {{ unlock.property.owner.get_full_name|default:unlock.property.owner.username }}
-            {% else %}
-              —
-            {% endif %}
-          </td>
-          <td class="px-6 py-4 text-gray-500">{{ unlock.unlocked_at|date:"d M Y, H:i" }}</td>
-        </tr>
-        {% empty %}
-        <tr>
-          <td colspan="4" class="px-6 py-8 text-center text-gray-500">Aucune mise en relation payée pour le moment.</td>
-        </tr>
-        {% endfor %}
+        <tr><td class="px-5 py-3 font-medium text-gray-900">Frais de mise en relation</td>
+            <td class="px-5 py-3 text-right">{{ finance.contact_real.total|intcomma }} FCFA <span class="text-gray-500">({{ finance.contact_real.count }})</span></td>
+            <td class="px-5 py-3 text-right text-amber-700">{{ finance.contact_test.total|intcomma }} FCFA <span class="text-gray-500">({{ finance.contact_test.count }})</span></td></tr>
+        <tr><td class="px-5 py-3 font-medium text-gray-900">Abonnements propriétaires</td>
+            <td class="px-5 py-3 text-right">{{ finance.subs_real.total|intcomma }} FCFA <span class="text-gray-500">({{ finance.subs_real.count }})</span></td>
+            <td class="px-5 py-3 text-right text-amber-700">{{ finance.subs_test.total|intcomma }} FCFA <span class="text-gray-500">({{ finance.subs_test.count }})</span></td></tr>
+        <tr class="bg-gray-50 font-bold"><td class="px-5 py-3">Total</td>
+            <td class="px-5 py-3 text-right text-emerald-700">{{ finance.real_total|intcomma }} FCFA</td>
+            <td class="px-5 py-3 text-right text-amber-700">{{ finance.test_total|intcomma }} FCFA</td></tr>
       </tbody>
     </table>
   </div>
 </div>
+
+<div class="bg-white rounded-2xl border border-gray-100 p-5 sm:p-6 shadow-sm mb-6">
+  <div class="flex items-center justify-between mb-4">
+    <h2 class="font-bold text-gray-900 text-lg">Évolution mensuelle</h2>
+    <span class="text-xs text-gray-500">12 derniers mois civils</span>
+  </div>
+  <div class="h-64 relative"><canvas id="financeChart" role="img" aria-label="Revenus réels et de test par mois"></canvas></div>
+</div>
+
+<!-- Historique -->
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+    <h2 class="px-5 py-4 border-b border-gray-100 font-bold text-gray-900">Mises en relation payées</h2>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-gray-50 text-xs uppercase text-gray-500"><tr><th class="px-4 py-3 text-left">Client → Propriétaire</th><th class="px-4 py-3 text-left">Annonce</th><th class="px-4 py-3 text-right">Montant</th><th class="px-4 py-3 text-right">Date</th></tr></thead>
+        <tbody class="divide-y divide-gray-100">
+          {% for pay in payments %}
+          <tr>
+            <td class="px-4 py-3 text-gray-900">{{ pay.client.get_full_name|default:pay.client.username }} → {{ pay.owner.get_full_name|default:pay.owner.username }}</td>
+            <td class="px-4 py-3 text-gray-600">{{ pay.property.title|default:"—"|truncatechars:40 }}</td>
+            <td class="px-4 py-3 text-right whitespace-nowrap">{{ pay.amount|intcomma }} {{ pay.currency }}
+              {% if pay.is_test %}<span class="ml-1 rounded bg-amber-100 px-1.5 py-0.5 text-[11px] font-semibold text-amber-800">Test</span>{% else %}<span class="ml-1 rounded bg-emerald-100 px-1.5 py-0.5 text-[11px] font-semibold text-emerald-800">Réel</span>{% endif %}</td>
+            <td class="px-4 py-3 text-right text-gray-500 whitespace-nowrap">{{ pay.paid_at|date:"d/m/Y" }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4" class="px-4 py-8 text-center text-gray-500">Aucun paiement sur la période.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+    <h2 class="px-5 py-4 border-b border-gray-100 font-bold text-gray-900">Paiements d'abonnement</h2>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-gray-50 text-xs uppercase text-gray-500"><tr><th class="px-4 py-3 text-left">Propriétaire</th><th class="px-4 py-3 text-left">Formule</th><th class="px-4 py-3 text-right">Montant</th><th class="px-4 py-3 text-right">Date</th></tr></thead>
+        <tbody class="divide-y divide-gray-100">
+          {% for sp in subscription_payments %}
+          <tr>
+            <td class="px-4 py-3 text-gray-900">{{ sp.owner.get_full_name|default:sp.owner.username }}</td>
+            <td class="px-4 py-3 text-gray-600">{{ sp.plan.name }} · {{ sp.get_purpose_display }}</td>
+            <td class="px-4 py-3 text-right whitespace-nowrap">{{ sp.amount|intcomma }} {{ sp.currency }}
+              {% if sp.is_simulated %}<span class="ml-1 rounded bg-amber-100 px-1.5 py-0.5 text-[11px] font-semibold text-amber-800">Test</span>{% else %}<span class="ml-1 rounded bg-emerald-100 px-1.5 py-0.5 text-[11px] font-semibold text-emerald-800">Réel</span>{% endif %}</td>
+            <td class="px-4 py-3 text-right text-gray-500 whitespace-nowrap">{{ sp.paid_at|date:"d/m/Y" }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4" class="px-4 py-8 text-center text-gray-500">Aucun paiement d'abonnement sur la période.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{{ chart|json_script:"finance-chart-data" }}
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+  (function () {
+    if (typeof Chart === 'undefined') return;
+    const d = JSON.parse(document.getElementById('finance-chart-data').textContent);
+    const primary = getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim() || '#71212d';
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const fmt = (v) => new Intl.NumberFormat('fr-FR').format(v) + ' FCFA';
+    new Chart(document.getElementById('financeChart'), {
+      type: 'bar',
+      data: { labels: d.labels, datasets: [
+        { label: 'Encaissé (réel)', data: d.real, backgroundColor: primary, borderRadius: 4, stack: 's' },
+        { label: 'Test (non encaissé)', data: d.test, backgroundColor: '#f59e0b', borderRadius: 4, stack: 's' },
+      ] },
+      options: {
+        responsive: true, maintainAspectRatio: false, animation: reduce ? false : { duration: 500 },
+        plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 10 } },
+                   tooltip: { callbacks: { label: (c) => `${c.dataset.label} : ${fmt(c.parsed.y)}` } } },
+        scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, beginAtZero: true, grid: { color: '#f3f4f6' } } },
+      },
+    });
+  })();
+</script>
 {% endblock %}

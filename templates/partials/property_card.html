@@ -16,15 +16,16 @@
         {% endif %}
       </span>
       {% if property.owner_verification_label %}
-      <span class="text-[10px] font-bold px-2 py-1 rounded shadow-sm bg-white/95 text-gray-800">
+      <span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded shadow-sm bg-white/95 text-gray-800">
+        <i class="fa-solid {% if property.owner_verified %}fa-circle-check text-emerald-600{% else %}fa-hourglass-half text-amber-600{% endif %}" aria-hidden="true"></i>
         {{ property.owner_verification_label }}
       </span>
       {% endif %}
       {% if property.verification_badge_html %}
       {{ property.verification_badge_html|safe }}
       {% endif %}
-      {% for badge_text, badge_class in property.status_badges %}
-      <span class="text-[10px] font-bold px-2 py-1 rounded shadow-sm {{ badge_class }}">{{ badge_text }}</span>
+      {% for badge_text, badge_class, badge_icon in property.status_badges %}
+      <span class="text-[10px] font-bold px-2 py-1 rounded shadow-sm {{ badge_class }}"><i class="fa-solid {{ badge_icon }}" aria-hidden="true"></i> {{ badge_text }}</span>
       {% endfor %}
     </div>
 
