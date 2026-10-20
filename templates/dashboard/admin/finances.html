@@ -49,9 +49,12 @@
         <tr><td class="px-5 py-3 font-medium text-gray-900">Abonnements propriétaires</td>
             <td class="px-5 py-3 text-right">{{ finance.subs_real.total|intcomma }} FCFA <span class="text-gray-500">({{ finance.subs_real.count }})</span></td>
             <td class="px-5 py-3 text-right text-amber-700">{{ finance.subs_test.total|intcomma }} FCFA <span class="text-gray-500">({{ finance.subs_test.count }})</span></td></tr>
-        <tr class="bg-gray-50 font-bold"><td class="px-5 py-3">Total</td>
+        <tr class="bg-gray-50 font-bold"><td class="px-5 py-3">Total des revenus de service</td>
             <td class="px-5 py-3 text-right text-emerald-700">{{ finance.real_total|intcomma }} FCFA</td>
             <td class="px-5 py-3 text-right text-amber-700">{{ finance.test_total|intcomma }} FCFA</td></tr>
+        <tr><td class="px-5 py-3 font-medium text-gray-900">Dons volontaires <span class="text-xs font-normal text-gray-500">(hors revenus de service)</span></td>
+            <td class="px-5 py-3 text-right">{{ finance.donations_real.total|intcomma }} FCFA <span class="text-gray-500">({{ finance.donations_real.count }})</span></td>
+            <td class="px-5 py-3 text-right text-amber-700">{{ finance.donations_test.total|intcomma }} FCFA <span class="text-gray-500">({{ finance.donations_test.count }})</span></td></tr>
       </tbody>
     </table>
   </div>

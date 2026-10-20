@@ -52,9 +52,9 @@
       </p>
 
       <!-- Search Form -->
-      <div class="mt-10 bg-white rounded-[16px] shadow-2xl p-4" x-data="{ tab: 'vente' }">
+      <div class="mt-10 bg-white rounded-[16px] shadow-2xl p-4" x-data="{ tab: 'tous' }">
         <!-- Onglets : À vendre / À louer filtrent la transaction ; Terrain / Commercial présélectionnent le type -->
-        <div class="flex gap-4 sm:gap-6 mb-4 px-2 text-sm font-bold text-gray-600" role="tablist" aria-label="Type de recherche">
+        <div class="flex gap-3 sm:gap-6 mb-4 px-1 sm:px-2 text-[13px] sm:text-sm font-bold text-gray-600" role="tablist" aria-label="Type de recherche">
           {% for key, label in search_tabs %}
           <button type="button" role="tab" class="whitespace-nowrap pb-2 border-b-2 transition"
                   :aria-selected="(tab === '{{ key }}').toString()"
@@ -66,7 +66,7 @@
           action="{% url 'properties:list' %}"
           class="grid gap-3 sm:grid-cols-[2fr_1fr_1fr_auto] items-center"
         >
-          <input type="hidden" name="transaction" :value="['vente', 'location'].includes(tab) ? tab : ''" :disabled="!['vente', 'location'].includes(tab)" value="vente">
+          <input type="hidden" name="transaction" :value="['vente', 'location'].includes(tab) ? tab : ''" :disabled="!['vente', 'location'].includes(tab)" value="" disabled>
           <div class="relative">
             <svg
               class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2"
@@ -83,8 +83,9 @@
             </svg>
             <input
               type="text"
-              name="city"
-              placeholder="Que recherchez-vous ?"
+              name="q"
+              aria-label="Ville, quartier ou type de bien"
+              placeholder="Ville, quartier, bien…"
               class="w-full text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-4 py-3 outline-none focus:border-primary-600 focus:ring-1 focus:ring-primary-600 font-medium transition"
             />
           </div>
@@ -115,30 +116,15 @@
             </svg>
           </div>
           <div class="relative">
-            <select
+            <input
+              type="text"
               name="price_max"
-              class="w-full bg-gray-50 border border-gray-200 text-sm text-gray-700 rounded-xl px-4 py-3 outline-none appearance-none pr-8 focus:border-primary-600 focus:ring-1 focus:ring-primary-600 transition"
-            >
-              <option value="">Prix max</option>
-              <option value="5000000">5 M FCFA</option>
-              <option value="15000000">15 M FCFA</option>
-              <option value="50000000">50 M FCFA</option>
-              <option value="100000000">100 M FCFA</option>
-              <option value="500000000">500 M FCFA</option>
-            </select>
-            <svg
-              class="w-4 h-4 text-gray-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M19 9l-7 7-7-7"
-              ></path>
-            </svg>
+              inputmode="numeric"
+              autocomplete="off"
+              aria-label="Budget maximum en FCFA"
+              placeholder="Budget max (FCFA)"
+              class="w-full bg-gray-50 border border-gray-200 text-sm text-gray-700 rounded-xl px-4 py-3 outline-none focus:border-primary-600 focus:ring-1 focus:ring-primary-600 transition"
+            />
           </div>
           <div>
             <button
@@ -546,7 +532,7 @@
     </div>
     <a
       href="{% url 'core:donate' %}"
-      class="w-full sm:w-auto bg-gradient-to-r from-accent to-accent-300 text-primary-900 font-bold px-12 py-6 rounded-2xl text-center hover:scale-105 transition shadow-2xl flex items-center justify-center gap-4 transform hover:translate-y-1 border-4 border-white/30"
+      class="domiora-donate-glow w-full sm:w-auto bg-gradient-to-r from-accent to-accent-300 text-primary-900 font-bold px-12 py-6 rounded-2xl text-center hover:scale-105 transition shadow-2xl flex items-center justify-center gap-4 transform hover:translate-y-1 border-4 border-white/30"
     >
       <svg
         class="w-7 h-7"

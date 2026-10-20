@@ -40,3 +40,30 @@ class BlogPostAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
+
+
+from .models import Donation, DonationEvent  # noqa: E402
+
+
+class DonationEventInline(admin.TabularInline):
+    model = DonationEvent
+    extra = 0
+    can_delete = False
+    readonly_fields = ("source", "reported_status", "status_before", "status_after", "event_key", "received_at")
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(Donation)
+class DonationAdmin(admin.ModelAdmin):
+    """Consultation seule : un don ne change d'état que par vérification auprès du prestataire."""
+    list_display = ("reference", "amount", "currency", "provider", "status", "is_test", "created_at", "confirmed_at")
+    list_filter = ("status", "is_test", "provider")
+    inlines = [DonationEventInline]
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False

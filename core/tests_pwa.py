@@ -54,6 +54,6 @@ class HomeGlideTests(TestCase):
             css = handle.read()
         self.assertIn("domiora-marquee calc(var(--marquee-items, 6) * 5s) linear infinite", css)
         self.assertIn("animation-play-state: paused", css)
-        reduced = css.split("@media (prefers-reduced-motion: reduce)")[-1]
+        reduced = "".join(css.split("@media (prefers-reduced-motion: reduce)")[1:])
         self.assertIn(".domiora-marquee__group { animation: none;", reduced)
         self.assertIn(".domiora-skyline__layer { animation: none; }", reduced)

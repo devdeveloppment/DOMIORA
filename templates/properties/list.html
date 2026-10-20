@@ -76,8 +76,8 @@
         <div>
           <p class="text-xs font-bold uppercase text-gray-400 mb-2">Budget</p>
           <div class="grid grid-cols-2 gap-2">
-            <input type="number" name="price_min" value="{{ request_get.price_min }}" placeholder="Min FCFA" class="rounded-lg border border-gray-200 border-gray-200 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 transition">
-            <input type="number" name="price_max" value="{{ request_get.price_max }}" placeholder="Max FCFA" class="rounded-lg border border-gray-200 border-gray-200 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 transition">
+            <input type="text" inputmode="numeric" name="price_min" value="{{ request_get.price_min }}" placeholder="Min FCFA" aria-label="Prix minimum en FCFA" class="rounded-lg border border-gray-200 border-gray-200 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 transition">
+            <input type="text" inputmode="numeric" name="price_max" value="{{ request_get.price_max }}" placeholder="Max FCFA" aria-label="Prix maximum en FCFA" class="rounded-lg border border-gray-200 border-gray-200 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 transition">
           </div>
         </div>
 
@@ -93,7 +93,7 @@
 
         <div>
           <p class="text-xs font-bold uppercase text-gray-400 mb-2">Ville</p>
-          <input type="text" name="city" value="{{ request_get.city }}" placeholder="Ex: Paris, New York..." class="w-full rounded-lg border border-gray-200 border-gray-200 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 transition">
+          <input type="text" name="city" value="{{ request_get.city }}" placeholder="Ex : Lomé, Kara…" class="w-full rounded-lg border border-gray-200 border-gray-200 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 transition">
         </div>
 
         {% if user.is_authenticated %}

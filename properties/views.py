@@ -21,6 +21,7 @@ from django.conf import settings
 # Importations des modèles DOMIORA
 from favorites.models import Favorite
 from rental_requests.forms import PropertyRequestForm
+from .search_params import parse_number
 from .models import Property, PropertyUnlock, PropertyView, SearchAlert
 
 # Configuration du logger pour le suivi des erreurs
@@ -147,9 +148,10 @@ def save_search_alert(request):
         city=(request.POST.get("city") or "").strip(),
         property_type=(request.POST.get("type") or "").strip(),
         transaction_type=(request.POST.get("transaction") or "").strip(),
-        price_min=(request.POST.get("price_min") or "").strip() or None,
-        price_max=(request.POST.get("price_max") or "").strip() or None,
-        bedrooms_min=(request.POST.get("bedrooms") or "").strip() or None,
+        # Même lecture tolérante que la recherche : « 10 000 » accepté, valeur illisible ignorée.
+        price_min=parse_number(request.POST.get("price_min")),
+        price_max=parse_number(request.POST.get("price_max")),
+        bedrooms_min=parse_number(request.POST.get("bedrooms"), integer=True),
         is_active=True,
     )
     messages.success(request, f"Alerte sauvegardée : {alert.name}")
@@ -216,30 +218,11 @@ def property_list(request):
     if city:
         qs = qs.filter(city__icontains=city)
 
-    # Filtre par prix minimum
-    price_min = request.GET.get("price_min")
-    if price_min:
-        qs = qs.filter(price__gte=price_min)
+    # Prix, chambres, salles de bain, surface : valeurs lues de façon tolérante
+    # (« 10 000 » accepté ; une valeur illisible est ignorée, jamais d'erreur 500).
+    from .search_params import apply_numeric_filters
 
-    # Filtre par prix maximum
-    price_max = request.GET.get("price_max")
-    if price_max:
-        qs = qs.filter(price__lte=price_max)
-
-    # Filtre par nombre de chambres minimum
-    bedrooms = request.GET.get("bedrooms")
-    if bedrooms:
-        qs = qs.filter(bedrooms__gte=bedrooms)
-
-    # Filtre par nombre de salles de bain minimum
-    bathrooms = request.GET.get("bathrooms")
-    if bathrooms:
-        qs = qs.filter(bathrooms__gte=bathrooms)
-
-    # Filtre par surface minimum
-    surface_min = request.GET.get("surface_min")
-    if surface_min:
-        qs = qs.filter(surface_area__gte=surface_min)
+    qs = apply_numeric_filters(qs, request.GET)
 
     # Filtre par statut (vendu/loué ou disponible)
     status = request.GET.get("status")

@@ -8,7 +8,7 @@
       <a href="{% url 'core:contact' %}" class="border border-white/60 text-white font-semibold rounded-full px-6 py-3 hover:bg-white/10 transition">Nous contacter</a>
       <!-- Soutenir DOMIORA (sauf sur page d'accueil) -->
       {% if request.path != '/' %}
-      <a href="{% url 'core:donate' %}" class="bg-accent text-primary-900 font-bold rounded-full px-6 py-3 hover:scale-105 transition shadow-lg flex items-center justify-center gap-2">
+      <a href="{% url 'core:donate' %}" class="domiora-donate-glow bg-accent text-primary-900 font-bold rounded-full px-6 py-3 hover:scale-105 transition shadow-lg flex items-center justify-center gap-2">
         <svg class="w-5 h-5 text-red-500" fill="currentColor" stroke="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg> Soutenir DOMIORA
       </a>
       {% endif %}

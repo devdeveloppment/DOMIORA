@@ -2,12 +2,18 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show kReleaseMode;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
-/// Adresse du backend Django. Par défaut : le PC hôte vu depuis l'émulateur Android.
-/// Pour un téléphone réel : flutter run --dart-define=API_BASE=http://IP_DU_PC:8000
-const String apiBase = String.fromEnvironment('API_BASE', defaultValue: 'http://10.0.2.2:8000');
+/// Adresse du backend Django.
+/// - Version publiée (flutter build apk/appbundle) : le site en ligne, en HTTPS.
+/// - Développement : le PC hôte vu depuis l'émulateur Android (http://10.0.2.2:8000).
+/// Surcharge possible : --dart-define=API_BASE=http://IP_DU_PC:8000 (téléphone réel en local).
+const String apiBase = String.fromEnvironment(
+  'API_BASE',
+  defaultValue: kReleaseMode ? 'https://domiora.onrender.com' : 'http://10.0.2.2:8000',
+);
 
 class ApiException implements Exception {
   final String message;

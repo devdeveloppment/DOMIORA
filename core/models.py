@@ -1,3 +1,5 @@
+import uuid
+
 from django.db import models
 from django.utils import timezone
 from django.contrib.auth import get_user_model
@@ -77,3 +79,66 @@ class BlogPost(models.Model):
     def get_absolute_url(self):
         from django.urls import reverse
         return reverse('core:blog_detail', kwargs={'slug': self.slug})
+
+
+class Donation(models.Model):
+    """
+    Don volontaire à DOMIORA (montant libre). Confirmé uniquement par vérification serveur
+    auprès du prestataire ; un don de test (simulation ou FedaPay sandbox) n'est jamais compté
+    comme encaissé (is_test).
+    """
+
+    class Provider(models.TextChoices):
+        SIMULATION = "simulation", "Simulation (démonstration)"
+        FEDAPAY = "fedapay", "FedaPay"
+
+    class Status(models.TextChoices):
+        PENDING = "pending", "En attente"
+        APPROVED = "approved", "Reçu"
+        DECLINED = "declined", "Refusé"
+        CANCELED = "canceled", "Annulé"
+        FAILED = "failed", "Échec technique"
+
+    TERMINAL = {Status.APPROVED, Status.DECLINED, Status.CANCELED, Status.FAILED}
+
+    reference = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    donor = models.ForeignKey("accounts.User", on_delete=models.SET_NULL, null=True, blank=True, related_name="donations")
+    donor_email = models.EmailField(blank=True)
+    donor_phone = models.CharField(max_length=30, blank=True)
+    amount = models.PositiveIntegerField()
+    currency = models.CharField(max_length=3, default="XOF")
+    provider = models.CharField(max_length=20, choices=Provider.choices)
+    provider_transaction_id = models.CharField(max_length=100, blank=True, db_index=True)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING, db_index=True)
+    is_test = models.BooleanField(default=True, db_index=True)
+    simulated_outcome = models.CharField(max_length=20, blank=True)
+    last_error = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    confirmed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Don"
+
+    def __str__(self):
+        return f"Don {self.amount} {self.currency} ({self.get_status_display()})"
+
+    @property
+    def is_terminal(self):
+        return self.status in self.TERMINAL
+
+
+class DonationEvent(models.Model):
+    """Journal idempotent : une même notification (clé) n'est appliquée qu'une fois."""
+
+    donation = models.ForeignKey(Donation, on_delete=models.CASCADE, related_name="events")
+    event_key = models.CharField(max_length=150, unique=True)
+    source = models.CharField(max_length=20)
+    reported_status = models.CharField(max_length=30, blank=True)
+    status_before = models.CharField(max_length=20, blank=True)
+    status_after = models.CharField(max_length=20, blank=True)
+    received_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["received_at"]

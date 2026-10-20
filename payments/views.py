@@ -132,10 +132,14 @@ def fedapay_webhook(request):
     entity = payload.get("entity") or (payload.get("data") or {}).get("transaction") or {}
     trx_id = str(entity.get("id") or "")
     attempt = PaymentAttempt.objects.filter(provider=PaymentAttempt.Provider.FEDAPAY, provider_transaction_id=trx_id).first() if trx_id else None
+    event_id = payload.get("id") or f"{trx_id}:{entity.get('status', '')}"
     if attempt is None:
+        from core.donations import handle_webhook_transaction
+
+        if handle_webhook_transaction(entity, event_id):
+            return HttpResponse("OK", status=200)
         logger.info("Webhook FedaPay pour une transaction inconnue")
         return HttpResponse("ignored", status=200)
-    event_id = payload.get("id") or f"{trx_id}:{entity.get('status', '')}"
     if _record_event(attempt, f"webhook:fedapay:{event_id}", PaymentEvent.Source.WEBHOOK, entity.get("status", "")) is None:
         return HttpResponse("duplicate", status=200)
     verify_attempt(attempt, source=PaymentEvent.Source.WEBHOOK)

@@ -401,6 +401,7 @@ def admin_stats(request):
 REPORTS = {
     "paiements": "Mises en relation payées",
     "abonnements": "Paiements d'abonnement",
+    "dons": "Dons reçus",
     "utilisateurs": "Utilisateurs inscrits",
     "annonces": "Annonces",
 }
@@ -452,6 +453,19 @@ def admin_report_export(request, kind):
         for p in qs.iterator():
             writer.writerow([fmt(p.paid_at), p.reference, p.owner.username, p.plan.name, p.get_purpose_display(),
                              p.amount, p.currency, "Test" if p.is_simulated else "Réel"])
+    elif kind == "dons":
+        from django.db.models.functions import Coalesce
+
+        from core.models import Donation
+
+        qs = Donation.objects.filter(status=Donation.Status.APPROVED).annotate(
+            paid_at=Coalesce("confirmed_at", "updated_at")).order_by("-paid_at")
+        if start:
+            qs = qs.filter(paid_at__gte=start)
+        writer.writerow(["Date", "Référence", "Montant", "Devise", "Moyen", "Nature"])
+        for d in qs.iterator():
+            writer.writerow([fmt(d.paid_at), d.reference, d.amount, d.currency, d.get_provider_display(),
+                             "Test" if d.is_test else "Réel"])
     elif kind == "utilisateurs":
         qs = User.objects.order_by("-date_joined")
         if start:

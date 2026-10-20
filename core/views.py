@@ -3,7 +3,7 @@ from django.contrib import messages
 from django.core.mail import send_mail
 from django.conf import settings
 from django.db.models import Count, Sum, Q
-from django.http import JsonResponse, HttpResponse
+from django.http import Http404, JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 
 from properties.models import Property
@@ -61,7 +61,7 @@ def home(request):
     context = {
         "featured": featured,
         "for_sale": for_sale,
-        "search_tabs": [("vente", "À vendre"), ("location", "À louer"), ("terrain", "Terrain"), ("commercial", "Commercial")],
+        "search_tabs": [("tous", "Tout"), ("vente", "À vendre"), ("location", "À louer"), ("terrain", "Terrain"), ("commercial", "Commercial")],
         "recently_sold": recently_sold,
         "testimonials": testimonials,
         "stats": stats,
@@ -187,89 +187,67 @@ def _assistant_card(item):
     return {"title": item.title, "url": item.get_absolute_url(), "price": item.price_display, "image": item.primary_image}
 
 
+DONATION_SUGGESTIONS = (300, 500, 700, 1000, 2000, 5000)
+
+
 def donate(request):
-    from properties.fedapay import generate_fedapay_payment_url
-    import uuid
-    
+    """Don volontaire, montant libre (suggestions indicatives)."""
+    from . import donations
+
+    context = {"suggestions": DONATION_SUGGESTIONS, "min_amount": donations.min_amount(),
+               "simulation": settings.PAYMENT_MODE == "simulation", "form": {}}
     if request.method == "POST":
-        amount = request.POST.get("amount", "2000")
+        context["form"] = {k: request.POST.get(k, "") for k in ("amount", "email", "phone")}
+        if is_rate_limited(request, "donation", limit=10, window=3600):
+            messages.error(request, "Trop de tentatives. Réessayez dans un moment.")
+            return render(request, "core/donate.html", context, status=429)
         try:
-            amount = int(amount)
-            if amount < 100:
-                messages.error(request, "Le montant minimum est de 100 FCFA")
-                return render(request, "core/donate.html")
-        except ValueError:
-            messages.error(request, "Montant invalide")
-            return render(request, "core/donate.html")
-        
-        # Générer un ID de transaction unique pour le don
-        donation_id = str(uuid.uuid4())
-        
-        # Générer l'URL de paiement FedaPay
-        payment_url, transaction_id_or_data = generate_fedapay_payment_url(
-            request=request,
-            property_slug=f"donation-{donation_id}",
-            amount=amount,
-            customer_name="Donateur",
-            customer_email=request.POST.get("email", ""),
-            customer_phone=request.POST.get("phone", ""),
-            is_donation=True
-        )
-        
-        if payment_url:
-            return redirect(payment_url)
-        elif transaction_id_or_data == "simulation":
-            messages.info(request, "Mode démonstration : les dons sont désactivés, aucun argent réel n'est encaissé.")
-            return render(request, "core/donate.html")
-        else:
-            messages.error(request, f"Erreur lors de la génération du lien de paiement. Veuillez réessayer.")
-            return render(request, "core/donate.html")
-    
-    return render(request, "core/donate.html")
+            amount = donations.parse_amount(request.POST.get("amount"))
+            _, url = donations.start_donation(request, amount, request.POST.get("email", "").strip(),
+                                              request.POST.get("phone", "").strip())
+        except donations.DonationError as error:
+            messages.error(request, str(error))
+            return render(request, "core/donate.html", context)
+        return redirect(url)
+    return render(request, "core/donate.html", context)
+
+
+def donation_simulator(request, reference):
+    """Démonstration : l'utilisateur choisit l'issue du paiement ; aucun argent réel."""
+    from .models import Donation
+
+    donation = get_object_or_404(Donation, reference=reference, provider=Donation.Provider.SIMULATION)
+    if settings.PAYMENT_MODE != "simulation":
+        raise Http404
+    if request.method == "POST" and not donation.is_terminal:
+        outcome = request.POST.get("outcome", "")
+        if outcome in ("approved", "declined", "canceled"):
+            Donation.objects.filter(pk=donation.pk).update(simulated_outcome=outcome)
+        return redirect("core:donation_return", reference=donation.reference)
+    return render(request, "core/donation_simulator.html", {"donation": donation})
+
+
+def donation_return(request, reference):
+    """Retour du prestataire : le statut est relu côté serveur, jamais lu dans l'URL."""
+    from . import donations
+    from .models import Donation
+
+    donation = get_object_or_404(Donation, reference=reference)
+    donation = donations.verify(donation, source="return")
+    return render(request, "core/donate_confirmation.html", {"donation": donation})
 
 
 def donate_confirmation(request):
-    """Page de confirmation après un don"""
-    return render(request, "core/donate_confirmation.html")
+    """Ancienne URL de confirmation : sans référence, aucun don ne peut être confirmé."""
+    return redirect("core:donate")
 
 
 @csrf_exempt
 def donation_notify(request):
-    """Webhook FedaPay pour les notifications de don"""
-    import logging
-    import json
-    from properties.fedapay import verify_fedapay_webhook_signature
-    
-    logger = logging.getLogger(__name__)
-    
-    if request.method != "POST":
-        return HttpResponse(status=405)
-    
-    try:
-        payload_raw = request.body.decode('utf-8')
-        signature = request.META.get('HTTP_X_FEDAPAY_SIGNATURE', '')
-        
-        if not verify_fedapay_webhook_signature(payload_raw, signature):
-            logger.warning("Invalid signature for donation notification")
-            return HttpResponse(status=403)
-        
-        payload = json.loads(payload_raw)
-        status = payload.get('status')
-        amount = payload.get('amount')
-        
-        logger.info(f"Donation notification: status={status}, amount={amount}")
-        
-        # Ici vous pouvez ajouter la logique pour enregistrer les dons
-        # Créer un modèle Donation si nécessaire
-        
-        return HttpResponse("OK", status=200)
-        
-    except json.JSONDecodeError:
-        logger.error("Invalid JSON in donation webhook")
-        return HttpResponse(status=400)
-    except Exception as e:
-        logger.error(f"Error in donation webhook: {str(e)}")
-        return HttpResponse(status=500)
+    """Ancienne adresse de notification des dons : même traitement que le webhook FedaPay commun."""
+    from payments.views import fedapay_webhook
+
+    return fedapay_webhook(request)
 
 
 def services(request):

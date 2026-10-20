@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Don — démonstration — {{ site_settings.site_name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto px-4 py-16">
+  <div class="bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-8">
+    <p class="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 mb-6">
+      <i class="fa-solid fa-flask" aria-hidden="true"></i> <strong>Démonstration.</strong> Aucun argent réel n'est prélevé ; ce don sera enregistré comme don de test.
+    </p>
+    <h1 class="text-2xl font-extrabold text-gray-900">Don de {{ donation.amount|intcomma }} {{ donation.currency }}</h1>
+    <p class="text-sm text-gray-500 mt-1 mb-6">Choisissez l'issue simulée du paiement.</p>
+    {% if donation.is_terminal %}
+      <a href="{% url 'core:donation_return' donation.reference %}" class="block text-center rounded-xl bg-primary-600 text-white font-bold py-3">Voir le résultat</a>
+    {% else %}
+    <form method="post" class="grid gap-3">
+      {% csrf_token %}
+      <button name="outcome" value="approved" class="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3"><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Paiement réussi</button>
+      <button name="outcome" value="declined" class="rounded-xl border border-gray-300 font-bold py-3 hover:bg-gray-50"><i class="fa-solid fa-ban" aria-hidden="true"></i> Paiement refusé</button>
+      <button name="outcome" value="canceled" class="rounded-xl border border-gray-300 font-bold py-3 hover:bg-gray-50"><i class="fa-solid fa-xmark" aria-hidden="true"></i> Paiement annulé</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

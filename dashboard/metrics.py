@@ -79,6 +79,15 @@ def finance_summary(start=None, owner=None):
         "subs_real": _sum_count(subs.filter(is_simulated=False)),
         "subs_test": _sum_count(subs.filter(is_simulated=True)),
     }
+    # Dons : affichés à part (contribution volontaire, pas un revenu de service).
+    from core.models import Donation
+
+    dons = _since(Donation.objects.filter(status=Donation.Status.APPROVED).annotate(
+        paid_at=Coalesce("confirmed_at", "updated_at")), "paid_at", start)
+    if owner is not None:
+        dons = dons.none()
+    data["donations_real"] = _sum_count(dons.filter(is_test=False))
+    data["donations_test"] = _sum_count(dons.filter(is_test=True))
     data["real_total"] = data["contact_real"]["total"] + data["subs_real"]["total"]
     data["test_total"] = data["contact_test"]["total"] + data["subs_test"]["total"]
     deal_agg = deals.aggregate(volume=Sum("amount"), commission=Sum("commission_amount"), count=Count("id"))

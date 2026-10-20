@@ -1452,3 +1452,27 @@
   .domiora-marquee__group[aria-hidden="true"] { display: none; }
   .domiora-skyline__layer { animation: none; }
 }
+
+/* ---------------------------------------------------------------------------
+   Bouton « Faire un don » : halo lumineux qui pulse doucement (2,8 s, en boucle).
+   Animation de box-shadow sur un pseudo-élément (opacité seule = composité, fluide).
+   Mouvement réduit : halo fixe, sans pulsation.
+--------------------------------------------------------------------------- */
+.domiora-donate-glow { position: relative; isolation: isolate; }
+.domiora-donate-glow::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: inherit;
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.55), 0 0 22px 6px rgba(212, 175, 55, 0.45);
+  opacity: 0;
+  z-index: -1;
+  pointer-events: none;
+  animation: domiora-donate-glow 2.8s ease-in-out infinite;
+}
+.domiora-donate-glow:hover::after,
+.domiora-donate-glow:focus-visible::after { animation-play-state: paused; opacity: 1; }
+@keyframes domiora-donate-glow { 0%, 100% { opacity: 0.15; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .domiora-donate-glow::after { animation: none; opacity: 0.6; }
+}

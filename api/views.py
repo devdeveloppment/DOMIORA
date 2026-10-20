@@ -35,12 +35,18 @@ class PropertyViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [permissions.AllowAny]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = [
-        "property_type", "transaction_type", "status", "country", "city", "bedrooms",
-        "bathrooms", "is_featured", "is_validated", "owner__verification_status",
+        "property_type", "transaction_type", "status", "country", "city",
+        "is_featured", "is_validated", "owner__verification_status",
     ]
     search_fields = ["title", "city", "description"]  # sans "address" : la recherche permettrait de la deviner
     ordering_fields = ["price", "created_at", "views_count", "surface_area"]
     lookup_field = "slug"
+
+    def get_queryset(self):
+        """Filtres numériques communs au site : ?price_min=10000&price_max=50000&bedrooms=2&surface_min=50."""
+        from properties.search_params import apply_numeric_filters
+
+        return apply_numeric_filters(super().get_queryset(), self.request.query_params)
 
 
 class AmenityViewSet(viewsets.ReadOnlyModelViewSet):
