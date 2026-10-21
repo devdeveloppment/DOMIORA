@@ -29,7 +29,7 @@ class User(AbstractUser):
     phone = models.CharField(max_length=30, blank=True)  # Numéro de téléphone
     whatsapp_number = models.CharField(max_length=30, blank=True)  # Numéro WhatsApp
     agency_name = models.CharField(max_length=100, blank=True)  # Nom de l'agence (pour agents)
-    avatar = models.ImageField(upload_to="avatars/", blank=True, null=True)  # Photo de profil
+    avatar = models.ImageField(max_length=255, upload_to="avatars/", blank=True, null=True)  # Photo de profil
     bio = models.TextField(blank=True)  # Biographie
     is_suspended = models.BooleanField(default=False, help_text="Compte désactivé par un administrateur")  # Suspension du compte
     # Compte de démonstration : seul type de compte autorisé à utiliser la simulation de
@@ -49,7 +49,7 @@ class User(AbstractUser):
         
     verification_status = models.CharField(max_length=30, choices=VerificationStatus.choices, default=VerificationStatus.UNVERIFIED)  # Statut de vérification
     can_publish_properties = models.BooleanField(default=False, help_text="Autorisé à publier des propriétés après vérification")  # Droit de publication
-    id_document = models.ImageField(upload_to="id_documents/", storage=private_storage, blank=True, null=True)  # Pièce d'identité
+    id_document = models.ImageField(max_length=255, upload_to="id_documents/", storage=private_storage, blank=True, null=True)  # Pièce d'identité
     id_document_type = models.CharField(max_length=50, blank=True)  # Type de pièce d'identité
     id_document_number = models.CharField(max_length=50, blank=True)  # Numéro de pièce d'identité
     verification_date = models.DateTimeField(null=True, blank=True)  # Date de vérification
@@ -283,8 +283,8 @@ class IdentityVerificationRequest(models.Model):
     )
     
     # Documents d'identité
-    id_document_front = models.ImageField(upload_to="id_documents/front/", storage=private_storage, verbose_name="Recto de la pièce d'identité")  # Recto de la pièce d'identité
-    id_document_back = models.ImageField(upload_to="id_documents/back/", storage=private_storage, verbose_name="Verso de la pièce d'identité")  # Verso de la pièce d'identité
+    id_document_front = models.ImageField(max_length=255, upload_to="id_documents/front/", storage=private_storage, verbose_name="Recto de la pièce d'identité")  # Recto de la pièce d'identité
+    id_document_back = models.ImageField(max_length=255, upload_to="id_documents/back/", storage=private_storage, verbose_name="Verso de la pièce d'identité")  # Verso de la pièce d'identité
     
     # Informations sur le document
     id_document_type = models.CharField(max_length=50, blank=True, verbose_name="Type de pièce d'identité")  # Type (CNI, passeport, etc.)

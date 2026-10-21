@@ -18,8 +18,8 @@ class FurnitureModel(models.Model):
     category = models.CharField(max_length=20, choices=Category.choices)
     
     # 3D model files
-    model_file = models.FileField(upload_to='ar_furniture/models/', help_text="GLB/GLTF 3D model file")
-    thumbnail = models.ImageField(upload_to='ar_furniture/thumbnails/')
+    model_file = models.FileField(max_length=255, upload_to='ar_furniture/models/', help_text="GLB/GLTF 3D model file")
+    thumbnail = models.ImageField(max_length=255, upload_to='ar_furniture/thumbnails/')
     
     # Dimensions (in meters)
     width = models.DecimalField(max_digits=5, decimal_places=2, help_text="Largeur en mètres")

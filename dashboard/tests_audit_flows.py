@@ -199,6 +199,14 @@ class PropertyPublicationTests(AuditBase):
         with Image.open(images[0].image.path) as stored:
             self.assertLessEqual(max(stored.size), PropertyImage.MAX_PHOTO_SIDE)
 
+    def test_long_phone_file_names_fit_in_database(self):
+        long_name = "WhatsApp Image 2026-10-21 at 18.05.32 - copie de la photo du salon principal (2).jpeg"
+        self.client.post(self.url, {**property_post(), "images": [image_file(long_name, (300, 200))]})
+        stored = PropertyImage.objects.get().image.name
+        self.assertTrue(stored.endswith(".webp"))
+        self.assertLessEqual(len(stored), 60)
+        self.assertEqual(PropertyImage._meta.get_field("image").max_length, 255)
+
     def test_fake_image_is_rejected(self):
         fake = SimpleUploadedFile("virus.jpg", b"MZ\x90\x00 pas une image", content_type="image/jpeg")
         resp = self.client.post(self.url, {**property_post(), "images": [fake]})

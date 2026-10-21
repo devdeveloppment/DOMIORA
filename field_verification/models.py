@@ -97,7 +97,7 @@ class MissionEvidence(models.Model):
 
     mission = models.ForeignKey(VerificationMission, on_delete=models.CASCADE, related_name="evidences")
     uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
-    image = models.ImageField(upload_to=evidence_upload_to, storage=private_storage)
+    image = models.ImageField(max_length=255, upload_to=evidence_upload_to, storage=private_storage)
     caption = models.CharField(max_length=200, blank=True)
     # Métadonnées DÉCLARÉES par l'appareil : utiles mais falsifiables.
     device_captured_at = models.DateTimeField(null=True, blank=True)

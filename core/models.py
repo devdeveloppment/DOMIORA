@@ -12,7 +12,7 @@ class Testimonial(models.Model):
     role = models.CharField(max_length=120, blank=True, help_text="Ex: Acheteuse | Paris")
     content = models.TextField()
     rating = models.PositiveSmallIntegerField(default=5)
-    avatar = models.ImageField(upload_to="testimonials/", blank=True, null=True)
+    avatar = models.ImageField(max_length=255, upload_to="testimonials/", blank=True, null=True)
     is_published = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -50,7 +50,7 @@ class BlogPost(models.Model):
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='blog_posts')
     excerpt = models.TextField(max_length=300, help_text="Courte description pour l'accueil")
     content = models.TextField()
-    featured_image = models.ImageField(upload_to="blog/", blank=True, null=True)
+    featured_image = models.ImageField(max_length=255, upload_to="blog/", blank=True, null=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
     is_featured = models.BooleanField(default=False, help_text="Mettre en avant sur l'accueil")
     meta_description = models.CharField(max_length=160, blank=True, help_text="SEO meta description")

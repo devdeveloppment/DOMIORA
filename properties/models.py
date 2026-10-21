@@ -124,14 +124,14 @@ class Property(models.Model):
         FAILED = "failed", "Erreur"
 
     # Stockage vidéo : Cloudinary (resource_type "video") si CLOUDINARY_URL est défini, sinon disque local.
-    virtual_tour_video = models.FileField(upload_to="properties/generated_tours/", storage=video_storage, null=True, blank=True, help_text="Vidéo générée automatiquement à partir des images")  # Vidéo générée automatiquement
+    virtual_tour_video = models.FileField(max_length=255, upload_to="properties/generated_tours/", storage=video_storage, null=True, blank=True, help_text="Vidéo générée automatiquement à partir des images")  # Vidéo générée automatiquement
     video_status = models.CharField(max_length=20, choices=VideoStatus.choices, default=VideoStatus.PENDING)  # Statut de génération vidéo
     video_progress = models.PositiveSmallIntegerField(default=0, help_text="Progression de la génération (0-100)")
     video_error = models.CharField(max_length=255, blank=True, help_text="Message affiché au propriétaire en cas d'échec")
     video_job_id = models.CharField(max_length=36, blank=True, help_text="Génération en cours : une tâche plus ancienne ne peut pas écraser le résultat")
 
     virtual_tour_url = models.URLField(blank=True, help_text="Lien d'une visite virtuelle (Matterport, vidéo 360°, YouTube...)")  # Lien visite virtuelle externe
-    uploaded_tour_video = models.FileField(upload_to="properties/uploaded_tours/", storage=video_storage, blank=True, null=True, verbose_name="Vidéo de visite filmée", help_text="Vidéo MP4 filmée par le propriétaire montrant la propriété")  # Vidéo uploadée
+    uploaded_tour_video = models.FileField(max_length=255, upload_to="properties/uploaded_tours/", storage=video_storage, blank=True, null=True, verbose_name="Vidéo de visite filmée", help_text="Vidéo MP4 filmée par le propriétaire montrant la propriété")  # Vidéo uploadée
     
     # Données JSON flexibles
     stock_image_urls = models.JSONField(default=list, blank=True, help_text="Images de démonstration (URLs) utilisées tant qu'aucune photo n'est uploadée")  # Images de démonstration
@@ -351,7 +351,7 @@ class Property(models.Model):
 class PropertyImage(models.Model):
     """Image associée à une propriété dans la galerie publique."""
     property = models.ForeignKey(Property, on_delete=models.CASCADE, related_name="images")
-    image = models.ImageField(upload_to="properties/%Y/%m/")
+    image = models.ImageField(max_length=255, upload_to="properties/%Y/%m/")
     is_primary = models.BooleanField(default=False)
     order = models.PositiveSmallIntegerField(default=0)
 
@@ -396,8 +396,10 @@ class PropertyImage(models.Model):
             webp_io = io.BytesIO()
             img.save(webp_io, format='WebP', quality=80, method=2)
 
-            base_name = os.path.basename(self.image.name)
-            webp_name = base_name.rsplit('.', 1)[0] + '.webp'
+            # Nom court et unique : les noms d'origine (« WhatsApp Image 2026-… .jpeg ») peuvent dépasser
+            # la longueur autorisée en base une fois le dossier et le suffixe Cloudinary ajoutés.
+            import uuid
+            webp_name = f"photo-{uuid.uuid4().hex[:16]}.webp"
             self.image.save(webp_name, ContentFile(webp_io.getvalue()), save=False)
 
         super().save(*args, **kwargs)
@@ -416,7 +418,7 @@ class PropertyDocument(models.Model):
         AUTRE = "autre", "Autre document"
     
     related_property = models.ForeignKey(Property, on_delete=models.CASCADE, related_name="documents")
-    file = models.FileField(upload_to="properties/documents/%Y/%m/", storage=private_storage, help_text="PDF, JPG, PNG, DOC autorisés")
+    file = models.FileField(max_length=255, upload_to="properties/documents/%Y/%m/", storage=private_storage, help_text="PDF, JPG, PNG, DOC autorisés")
     document_type = models.CharField(max_length=30, choices=DocumentType.choices, default=DocumentType.AUTRE)
     title = models.CharField(max_length=200, help_text="Titre du document")
     description = models.TextField(blank=True, help_text="Description optionnelle")

@@ -6,8 +6,8 @@ from django.conf import settings as django_settings
 class SiteSettings(models.Model):
     site_name = models.CharField(max_length=100, default="DOMIORA")
     tagline = models.CharField(max_length=255, default="Votre rêve, notre priorité")
-    logo = models.ImageField(upload_to="settings/", blank=True, null=True)
-    favicon = models.ImageField(upload_to="settings/", blank=True, null=True)
+    logo = models.ImageField(max_length=255, upload_to="settings/", blank=True, null=True)
+    favicon = models.ImageField(max_length=255, upload_to="settings/", blank=True, null=True)
     contact_email = models.EmailField(default="denistchil@gmail.com")
     contact_phone = models.CharField(max_length=50, default="+228 90 56 78 48 / +228 73 06 01 18")
     address = models.CharField(max_length=255, default="Lomé, Togo")

@@ -46,7 +46,7 @@ class ListingReport(models.Model):
     reporter = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="listing_reports")
     reason = models.CharField(max_length=20, choices=Reason.choices)
     details = models.TextField(max_length=2000, blank=True)
-    attachment = models.FileField(upload_to="reports/%Y/%m/", storage=private_storage, blank=True)
+    attachment = models.FileField(max_length=255, upload_to="reports/%Y/%m/", storage=private_storage, blank=True)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.OPEN, db_index=True)
     admin_note = models.TextField(blank=True, help_text="Dernière note interne (historique complet dans les événements)")
     public_message = models.TextField(max_length=1000, blank=True, help_text="Message visible par l'auteur du signalement")
