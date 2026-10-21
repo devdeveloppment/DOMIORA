@@ -12,7 +12,7 @@ import 'package:http/http.dart' as http;
 /// Surcharge possible : --dart-define=API_BASE=http://IP_DU_PC:8000 (téléphone réel en local).
 const String apiBase = String.fromEnvironment(
   'API_BASE',
-  defaultValue: kReleaseMode ? 'https://domiora.onrender.com' : 'http://10.0.2.2:8000',
+  defaultValue: kReleaseMode ? 'https://domiora-5pfq.onrender.com' : 'http://10.0.2.2:8000',
 );
 
 class ApiException implements Exception {

@@ -218,8 +218,9 @@ CACHES = {
 # ----------------------------------------------------------------------------
 EMAIL_BACKEND = env(
     "EMAIL_BACKEND",
-    default="django.core.mail.backends.console.EmailBackend" if DEBUG else "django.core.mail.backends.smtp.EmailBackend",
+    default="django.core.mail.backends.console.EmailBackend" if DEBUG else "services.mail_backend.BackgroundSMTPBackend",
 )
+EMAIL_TIMEOUT = env.int("EMAIL_TIMEOUT", default=10)
 EMAIL_HOST = env("EMAIL_HOST", default="smtp.gmail.com")
 EMAIL_PORT = env.int("EMAIL_PORT", default=587)
 EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
