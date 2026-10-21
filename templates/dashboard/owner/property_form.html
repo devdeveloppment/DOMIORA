@@ -3,7 +3,7 @@
 {% block dashboard_content %}
 <h1 class="text-2xl font-extrabold mb-6">{% if is_edit %}Modifier « {{ property.title }} »{% else %}Ajouter un nouveau bien{% endif %}</h1>
 
-<form method="post" enctype="multipart/form-data" novalidate class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6 space-y-6">
+<form method="post" enctype="multipart/form-data" novalidate x-data="photoPicker()" @submit="if (busy) $event.preventDefault()" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6 space-y-6">
   {% csrf_token %}
 
   {% if form.errors or image_errors %}
@@ -63,11 +63,12 @@
   {% for error in form.virtual_tour_url.errors %}<p class="text-xs text-rose-600 -mt-4">{{ error }}</p>{% endfor %}
   {% for error in form.uploaded_tour_video.errors %}<p class="text-xs text-rose-600 -mt-4">{{ error }}</p>{% endfor %}
 
-  <div x-data="photoPicker()">
+  <div>
     <label for="id_images" class="text-sm font-semibold text-gray-700 block mb-1">{% if is_edit %}Ajouter des photos{% else %}Photos{% endif %}</label>
     <p class="text-xs text-gray-500 mb-2">JPEG, PNG ou WebP, 10 Mo maximum par photo, {{ max_images }} photos par envoi. {% if is_edit %}Les photos actuelles sont conservées.{% else %}La première photo sera la photo principale.{% endif %}</p>
-    <input id="id_images" type="file" name="images" multiple accept="image/jpeg,image/png,image/webp" @change="pick($event)" class="block w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5">
+    <input id="id_images" type="file" name="images" multiple accept="image/jpeg,image/png,image/webp" @change="pick($event)" x-ref="images" class="block w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5">
     {% for error in image_errors %}<p class="text-xs text-rose-600 mt-1 flex items-start gap-1"><i class="fa-solid fa-circle-exclamation mt-0.5" aria-hidden="true"></i>{{ error }}</p>{% endfor %}
+    <p x-show="busy" x-cloak class="mt-2 text-xs text-primary-700 flex items-center gap-2"><i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Optimisation des photos pour un envoi rapide…</p>
     <template x-if="files.length">
       <div class="mt-3">
         <p class="text-xs text-gray-600 mb-2"><span x-text="files.length"></span> photo(s) sélectionnée(s)<span x-show="files.length > {{ max_images }}" class="text-rose-600 font-semibold"> : {{ max_images }} au maximum</span><span x-show="files.some(f => f.big)" class="text-rose-600 font-semibold"> : une photo encadrée en rouge dépasse 10 Mo</span></p>
@@ -101,17 +102,60 @@
   {% endif %}
 
   <div class="flex flex-col sm:flex-row gap-3 pt-2">
-    <button type="submit" data-loading-text="Enregistrement…" class="bg-primary-600 hover:bg-primary-700 transition text-white font-semibold rounded-full px-6 py-3">{% if is_edit %}Enregistrer les modifications{% else %}Soumettre pour validation{% endif %}</button>
+    <button type="submit" :disabled="busy" data-loading-text="Envoi des photos et enregistrement…" class="bg-primary-600 hover:bg-primary-700 disabled:opacity-60 transition text-white font-semibold rounded-full px-6 py-3">{% if is_edit %}Enregistrer les modifications{% else %}Soumettre pour validation{% endif %}</button>
     <a href="{% url 'dashboard:owner_properties' %}" class="border border-gray-200 text-gray-600 font-semibold rounded-full px-6 py-3 text-center">Annuler</a>
   </div>
 </form>
 <script>
+// Les photos de téléphone (souvent 4 à 8 Mo) sont réduites dans le navigateur avant l'envoi :
+// envoi bien plus rapide sur réseau mobile et presque aucun calcul pour le serveur.
+const PHOTO_MAX_SIDE = 2048, PHOTO_QUALITY = 0.85;
+
+async function shrinkPhoto(file) {
+  if (!/^image\/(jpeg|png|webp)$/.test(file.type) || !window.createImageBitmap) return file;
+  try {
+    const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
+    const scale = Math.min(1, PHOTO_MAX_SIDE / Math.max(bitmap.width, bitmap.height));
+    if (scale === 1 && file.size < 1.5 * 1024 * 1024) { bitmap.close(); return file; }
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    bitmap.close();
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', PHOTO_QUALITY));
+    if (!blob || blob.size >= file.size) return file;
+    return new File([blob], file.name.replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg', lastModified: Date.now() });
+  } catch (e) {
+    return file; // navigateur ancien ou image illisible : le serveur vérifiera
+  }
+}
+
 function photoPicker() {
   return {
     files: [],
-    pick(event) {
+    busy: false,
+    async pick(event) {
+      const input = event.target;
+      const originals = Array.from(input.files);
       this.files.forEach(f => URL.revokeObjectURL(f.url));
-      this.files = Array.from(event.target.files).map(f => ({ name: f.name, url: URL.createObjectURL(f), big: f.size > 10 * 1024 * 1024 }));
+      this.files = [];
+      if (!originals.length) return;
+      this.busy = true;
+      try {
+        const optimized = [];
+        for (const file of originals) optimized.push(await shrinkPhoto(file));
+        if (window.DataTransfer) {
+          const transfer = new DataTransfer();
+          optimized.forEach(f => transfer.items.add(f));
+          input.files = transfer.files;
+        }
+        const shown = window.DataTransfer ? optimized : originals;
+        this.files = shown.map(f => ({ name: f.name, url: URL.createObjectURL(f), big: f.size > 10 * 1024 * 1024 }));
+      } finally {
+        this.busy = false;
+      }
     },
   };
 }

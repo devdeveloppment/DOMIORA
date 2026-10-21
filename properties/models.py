@@ -376,6 +376,8 @@ class PropertyImage(models.Model):
             from django.core.files.base import ContentFile
 
             img = Image.open(self.image)
+            # JPEG : décodage directement à taille réduite (bien plus rapide sur un petit serveur).
+            img.draft("RGB", (self.MAX_PHOTO_SIDE, self.MAX_PHOTO_SIDE))
             img = ImageOps.exif_transpose(img)
 
             # Convert to RGB if necessary
@@ -389,10 +391,10 @@ class PropertyImage(models.Model):
             elif img.mode != 'RGB':
                 img = img.convert('RGB')
 
-            img.thumbnail((self.MAX_PHOTO_SIDE, self.MAX_PHOTO_SIDE), Image.LANCZOS)
+            img.thumbnail((self.MAX_PHOTO_SIDE, self.MAX_PHOTO_SIDE), Image.BICUBIC, reducing_gap=2.0)
 
             webp_io = io.BytesIO()
-            img.save(webp_io, format='WebP', quality=82, method=4)
+            img.save(webp_io, format='WebP', quality=80, method=2)
 
             base_name = os.path.basename(self.image.name)
             webp_name = base_name.rsplit('.', 1)[0] + '.webp'
