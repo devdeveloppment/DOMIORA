@@ -578,10 +578,7 @@ def property_payment_redirect(request, slug):
             messages.info(request, "Mode démonstration : connectez-vous avec un compte de démonstration.")
             return redirect(f"{reverse('accounts:login')}?next={request.path}")
         if not request.user.is_authenticated:
-            form = ClientPostPaymentForm(request.POST)
-            email = (request.POST.get("email") or "").strip()
-            if email and User.objects.filter(email__iexact=email).exists():
-                form.add_error("email", "Un compte existe déjà avec cet e-mail. Connectez-vous pour continuer.")
+            form = ClientPostPaymentForm(request.POST)  # e-mail unique vérifié par le formulaire
             if not form.is_valid():
                 return render(request, "properties/payment_init.html", {"property": property_obj, "form": form})
             user = form.save()

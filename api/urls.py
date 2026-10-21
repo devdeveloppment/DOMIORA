@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from rest_framework.authtoken.views import obtain_auth_token
+
 from . import views
 
 router = DefaultRouter()
@@ -15,7 +15,7 @@ router.register("notifications", views.NotificationViewSet, basename="notificati
 router.register("me", views.MeView, basename="me")
 
 urlpatterns = [
-    path("auth/token/", obtain_auth_token, name="api_token_auth"),
+    path("auth/token/", views.ThrottledObtainAuthToken.as_view(), name="api_token_auth"),
     path("verification/submit/", views.verification_submit, name="verification_submit"),
     path("verification/resume/<int:verification_id>/", views.verification_resume, name="verification_resume"),
     path("chat/", views.chat_assistant, name="chat_assistant"),

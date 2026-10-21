@@ -97,7 +97,7 @@
   {% endif %}
 
   {% if user.verification_status != 'approved' %}
-  <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 {% if user.verification_status == 'pending' %}hidden{% endif %}" id="resubmitForm">
+  <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 {% if user.verification_status == 'pending_documents' or user.verification_status == 'pending_field_visit' or user.verification_status == 'field_visit_completed' %}hidden{% endif %}" id="resubmitForm">
     <h2 class="text-lg font-bold text-gray-900 mb-2">Soumettre mes documents</h2>
     <p class="text-sm text-gray-500 mb-6">Veuillez fournir les deux faces de votre pièce d'identité. Les documents doivent être lisibles et en couleur.</p>
     
@@ -171,7 +171,7 @@
               </button>
             </div>
             
-            <input type="file" name="id_document_front" id="id_document_front" accept="image/*" 
+            <input type="file" name="id_document_front" id="id_document_front" accept="image/jpeg,image/png,image/webp" 
                    @change="handleFrontUpload($event)"
                    class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" required>
           </div>
@@ -196,7 +196,7 @@
               </button>
             </div>
             
-            <input type="file" name="id_document_back" id="id_document_back" accept="image/*" 
+            <input type="file" name="id_document_back" id="id_document_back" accept="image/jpeg,image/png,image/webp" 
                    @change="handleBackUpload($event)"
                    class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" required>
           </div>

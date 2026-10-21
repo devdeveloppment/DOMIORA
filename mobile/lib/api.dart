@@ -58,15 +58,25 @@ class Api {
   Future<dynamic> _send(Future<http.Response> Function() call) async {
     http.Response resp;
     try {
-      resp = await call().timeout(const Duration(seconds: 15));
+      // 60 s : sur l'offre gratuite, le serveur peut mettre jusqu'à une minute à sortir de veille.
+      resp = await call().timeout(const Duration(seconds: 60));
     } on TimeoutException {
-      throw ApiException('Le serveur ne répond pas. Vérifiez votre connexion.');
+      throw ApiException('Le serveur met trop de temps à répondre (il sort peut-être de veille). Réessayez dans un instant.');
     } on SocketException {
       throw ApiException('Pas de connexion au serveur DOMIORA.');
     } on http.ClientException {
       throw ApiException('Erreur réseau. Réessayez.');
     }
-    final body = resp.body.isEmpty ? null : jsonDecode(utf8.decode(resp.bodyBytes));
+    dynamic body;
+    try {
+      body = resp.body.isEmpty ? null : jsonDecode(utf8.decode(resp.bodyBytes));
+    } on FormatException {
+      // Page HTML (serveur en cours de démarrage, maintenance) au lieu de JSON.
+      if (resp.statusCode >= 500 || resp.statusCode == 429) {
+        throw ApiException('Le serveur DOMIORA démarre ou est momentanément indisponible. Réessayez dans un instant.', status: resp.statusCode);
+      }
+      body = null;
+    }
     if (resp.statusCode >= 200 && resp.statusCode < 300) return body;
     if (resp.statusCode == 401 || resp.statusCode == 403) {
       if (_token != null && resp.statusCode == 401) await logout();

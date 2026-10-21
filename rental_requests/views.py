@@ -11,149 +11,121 @@ from properties.models import Property
 from notifications.models import Notification
 from accounts.models import User
 import json
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+def _request_response(request, ok, text, property_obj=None, status=200, **extra):
+    """Réponse JSON (appel AJAX) ou redirection avec message (formulaire classique)."""
+    if request.content_type == "application/json" or status == 403:  # refus d'accès : toujours 403 explicite
+        return JsonResponse({"success": ok, "message": text, **extra}, status=status)
+    from django.contrib import messages
+
+    (messages.success if ok else messages.error)(request, text)
+    if property_obj is not None:
+        return redirect("properties:detail", slug=property_obj.slug)
+    return redirect("properties:list")
 
 
 @require_http_methods(["POST"])
 def create_property_request(request):
     """
-    Créer une demande de visite, d'achat ou de location
-    Permet aux utilisateurs connectés et aux guests (non connectés) de créer des demandes
+    Créer une demande de visite, d'achat ou de location.
+    Règle métier : compte client connecté disposant d'une relation payée avec le propriétaire.
     """
+    from django.utils.dateparse import parse_date
+
+    from payments.relations import has_owner_relation
+
     try:
         data = json.loads(request.body) if request.content_type == "application/json" else request.POST
-        
-        property_id = data.get("property_id")
-        request_type = data.get("request_type", "visite")
-        message = data.get("message", "")
-        move_in_date = data.get("move_in_date", None)
-        
-        # Vérifier que l'utilisateur a bien débloqué la propriété (payé)
-        property_obj = get_object_or_404(Property, id=property_id, is_published=True, is_validated=True, owner__isnull=False)
-        
-        # Règle métier : une demande (visite, achat, location) exige un compte client connecté
-        # disposant d'une relation payée avec le propriétaire. Plus de création de compte invité.
-        from payments.relations import has_owner_relation
+    except (ValueError, UnicodeDecodeError):
+        return JsonResponse({"success": False, "message": "Requête invalide."}, status=400)
 
-        if not (request.user.is_authenticated and request.user.role == User.Role.CLIENT
-                and has_owner_relation(request.user, property_obj.owner)):
-            return JsonResponse({
-                "success": False,
-                "message": "Une mise en relation avec ce propriétaire est nécessaire avant d'envoyer une demande.",
-            }, status=403)
+    property_id = str(data.get("property_id") or "")
+    property_obj = Property.objects.filter(
+        pk=property_id if property_id.isdigit() else None,
+        is_published=True, is_validated=True, owner__isnull=False,
+    ).select_related("owner").first()
+    if property_obj is None:
+        return _request_response(request, False, "Ce bien n'est plus disponible.", status=404)
 
-        if not request.user.is_authenticated:  # code invité historique, désormais inatteignable
-            guest_name = data.get("guest_name", "")
-            guest_email = data.get("guest_email", "")
-            guest_phone = data.get("guest_phone", "")
-            
-            if not guest_name or not guest_email or not guest_phone:
-                return JsonResponse({
-                    "success": False,
-                    "message": "Veuillez fournir votre nom, email et téléphone pour continuer."
-                }, status=400)
-            
-            # Créer un compte client automatiquement
-            import random
-            import string
-            
-            # Générer un username unique
-            username = f"guest_{guest_name.lower().replace(' ', '_')}_{random.randint(1000, 9999)}"
-            while User.objects.filter(username=username).exists():
-                username = f"guest_{guest_name.lower().replace(' ', '_')}_{random.randint(1000, 9999)}"
-            
-            # Générer un mot de passe aléatoire
-            password = ''.join(random.choices(string.ascii_letters + string.digits, k=12))
-            
-            guest_user = User.objects.create_user(
-                username=username,
-                email=guest_email,
-                password=password,
-                first_name=guest_name.split()[0] if ' ' in guest_name else guest_name,
-                last_name=guest_name.split()[-1] if ' ' in guest_name else '',
-                phone=guest_phone,
-                role=User.Role.CLIENT
-            )
-            
-            # Aucune relation n'est créée ici : la mise en relation exige un paiement vérifié.
-            # Auto-login the guest user
-            from django.contrib.auth import login
-            login(request, guest_user)
-            
-            # Force session role to 'client'
-            request.session['dash_role'] = 'client'
-            request.session.modified = True
-            
-            user = guest_user
-        else:
-            user = request.user
-        
-        # Créer la demande
-        property_request = PropertyRequest.objects.create(
-            user=user,
-            property=property_obj,
-            request_type=request_type,
-            message=message,
-            move_in_date=move_in_date,
-            status="en_attente"
+    if not (request.user.is_authenticated and request.user.role == User.Role.CLIENT
+            and has_owner_relation(request.user, property_obj.owner)):
+        return _request_response(
+            request, False, "Une mise en relation avec ce propriétaire est nécessaire avant d'envoyer une demande.",
+            property_obj, status=403,
         )
-        
-        # Créer une notification pour le propriétaire
-        Notification.objects.create(
-            user=property_obj.owner,
-            notification_type="demande",
-            title=f"Nouvelle demande de {property_request.get_request_type_display()}",
-            message=f"{user.get_full_name() or user.email} souhaite {property_request.get_request_type_display().lower()} votre bien : {property_obj.title}",
-            link="/dashboard/proprietaire/",
-        )
-        
-        # Envoyer un email au propriétaire
+
+    request_type = data.get("request_type") or PropertyRequest.RequestType.VISITE
+    if request_type not in PropertyRequest.RequestType.values:
+        return _request_response(request, False, "Type de demande inconnu.", property_obj, status=400)
+    message = str(data.get("message") or "").strip()[:2000]
+    raw_date = str(data.get("move_in_date") or "").strip()
+    move_in_date = None
+    if raw_date:
         try:
-            subject = f"Nouvelle demande de {property_request.get_request_type_display()} pour {property_obj.title}"
-            
-            html_message = render_to_string(
-                "rental_requests/email_owner_notification.html",
-                {
-                    "owner": property_obj.owner,
-                    "user": user,
-                    "property": property_obj,
-                    "request_type": property_request.get_request_type_display(),
-                    "message": message,
-                    "request_id": property_request.id,
-                    "site_url": f"{request.scheme}://{request.get_host()}",
-                }
-            )
-            
-            send_mail(
-                subject,
-                message,
-                settings.DEFAULT_FROM_EMAIL,
-                [property_obj.owner.email],
-                html_message=html_message,
-                fail_silently=True,
-            )
-        except Exception as e:
-            print(f"Erreur envoi email: {e}")
+            move_in_date = parse_date(raw_date)
+        except ValueError:
+            move_in_date = None
+        if move_in_date is None:
+            return _request_response(request, False, "Date d'emménagement invalide.", property_obj, status=400)
+
+    user = request.user
+    # Anti double envoi : une demande identique encore en attente n'est pas recréée.
+    existing = PropertyRequest.objects.filter(
+        user=user, property=property_obj, request_type=request_type, status=PropertyRequest.Status.EN_ATTENTE,
+    ).first()
+    if existing:
+        return _request_response(
+            request, True, "Votre demande est déjà enregistrée et en attente de réponse du propriétaire.",
+            property_obj, request_id=existing.id, duplicate=True,
+        )
+
+    property_request = PropertyRequest.objects.create(
+        user=user,
+        property=property_obj,
+        request_type=request_type,
+        message=message,
+        move_in_date=move_in_date,
+        status=PropertyRequest.Status.EN_ATTENTE,
+    )
+
+    Notification.objects.create(
+        user=property_obj.owner,
+        notification_type="demande",
+        title=f"Nouvelle demande de {property_request.get_request_type_display()}",
+        message=f"{user.get_full_name() or user.username} souhaite {property_request.get_request_type_display().lower()} votre bien : {property_obj.title}",
+        link="/dashboard/proprietaire/",
+    )
+
+    # Envoyer un email au propriétaire
+    try:
+        subject = f"Nouvelle demande de {property_request.get_request_type_display()} pour {property_obj.title}"
         
-        # Réponse JSON si AJAX
-        if request.content_type == "application/json":
-            return JsonResponse({
-                "success": True,
-                "message": "Demande de visite envoyée avec succès!",
-                "request_id": property_request.id
-            })
+        html_message = render_to_string(
+            "rental_requests/email_owner_notification.html",
+            {
+                "owner": property_obj.owner,
+                "user": user,
+                "property": property_obj,
+                "request_type": property_request.get_request_type_display(),
+                "message": message,
+                "request_id": property_request.id,
+                "site_url": f"{request.scheme}://{request.get_host()}",
+            }
+        )
         
-        # Sinon redirection avec message
-        from django.contrib import messages
-        messages.success(request, "Votre demande de visite a été envoyée au propriétaire!")
-        return redirect("properties:detail", slug=property_obj.slug)
-        
+        send_mail(
+            subject,
+            message,
+            settings.DEFAULT_FROM_EMAIL,
+            [property_obj.owner.email],
+            html_message=html_message,
+            fail_silently=True,
+        )
     except Exception as e:
-        if request.content_type == "application/json":
-            return JsonResponse({
-                "success": False,
-                "message": str(e)
-            }, status=400)
-        
-        from django.contrib import messages
-        messages.error(request, "Erreur lors de l'envoi de la demande")
-        return redirect("properties:detail", slug=property_obj.slug)
+        logger.warning("Notification e-mail de demande impossible (%s)", e.__class__.__name__)
+    
+    return _request_response(request, True, "Votre demande a été envoyée au propriétaire.", property_obj, request_id=property_request.id)

@@ -358,43 +358,46 @@ class PropertyImage(models.Model):
     class Meta:
         ordering = ["order", "id"]
 
+    MAX_PHOTO_SIDE = 2048
+
     def __str__(self):
         return f"Image #{self.pk} - {self.property.title}"
     
     def save(self, *args, **kwargs):
-        """Convertit les images téléchargées au format WebP pour optimiser le stockage et le rendu."""
-        if self.image:
-            from PIL import Image
+        """
+        Convertit une photo nouvellement envoyée en WebP : orientation EXIF appliquée, côté le plus long
+        limité à MAX_PHOTO_SIDE px. Une image déjà enregistrée n'est jamais retraitée (simple mise à jour
+        de l'ordre ou du statut principal : aucun téléchargement ni reconversion).
+        """
+        if self.image and not getattr(self.image, "_committed", True):
+            from PIL import Image, ImageOps
             import io
+            import os
             from django.core.files.base import ContentFile
-            
-            # Read the image
+
             img = Image.open(self.image)
-            
+            img = ImageOps.exif_transpose(img)
+
             # Convert to RGB if necessary
             if img.mode in ('RGBA', 'LA', 'P'):
                 # Create white background for transparency
-                background = Image.new('RGB', img.size, (255, 255, 255))
-                if img.mode == 'P':
+                if img.mode != 'RGBA':
                     img = img.convert('RGBA')
-                background.paste(img, mask=img.split()[-1] if img.mode == 'RGBA' else None)
+                background = Image.new('RGB', img.size, (255, 255, 255))
+                background.paste(img, mask=img.split()[-1])
                 img = background
             elif img.mode != 'RGB':
                 img = img.convert('RGB')
-            
-            # Save as WebP with good quality
+
+            img.thumbnail((self.MAX_PHOTO_SIDE, self.MAX_PHOTO_SIDE), Image.LANCZOS)
+
             webp_io = io.BytesIO()
-            img.save(webp_io, format='WebP', quality=85, method=6)
-            webp_io.seek(0)
-            
-            # Change extension to .webp
-            import os
+            img.save(webp_io, format='WebP', quality=82, method=4)
+
             base_name = os.path.basename(self.image.name)
             webp_name = base_name.rsplit('.', 1)[0] + '.webp'
-            
-            # Replace the image with WebP version
-            self.image.save(webp_name, ContentFile(webp_io.read()), save=False)
-        
+            self.image.save(webp_name, ContentFile(webp_io.getvalue()), save=False)
+
         super().save(*args, **kwargs)
 
 

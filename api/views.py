@@ -1,4 +1,5 @@
 from rest_framework import viewsets, permissions, filters, status
+from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -203,6 +204,12 @@ def verification_submit(request):
                 status=status.HTTP_400_BAD_REQUEST
             )
     
+    # Le type déclaré par le client ne suffit pas : le contenu doit être une vraie image.
+    from properties.forms import validate_property_images
+    content_errors = validate_property_images([id_card_front, id_card_back])
+    if content_errors:
+        return Response({'error': content_errors[0]}, status=status.HTTP_400_BAD_REQUEST)
+
     # Create verification request
     verification = IdentityVerificationRequest.objects.create(
         owner=request.user,
@@ -434,3 +441,25 @@ def app_config(request):
         "property_types": [{"value": v, "label": l} for v, l in Property.PropertyType.choices],
         "transaction_types": [{"value": v, "label": l} for v, l in Property.TransactionType.choices],
     })
+
+
+class ThrottledObtainAuthToken(ObtainAuthToken):
+    """Jeton d'API (application mobile) avec la même limitation des échecs que la connexion web."""
+
+    def post(self, request, *args, **kwargs):
+        from accounts import throttle
+
+        identifier = request.data.get("username")
+        if throttle.is_locked(request, identifier):
+            return Response({"detail": throttle.LOCKED_MESSAGE}, status=status.HTTP_429_TOO_MANY_REQUESTS)
+        response = super().post(request, *args, **kwargs)
+        throttle.reset(request, identifier)
+        return response
+
+    def handle_exception(self, exc):
+        from accounts import throttle
+        from rest_framework.exceptions import ValidationError
+
+        if isinstance(exc, ValidationError):
+            throttle.register_failure(self.request, self.request.data.get("username"))
+        return super().handle_exception(exc)

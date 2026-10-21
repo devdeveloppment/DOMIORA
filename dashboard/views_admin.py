@@ -116,7 +116,7 @@ def admin_properties(request):
 def admin_property_create(request):
     """Crée une propriété depuis l'espace d'administration."""
     if request.method == "POST":
-        form = AdminPropertyForm(request.POST)
+        form = AdminPropertyForm(request.POST, request.FILES)
         formset = PropertyImageFormSet(request.POST, request.FILES)
         if form.is_valid() and formset.is_valid():
             property_obj = form.save()
@@ -137,7 +137,7 @@ def admin_property_edit(request, pk):
     """Modifie une propriété existante depuis l'administration."""
     property_obj = get_object_or_404(Property, pk=pk)
     if request.method == "POST":
-        form = AdminPropertyForm(request.POST, instance=property_obj)
+        form = AdminPropertyForm(request.POST, request.FILES, instance=property_obj)
         formset = PropertyImageFormSet(request.POST, request.FILES, instance=property_obj)
         if form.is_valid() and formset.is_valid():
             form.save()

@@ -4,33 +4,52 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth.views import LoginView
 from django.conf import settings
+from django.urls import reverse
+from django.utils.html import format_html
 
+from . import throttle
 from .forms import RegisterForm, OwnerRegisterForm, ClientPostPaymentForm, ProfileForm
 from .models import User
 
 
 class CustomLoginView(LoginView):
-    """Vue de connexion standard avec blocage explicite des comptes admin."""
+    """Vue de connexion standard avec blocage explicite des comptes admin et limitation des échecs."""
     template_name = "accounts/login.html"
-    
+    redirect_authenticated_user = True
+
+    def post(self, request, *args, **kwargs):
+        if throttle.is_locked(request, request.POST.get("username")):
+            messages.error(request, throttle.LOCKED_MESSAGE)
+            return self.render_to_response(self.get_context_data(form=self.get_form()))
+        return super().post(request, *args, **kwargs)
+
+    def form_invalid(self, form):
+        if self.request.method == "POST" and not form.get_user():
+            throttle.register_failure(self.request, self.request.POST.get("username"))
+        return super().form_invalid(form)
+
     def form_valid(self, form):
         user = form.get_user()
         # Block admin users from regular login
         if user.is_superuser or user.role == User.Role.ADMIN:
             messages.error(
                 self.request,
-                "Les administrateurs doivent utiliser la page de connexion dédiée. "
-                "<a href='/accounts/admin-login/' class='underline font-bold'>Accéder à la connexion admin</a>"
+                format_html(
+                    "Les administrateurs doivent utiliser la page de connexion dédiée. "
+                    "<a href=\"{}\" class=\"underline font-bold\">Accéder à la connexion admin</a>",
+                    reverse("accounts:admin_login"),
+                ),
             )
             return self.form_invalid(form)
-        
+        throttle.reset(self.request, self.request.POST.get("username"))
+
         # Set the appropriate session role based on user role
         if user.role == User.Role.OWNER:
             self.request.session['dash_role'] = 'owner'
         elif user.role == User.Role.CLIENT:
             self.request.session['dash_role'] = 'client'
         self.request.session.modified = True
-        
+
         return super().form_valid(form)
 
 
@@ -48,39 +67,33 @@ def client_login(request):
         return render(request, "accounts/client_login.html")
     
     if request.method == "POST":
-        email = request.POST.get("email")  # email only
+        email = (request.POST.get("email") or "").strip()
         password = request.POST.get("password")
-        
-        if email and password:
-            # Try to find user by email
-            user = None
-            try:
-                user = User.objects.get(email=email)
-            except User.DoesNotExist:
-                pass
-            
-            if user:
-                # Authenticate user
-                authenticated_user = authenticate(request, username=user.username, password=password)
-                
-                if authenticated_user is not None:
-                    # Check if user is client
-                    if authenticated_user.role == User.Role.CLIENT:
-                        login(request, authenticated_user)
-                        # Set client session role
-                        request.session['dash_role'] = 'client'
-                        request.session.modified = True
-                        messages.success(request, f"Bienvenue {authenticated_user.get_full_name() or authenticated_user.username} !")
-                        return redirect("dashboard:client_overview")
-                    else:
-                        messages.error(request, "Ce compte n'est pas un compte client. Utilisez la page de connexion appropriée.")
-                else:
-                    messages.error(request, "Mot de passe incorrect.")
-            else:
-                messages.error(request, "Aucun compte trouvé avec cet email.")
-        else:
+
+        if not (email and password):
             messages.error(request, "Veuillez remplir tous les champs.")
-    
+        elif throttle.is_locked(request, email):
+            messages.error(request, throttle.LOCKED_MESSAGE)
+        else:
+            # Message identique que l'e-mail existe ou non : aucune fuite sur les comptes enregistrés.
+            authenticated_user = None
+            for candidate in User.objects.filter(email__iexact=email)[:5]:
+                authenticated_user = authenticate(request, username=candidate.username, password=password)
+                if authenticated_user is not None:
+                    break
+            if authenticated_user is None:
+                throttle.register_failure(request, email)
+                messages.error(request, "E-mail ou mot de passe incorrect.")
+            elif authenticated_user.role != User.Role.CLIENT:
+                messages.error(request, "Ce compte n'est pas un compte client. Utilisez la page de connexion appropriée.")
+            else:
+                throttle.reset(request, email)
+                login(request, authenticated_user)
+                request.session['dash_role'] = 'client'
+                request.session.modified = True
+                messages.success(request, f"Bienvenue {authenticated_user.get_full_name() or authenticated_user.username} !")
+                return redirect("dashboard:client_overview")
+
     return render(request, "accounts/client_login.html")
 
 
@@ -116,13 +129,16 @@ def register_owner(request):
             _notify_admins_new_owner(user)
             _send_welcome_email(user)
 
+            # Connexion immédiate : le propriétaire arrive directement sur la vérification d'identité,
+            # étape obligatoire avant toute publication.
+            login(request, user, backend="django.contrib.auth.backends.ModelBackend")
+            request.session["dash_role"] = "owner"
             messages.success(
                 request,
-                f"Bienvenue {user.first_name} ! Votre compte propriétaire a été créé. "
-                "Connectez-vous maintenant pour accéder à votre tableau de bord."
+                f"Bienvenue {user.first_name} ! Votre compte propriétaire est créé. "
+                "Dernière étape avant de publier : envoyez votre pièce d'identité."
             )
-            # Redirect to the main login which is now the dedicated owner login
-            return redirect("accounts:login")
+            return redirect("dashboard:owner_verify_identity")
     else:
         form = OwnerRegisterForm()
     return render(request, "accounts/register_owner.html", {"form": form})
@@ -237,12 +253,17 @@ def admin_login(request):
         username = request.POST.get("username")
         password = request.POST.get("password")
         
-        if username and password:
+        if username and password and throttle.is_locked(request, username):
+            messages.error(request, throttle.LOCKED_MESSAGE)
+        elif username and password:
             user = authenticate(request, username=username, password=password)
-            
+            if user is None:
+                throttle.register_failure(request, username)
+
             if user is not None:
                 # Check if user is admin
                 if user.is_superuser or user.role == User.Role.ADMIN:
+                    throttle.reset(request, username)
                     login(request, user)
                     # Set admin session role
                     request.session['dash_role'] = 'admin'

@@ -3,90 +3,96 @@
 {% block dashboard_content %}
 <h1 class="text-2xl font-extrabold mb-6">{% if is_edit %}Modifier « {{ property.title }} »{% else %}Ajouter un nouveau bien{% endif %}</h1>
 
-<form method="post" enctype="multipart/form-data" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-6">
+<form method="post" enctype="multipart/form-data" novalidate class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6 space-y-6">
   {% csrf_token %}
 
-  <div>
-    <label class="text-sm font-semibold text-gray-700">{{ form.title.label }}</label>
-    {{ form.title }}
+  {% if form.errors or image_errors %}
+  <div role="alert" class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+    <p class="font-bold flex items-center gap-2"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> Le bien n'a pas été enregistré : corrigez les champs signalés ci-dessous.</p>
+    {% for error in form.non_field_errors %}<p class="mt-1">{{ error }}</p>{% endfor %}
+    {% if files_lost %}<p class="mt-1">Par sécurité, le navigateur ne conserve pas les fichiers choisis : sélectionnez à nouveau vos photos et votre vidéo. Les autres informations saisies sont conservées.</p>{% endif %}
   </div>
+  {% endif %}
 
-  <div>
-    <label class="text-sm font-semibold text-gray-700">{{ form.description.label }}</label>
-    {{ form.description }}
-  </div>
+  <fieldset class="space-y-4">
+    <legend class="text-base font-bold text-gray-900 mb-1">Présentation</legend>
+    {% include "dashboard/owner/partials/field.html" with field=form.title %}
+    {% include "dashboard/owner/partials/field.html" with field=form.description %}
+    <div class="grid sm:grid-cols-2 gap-4">
+      {% include "dashboard/owner/partials/field.html" with field=form.property_type %}
+      {% include "dashboard/owner/partials/field.html" with field=form.transaction_type %}
+    </div>
+    <div class="grid sm:grid-cols-2 gap-4">
+      {% include "dashboard/owner/partials/field.html" with field=form.price %}
+      {% include "dashboard/owner/partials/field.html" with field=form.currency %}
+    </div>
+    {% include "dashboard/owner/partials/field.html" with field=form.status %}
+  </fieldset>
 
-  <div class="grid sm:grid-cols-2 gap-4">
-    <div><label class="text-sm font-semibold text-gray-700">{{ form.property_type.label }}</label>{{ form.property_type }}</div>
-    <div><label class="text-sm font-semibold text-gray-700">{{ form.transaction_type.label }}</label>{{ form.transaction_type }}</div>
-  </div>
+  <fieldset class="space-y-4">
+    <legend class="text-base font-bold text-gray-900 mb-1">Localisation</legend>
+    <div class="grid sm:grid-cols-3 gap-4">
+      {% include "dashboard/owner/partials/field.html" with field=form.country %}
+      {% include "dashboard/owner/partials/field.html" with field=form.city %}
+      {% include "dashboard/owner/partials/field.html" with field=form.neighborhood %}
+    </div>
+    {% include "dashboard/owner/partials/field.html" with field=form.address %}
+    <div class="grid sm:grid-cols-2 gap-4">
+      {% include "dashboard/owner/partials/field.html" with field=form.latitude %}
+      {% include "dashboard/owner/partials/field.html" with field=form.longitude %}
+    </div>
+  </fieldset>
 
-  <div class="grid sm:grid-cols-2 gap-4">
-    <div><label class="text-sm font-semibold text-gray-700">{{ form.price.label }}</label>{{ form.price }}</div>
-    <div><label class="text-sm font-semibold text-gray-700">{{ form.currency.label }}</label>{{ form.currency }}</div>
-  </div>
-
-  <div class="grid sm:grid-cols-3 gap-4">
-    <div><label class="text-sm font-semibold text-gray-700">{{ form.country.label }}</label>{{ form.country }}</div>
-    <div><label class="text-sm font-semibold text-gray-700">{{ form.city.label }}</label>{{ form.city }}</div>
-    <div><label class="text-sm font-semibold text-gray-700">{{ form.neighborhood.label|default:"Quartier" }}</label>{{ form.neighborhood }}</div>
-  </div>
-
-  <div>
-    <label class="text-sm font-semibold text-gray-700">{{ form.address.label }}</label>
-    {{ form.address }}
-  </div>
-
-  <div class="grid sm:grid-cols-2 gap-4">
-    <div><label class="text-sm font-semibold text-gray-700">{{ form.latitude.label }}</label>{{ form.latitude }}</div>
-    <div><label class="text-sm font-semibold text-gray-700">{{ form.longitude.label }}</label>{{ form.longitude }}</div>
-  </div>
-
-  <div class="grid sm:grid-cols-3 gap-4">
-    <div><label class="text-sm font-semibold text-gray-700">{{ form.bedrooms.label }}</label>{{ form.bedrooms }}</div>
-    <div><label class="text-sm font-semibold text-gray-700">{{ form.bathrooms.label }}</label>{{ form.bathrooms }}</div>
-    <div><label class="text-sm font-semibold text-gray-700">{{ form.surface_area.label }}</label>{{ form.surface_area }}</div>
-  </div>
-
-  <div class="grid sm:grid-cols-2 gap-4">
-    <div><label class="text-sm font-semibold text-gray-700">{{ form.floors.label }}</label>{{ form.floors }}</div>
-    <div><label class="text-sm font-semibold text-gray-700">{{ form.year_built.label }}</label>{{ form.year_built }}</div>
-  </div>
-
-  <div>
-    <label class="text-sm font-semibold text-gray-700">{{ form.status.label }}</label>
-    {{ form.status }}
-  </div>
-
-  <div class="flex gap-8">
-    <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">{{ form.is_featured }} {{ form.is_featured.label }}</label>
-  </div>
-
-  <div>
-    <label class="text-sm font-semibold text-gray-700 block mb-2">{{ form.amenities.label }}</label>
-    <div class="grid sm:grid-cols-3 gap-2">{{ form.amenities }}</div>
-  </div>
+  <fieldset class="space-y-4">
+    <legend class="text-base font-bold text-gray-900 mb-1">Caractéristiques</legend>
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+      {% include "dashboard/owner/partials/field.html" with field=form.bedrooms %}
+      {% include "dashboard/owner/partials/field.html" with field=form.bathrooms %}
+      {% include "dashboard/owner/partials/field.html" with field=form.surface_area %}
+      {% include "dashboard/owner/partials/field.html" with field=form.floors %}
+      {% include "dashboard/owner/partials/field.html" with field=form.year_built %}
+    </div>
+    <div>
+      <span class="text-sm font-semibold text-gray-700 block mb-2">{{ form.amenities.label }}</span>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">{{ form.amenities }}</div>
+      {% for error in form.amenities.errors %}<p class="text-xs text-rose-600 mt-1">{{ error }}</p>{% endfor %}
+    </div>
+  </fieldset>
 
   {% include "partials/property_3d_fields.html" %}
+  {% for error in form.virtual_tour_url.errors %}<p class="text-xs text-rose-600 -mt-4">{{ error }}</p>{% endfor %}
+  {% for error in form.uploaded_tour_video.errors %}<p class="text-xs text-rose-600 -mt-4">{{ error }}</p>{% endfor %}
 
-  <div>
-    <label class="text-sm font-semibold text-gray-700 block mb-2">Photos (sélection multiple)</label>
-    <input type="file" name="images" multiple accept="image/*" class="block w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5">
+  <div x-data="photoPicker()">
+    <label for="id_images" class="text-sm font-semibold text-gray-700 block mb-1">{% if is_edit %}Ajouter des photos{% else %}Photos{% endif %}</label>
+    <p class="text-xs text-gray-500 mb-2">JPEG, PNG ou WebP, 10 Mo maximum par photo, {{ max_images }} photos par envoi. {% if is_edit %}Les photos actuelles sont conservées.{% else %}La première photo sera la photo principale.{% endif %}</p>
+    <input id="id_images" type="file" name="images" multiple accept="image/jpeg,image/png,image/webp" @change="pick($event)" class="block w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5">
+    {% for error in image_errors %}<p class="text-xs text-rose-600 mt-1 flex items-start gap-1"><i class="fa-solid fa-circle-exclamation mt-0.5" aria-hidden="true"></i>{{ error }}</p>{% endfor %}
+    <template x-if="files.length">
+      <div class="mt-3">
+        <p class="text-xs text-gray-600 mb-2"><span x-text="files.length"></span> photo(s) sélectionnée(s)<span x-show="files.length > {{ max_images }}" class="text-rose-600 font-semibold"> : {{ max_images }} au maximum</span><span x-show="files.some(f => f.big)" class="text-rose-600 font-semibold"> : une photo encadrée en rouge dépasse 10 Mo</span></p>
+        <div class="grid grid-cols-4 sm:grid-cols-6 gap-2">
+          <template x-for="f in files" :key="f.url">
+            <img :src="f.url" :alt="f.name" class="w-full h-16 object-cover rounded-lg" :class="f.big && 'ring-2 ring-rose-500'">
+          </template>
+        </div>
+      </div>
+    </template>
   </div>
 
   {% if is_edit and property.images.all %}
   <div>
-    <label class="text-sm font-semibold text-gray-700 block mb-1">Photos actuelles</label>
-    <p class="text-xs text-gray-500 mb-2">L'ordre des photos est utilisé par la galerie et par la visite virtuelle (la première photo ouvre la vidéo). Utilisez ← → pour le modifier.</p>
-    <div class="grid grid-cols-4 sm:grid-cols-6 gap-3">
+    <span class="text-sm font-semibold text-gray-700 block mb-1">Photos actuelles</span>
+    <p class="text-xs text-gray-500 mb-2">L'ordre des photos est utilisé par la galerie et par la visite virtuelle (la première photo ouvre la vidéo). Utilisez les flèches pour le modifier.</p>
+    <div class="grid grid-cols-3 sm:grid-cols-6 gap-3">
       {% for img in property.images.all %}
       <div class="relative group">
-        <img src="{{ img.image.url }}" class="w-full h-20 object-cover rounded-lg">
+        <img src="{{ img.image.url }}" alt="Photo {{ forloop.counter }}" loading="lazy" class="w-full h-20 object-cover rounded-lg">
         <span class="absolute top-1 left-1 bg-black/60 text-white text-[10px] font-bold px-1.5 rounded">{{ forloop.counter }}</span>
-        <button form="delete-img-{{ img.pk }}" type="submit" class="absolute top-1 right-1 bg-black/60 text-white text-xs w-5 h-5 rounded-full opacity-0 group-hover:opacity-100 transition" title="Supprimer"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
-        <div class="absolute bottom-1 inset-x-1 flex justify-between opacity-0 group-hover:opacity-100 transition">
-          {% if not forloop.first %}<button form="move-img-{{ img.pk }}-up" type="submit" class="bg-black/60 text-white text-xs w-5 h-5 rounded-full" title="Avancer">←</button>{% else %}<span></span>{% endif %}
-          {% if not forloop.last %}<button form="move-img-{{ img.pk }}-down" type="submit" class="bg-black/60 text-white text-xs w-5 h-5 rounded-full" title="Reculer">→</button>{% endif %}
+        <button form="delete-img-{{ img.pk }}" type="submit" class="absolute top-1 right-1 bg-black/70 text-white text-xs w-7 h-7 rounded-full sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 transition" title="Supprimer" aria-label="Supprimer la photo {{ forloop.counter }}"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+        <div class="absolute bottom-1 inset-x-1 flex justify-between sm:opacity-0 sm:group-hover:opacity-100 focus-within:opacity-100 transition">
+          {% if not forloop.first %}<button form="move-img-{{ img.pk }}-up" type="submit" class="bg-black/70 text-white text-xs w-7 h-7 rounded-full" title="Avancer" aria-label="Avancer la photo"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i></button>{% else %}<span></span>{% endif %}
+          {% if not forloop.last %}<button form="move-img-{{ img.pk }}-down" type="submit" class="bg-black/70 text-white text-xs w-7 h-7 rounded-full" title="Reculer" aria-label="Reculer la photo"><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button>{% endif %}
         </div>
       </div>
       {% endfor %}
@@ -94,15 +100,26 @@
   </div>
   {% endif %}
 
-  <div class="flex gap-3 pt-2">
-    <button type="submit" class="bg-primary-600 hover:bg-primary-700 transition text-white font-semibold rounded-full px-6 py-3">{% if is_edit %}Enregistrer les modifications{% else %}Soumettre pour validation{% endif %}</button>
-    <a href="{% url 'dashboard:owner_properties' %}" class="border border-gray-200 text-gray-600 font-semibold rounded-full px-6 py-3">Annuler</a>
+  <div class="flex flex-col sm:flex-row gap-3 pt-2">
+    <button type="submit" data-loading-text="Enregistrement…" class="bg-primary-600 hover:bg-primary-700 transition text-white font-semibold rounded-full px-6 py-3">{% if is_edit %}Enregistrer les modifications{% else %}Soumettre pour validation{% endif %}</button>
+    <a href="{% url 'dashboard:owner_properties' %}" class="border border-gray-200 text-gray-600 font-semibold rounded-full px-6 py-3 text-center">Annuler</a>
   </div>
 </form>
+<script>
+function photoPicker() {
+  return {
+    files: [],
+    pick(event) {
+      this.files.forEach(f => URL.revokeObjectURL(f.url));
+      this.files = Array.from(event.target.files).map(f => ({ name: f.name, url: URL.createObjectURL(f), big: f.size > 10 * 1024 * 1024 }));
+    },
+  };
+}
+</script>
 
 {% if is_edit and property.images.all %}
 {% for img in property.images.all %}
-<form id="delete-img-{{ img.pk }}" method="post" action="{% url 'dashboard:owner_property_image_delete' property.pk img.pk %}" class="hidden">{% csrf_token %}</form>
+<form id="delete-img-{{ img.pk }}" method="post" action="{% url 'dashboard:owner_property_image_delete' property.pk img.pk %}" class="hidden" onsubmit="return confirm('Supprimer cette photo ? Cette action est définitive.')">{% csrf_token %}</form>
 <form id="move-img-{{ img.pk }}-up" method="post" action="{% url 'dashboard:owner_property_image_move' property.pk img.pk %}" class="hidden">{% csrf_token %}<input type="hidden" name="direction" value="up"></form>
 <form id="move-img-{{ img.pk }}-down" method="post" action="{% url 'dashboard:owner_property_image_move' property.pk img.pk %}" class="hidden">{% csrf_token %}<input type="hidden" name="direction" value="down"></form>
 {% endfor %}

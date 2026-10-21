@@ -3,6 +3,7 @@ from django.contrib import messages
 from django.core.paginator import Paginator
 from django.core.mail import send_mail
 from django.conf import settings
+from django.db import transaction
 from django.db.models import Sum, Count, Q
 from django.utils import timezone
 from django.db.models.functions import TruncMonth
@@ -12,7 +13,7 @@ import json
 from .decorators import role_required
 from accounts.models import User
 from properties.models import Property, PropertyImage
-from properties.forms import PropertyForm, PropertyImageFormSet, PropertyDocumentFormSet
+from properties.forms import MAX_IMAGES_PER_UPLOAD, PropertyForm, validate_property_images
 from properties.video.service import has_ready_video, in_progress, request_virtual_tour, status_payload
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET, require_POST
@@ -101,6 +102,24 @@ def owner_properties(request):
     return render(request, "dashboard/owner/properties.html", {"page_obj": page_obj, "dash_role": "owner", "active": "properties"})
 
 
+def _save_new_images(property, files):
+    """Ajoute les photos à la suite des existantes ; la première photo d'un bien sans photo devient principale."""
+    start = property.images.count()
+    for i, f in enumerate(files):
+        PropertyImage.objects.create(property=property, image=f, is_primary=(start == 0 and i == 0), order=start + i)
+
+
+def _property_form_context(form, property=None):
+    return {
+        "form": form,
+        "is_edit": property is not None,
+        "property": property,
+        "max_images": MAX_IMAGES_PER_UPLOAD,
+        "dash_role": "owner",
+        "active": "properties",
+    }
+
+
 @role_required(User.Role.OWNER)
 def owner_property_create(request):
     """Permet à un propriétaire d'ajouter une nouvelle annonce immobilière."""
@@ -109,83 +128,67 @@ def owner_property_create(request):
         return redirect("dashboard:owner_verify_identity")
 
     if request.method == "POST":
-        form = PropertyForm(request.POST)
-        
-        if form.is_valid():
-            property = form.save(commit=False)
-            property.owner = request.user
-            # Force la propriété à être en attente de validation et non publiée
-            property.is_published = False
-            property.is_validated = False
-            property.validation_status = Property.ValidationStatus.PENDING
-            property.save()
-            form.save_m2m()
-            
-            for i, f in enumerate(request.FILES.getlist("images")):
-                PropertyImage.objects.create(property=property, image=f, is_primary=(i == 0), order=i)
-                
+        form = PropertyForm(request.POST, request.FILES)
+        files = request.FILES.getlist("images")
+        image_errors = validate_property_images(files)
+        if form.is_valid() and not image_errors:
+            with transaction.atomic():
+                property = form.save(commit=False)
+                property.owner = request.user
+                # Force la propriété à être en attente de validation et non publiée
+                property.is_published = False
+                property.is_validated = False
+                property.is_featured = False
+                property.validation_status = Property.ValidationStatus.PENDING
+                property.save()
+                form.save_m2m()
+                _save_new_images(property, files)
+
             messages.success(request, "Le bien a été ajouté avec succès et est en attente de validation par l'administrateur.")
             # Visite virtuelle : génération asynchrone (ne publie ni ne valide le bien).
             queued, video_message = request_virtual_tour(property)
             (messages.info if queued else messages.warning)(request, video_message)
-                
             return redirect("dashboard:owner_properties")
-    else:
-        form = PropertyForm()
-        formset = PropertyImageFormSet(prefix='images')
-        doc_formset = PropertyDocumentFormSet(prefix='documents')
-    
-    return render(request, "dashboard/owner/property_form.html", {
-        "form": form, 
-        "formset": formset,
-        "doc_formset": doc_formset,
-        "is_edit": False, 
-        "dash_role": "owner", 
-        "active": "properties"
-    })
+        context = _property_form_context(form)
+        context["image_errors"] = image_errors
+        context["files_lost"] = bool(files) or bool(request.FILES.get("uploaded_tour_video"))
+        return render(request, "dashboard/owner/property_form.html", context, status=400)
+
+    return render(request, "dashboard/owner/property_form.html", _property_form_context(PropertyForm()))
 
 
 @role_required(User.Role.OWNER)
 def owner_property_edit(request, pk):
-    """Modifie un bien déjà enregistré par le propriétaire."""
+    """Modifie un bien déjà enregistré par le propriétaire (les photos existantes sont conservées)."""
     property = get_object_or_404(Property, pk=pk, owner=request.user)
     if request.method == "POST":
-        form = PropertyForm(request.POST, instance=property)
-        
-        if form.is_valid():
-            updated_property = form.save(commit=False)
-            # Si la propriété n'est pas encore validée, la remettre en attente de validation
-            if not property.is_validated:
-                updated_property.is_published = False
-                updated_property.validation_status = Property.ValidationStatus.PENDING
-            updated_property.save()
-            form.save_m2m()
-            
-            files = request.FILES.getlist("images")
-            for i, f in enumerate(files):
-                PropertyImage.objects.create(property=property, image=f, order=property.images.count() + i)
-                
-            messages.success(request, "Le bien a été mis à jour.")
+        form = PropertyForm(request.POST, request.FILES, instance=property)
+        files = request.FILES.getlist("images")
+        image_errors = validate_property_images(files)
+        if form.is_valid() and not image_errors:
+            with transaction.atomic():
+                updated_property = form.save(commit=False)
+                # Si la propriété n'est pas encore validée, la remettre en attente de validation
+                if not updated_property.is_validated:
+                    updated_property.is_published = False
+                    updated_property.validation_status = Property.ValidationStatus.PENDING
+                updated_property.save()
+                form.save_m2m()
+                _save_new_images(updated_property, files)
+
+            messages.success(request, "Les modifications du bien ont été enregistrées.")
             if files:
                 # De nouvelles photos : la visite virtuelle doit les inclure.
-                queued, video_message = request_virtual_tour(property)
+                queued, video_message = request_virtual_tour(updated_property)
                 (messages.info if queued else messages.warning)(request, video_message)
-                
             return redirect("dashboard:owner_properties")
-    else:
-        form = PropertyForm(instance=property)
-        formset = PropertyImageFormSet(instance=property, prefix='images')
-        doc_formset = PropertyDocumentFormSet(instance=property, prefix='documents')
-    
-    return render(request, "dashboard/owner/property_form.html", {
-        "form": form, 
-        "formset": formset,
-        "doc_formset": doc_formset,
-        "is_edit": True, 
-        "property": property, 
-        "dash_role": "owner", 
-        "active": "properties"
-    })
+        property.refresh_from_db()  # l'en-tête et les photos affichent l'état enregistré, pas la saisie refusée
+        context = _property_form_context(form, property)
+        context["image_errors"] = image_errors
+        context["files_lost"] = bool(files) or bool(request.FILES.get("uploaded_tour_video"))
+        return render(request, "dashboard/owner/property_form.html", context, status=400)
+
+    return render(request, "dashboard/owner/property_form.html", _property_form_context(PropertyForm(instance=property), property))
 
 
 @role_required(User.Role.OWNER)
@@ -198,20 +201,26 @@ def owner_property_delete(request, pk):
 
 
 @role_required(User.Role.OWNER)
+@require_POST
 def owner_property_toggle_publish(request, pk):
-    """Publie ou retire une annonce du site public."""
+    """Publie ou retire une annonce du site public (seule une annonce validée peut être en ligne)."""
     property = get_object_or_404(Property, pk=pk, owner=request.user)
-    
+
     if request.user.verification_status != User.VerificationStatus.APPROVED:
         messages.error(request, "Votre identité doit être vérifiée pour publier/dépublier un bien.")
         return redirect("dashboard:owner_properties")
-        
+    if not property.is_published and not property.is_validated:
+        messages.error(request, "Cette annonce doit d'abord être validée par l'administration avant d'être mise en ligne.")
+        return redirect("dashboard:owner_properties")
+
     property.is_published = not property.is_published
     property.save(update_fields=["is_published"])
+    messages.success(request, "L'annonce est en ligne." if property.is_published else "L'annonce est retirée du site.")
     return redirect("dashboard:owner_properties")
 
 
 @role_required(User.Role.OWNER)
+@require_POST
 def owner_property_image_delete(request, pk, image_id):
     """Supprime une image d'un bien du propriétaire."""
     property = get_object_or_404(Property, pk=pk, owner=request.user)
@@ -281,94 +290,76 @@ def owner_property_video_status(request, pk):
 @role_required(User.Role.OWNER)
 def owner_verify_identity(request):
     """Soumet et suit la vérification d'identité du propriétaire."""
-    from accounts.models import IdentityVerificationRequest
-    
-    # Get the latest verification request for this owner
-    latest_request = request.user.verification_requests.first()
-    
-    # Debug logging
     import logging
+
+    from accounts.models import IdentityVerificationRequest
+
     logger = logging.getLogger(__name__)
-    logger.info(f"=== VERIFICATION PAGE LOAD ===")
-    logger.info(f"Owner: {request.user.username} (ID: {request.user.id})")
-    logger.info(f"Verification status: {request.user.verification_status}")
-    logger.info(f"Latest request: {latest_request}")
-    if latest_request:
-        logger.info(f"Request ID: {latest_request.id}, Status: {latest_request.status}")
-    
+    latest_request = request.user.verification_requests.first()
+
     if request.method == "POST":
-        logger.info(f"=== FORM SUBMISSION ===")
-        logger.info(f"POST data keys: {list(request.POST.keys())}")
-        logger.info(f"FILES keys: {list(request.FILES.keys())}")
-        
+        locked_statuses = {
+            User.VerificationStatus.APPROVED,
+            User.VerificationStatus.PENDING_FIELD_VISIT,
+            User.VerificationStatus.FIELD_VISIT_COMPLETED,
+        }
+        if request.user.verification_status in locked_statuses:
+            messages.info(request, "Votre vérification est déjà validée ou en cours de vérification terrain : aucun nouvel envoi n'est nécessaire.")
+            return redirect("dashboard:owner_verify_identity")
+        if request.user.verification_requests.filter(status=IdentityVerificationRequest.Status.PENDING).exists():
+            messages.info(request, "Vos documents sont déjà en cours d'analyse. Vous serez notifié dès qu'un administrateur les aura examinés.")
+            return redirect("dashboard:owner_verify_identity")
+
         id_document_front = request.FILES.get("id_document_front")
         id_document_back = request.FILES.get("id_document_back")
-        id_document_type = request.POST.get("id_document_type", "")
-        id_document_number = request.POST.get("id_document_number", "")
-        
-        logger.info(f"Front document: {id_document_front}")
-        logger.info(f"Back document: {id_document_back}")
-        logger.info(f"Document type: {id_document_type}")
-        logger.info(f"Document number: {id_document_number}")
-        
+        id_document_type = (request.POST.get("id_document_type") or "").strip()[:50]
+        id_document_number = (request.POST.get("id_document_number") or "").strip()[:50]
+
         if not id_document_front or not id_document_back:
-            logger.error("Missing documents")
             messages.error(request, "Veuillez fournir les deux faces de votre pièce d'identité.")
             return redirect("dashboard:owner_verify_identity")
-        
+        file_errors = validate_property_images([id_document_front, id_document_back])
+        if file_errors:
+            for error in file_errors:
+                messages.error(request, error)
+            return redirect("dashboard:owner_verify_identity")
+
         try:
-            # Create new verification request
-            verification_request = IdentityVerificationRequest.objects.create(
-                owner=request.user,
-                id_document_front=id_document_front,
-                id_document_back=id_document_back,
-                id_document_type=id_document_type,
-                id_document_number=id_document_number,
-                status=IdentityVerificationRequest.Status.PENDING
-            )
-            
-            logger.info(f"✓ Created verification request #{verification_request.id}")
-            logger.info(f"✓ Front image: {verification_request.id_document_front.name}")
-            logger.info(f"✓ Back image: {verification_request.id_document_back.name}")
-            
-            # Update owner's verification status
-            request.user.verification_status = User.VerificationStatus.PENDING_DOCUMENTS
-            request.user.save(update_fields=["verification_status"])
-            logger.info(f"✓ Updated owner status to PENDING")
-            
-            # Send notification to owner
-            Notification.objects.create(
-                user=request.user,
-                title="Demande de vérification soumise",
-                message="Vos documents ont été envoyés avec succès. Ils seront examinés par un administrateur. Vous recevrez une notification dès que votre identité sera validée.",
-                notification_type="systeme",
-                link="/dashboard/proprietaire/verification-identite/"
-            )
-            logger.info(f"✓ Notification sent to owner")
-            
-            # Send notification to all admins
-            admins = User.objects.filter(role=User.Role.ADMIN)
-            logger.info(f"✓ Found {admins.count()} admin(s)")
-            for admin in admins:
-                Notification.objects.create(
-                    user=admin,
-                    title="Nouvelle demande de vérification d'identité",
-                    message=f"Le propriétaire {request.user.get_full_name() or request.user.username} vient de soumettre ses documents d'identité. Veuillez examiner les pièces et valider ou refuser la demande.",
-                    notification_type="systeme",
-                    link="/dashboard/admin-panel/verifications-identite/"
+            with transaction.atomic():
+                verification_request = IdentityVerificationRequest.objects.create(
+                    owner=request.user,
+                    id_document_front=id_document_front,
+                    id_document_back=id_document_back,
+                    id_document_type=id_document_type,
+                    id_document_number=id_document_number,
+                    status=IdentityVerificationRequest.Status.PENDING,
                 )
-            logger.info(f"✓ Notifications sent to admins")
-            
+                request.user.verification_status = User.VerificationStatus.PENDING_DOCUMENTS
+                request.user.save(update_fields=["verification_status"])
+
+                Notification.objects.create(
+                    user=request.user,
+                    title="Demande de vérification soumise",
+                    message="Vos documents ont été envoyés avec succès. Ils seront examinés par un administrateur. Vous recevrez une notification dès que votre identité sera validée.",
+                    notification_type="systeme",
+                    link="/dashboard/proprietaire/verification-identite/",
+                )
+                for admin in User.objects.filter(role=User.Role.ADMIN):
+                    Notification.objects.create(
+                        user=admin,
+                        title="Nouvelle demande de vérification d'identité",
+                        message=f"Le propriétaire {request.user.get_full_name() or request.user.username} vient de soumettre ses documents d'identité. Veuillez examiner les pièces et valider ou refuser la demande.",
+                        notification_type="systeme",
+                        link="/dashboard/admin-panel/verifications-identite/",
+                    )
+            # Journal sans donnée personnelle : ni numéro de pièce, ni nom de fichier.
+            logger.info("Demande de vérification #%s soumise (propriétaire %s)", verification_request.pk, request.user.pk)
             messages.success(request, "Vos documents ont été envoyés avec succès. Ils seront examinés par un administrateur. Vous recevrez une notification dès que votre identité sera validée.")
-            return redirect("dashboard:owner_verify_identity")
-            
-        except Exception as e:
-            logger.error(f"Error creating verification request: {e}")
-            import traceback
-            logger.error(traceback.format_exc())
-            messages.error(request, f"Erreur lors de la soumission: {str(e)}")
-            return redirect("dashboard:owner_verify_identity")
-    
+        except Exception as exc:
+            logger.error("Échec de la soumission de vérification (propriétaire %s) : %s", request.user.pk, exc.__class__.__name__)
+            messages.error(request, "L'envoi de vos documents a échoué. Réessayez dans quelques instants.")
+        return redirect("dashboard:owner_verify_identity")
+
     context = {
         "dash_role": "owner",
         "active": "verification",
