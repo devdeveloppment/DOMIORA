@@ -78,19 +78,20 @@ def _fedapay_headers():
 
     secret = _get_fedapay_secret_key()
     if not secret:
+        logger.error("FedaPay : FEDAPAY_SECRET_KEY absente (variable d'environnement à définir sur le serveur)")
         raise DonationError("Le paiement en ligne n'est pas configuré.")
     return {"Authorization": f"Bearer {secret}", "Content-Type": "application/json"}
 
 
 def _fedapay_start(request, donation):
-    from properties.fedapay import _get_fedapay_base_url
+    from properties.fedapay import _get_fedapay_base_url, describe_fedapay_error, fedapay_customer
 
     payload = {
         "description": "Don à DOMIORA",
         "amount": donation.amount,
         "currency": {"iso": donation.currency},
         "callback_url": request.build_absolute_uri(reverse("core:donation_return", args=[donation.reference])),
-        "customer": {"firstname": "Donateur", "lastname": "", "email": donation.donor_email},
+        "customer": fedapay_customer("Donateur", "", donation.donor_email),
         "custom_metadata": {"donation_reference": str(donation.reference)},
     }
     base = _get_fedapay_base_url()
@@ -102,8 +103,11 @@ def _fedapay_start(request, donation):
             raise DonationError("Réponse du prestataire incomplète.")
         donation.provider_transaction_id = str(trx["id"])
         donation.save(update_fields=["provider_transaction_id", "updated_at"])
-        token = requests.post(f"{base}/transactions/{trx['id']}/token", headers=_fedapay_headers(), timeout=20).json()
+        token_resp = requests.post(f"{base}/transactions/{trx['id']}/token", headers=_fedapay_headers(), timeout=20)
+        token_resp.raise_for_status()
+        token = token_resp.json()
     except requests.RequestException as error:
+        logger.error("FedaPay : création du don %s refusée — %s", donation.reference, describe_fedapay_error(error))
         _fail(donation, "Erreur de communication avec le prestataire")
         raise DonationError("Le prestataire de paiement ne répond pas. Réessayez dans quelques instants.") from error
     url = token.get("url") or (token.get("token") and

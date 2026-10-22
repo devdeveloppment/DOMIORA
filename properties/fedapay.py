@@ -214,3 +214,27 @@ def verify_fedapay_webhook_signature(payload_raw, signature, secret_key=None):
     ).hexdigest()
 
     return hmac.compare_digest(expected, signature)
+
+
+def fedapay_customer(firstname="", lastname="", email=""):
+    """Client FedaPay sans champ vide (une adresse e-mail vide est refusée par l'API)."""
+    customer = {"firstname": (firstname or "Client").strip()[:100]}
+    if (lastname or "").strip():
+        customer["lastname"] = lastname.strip()[:100]
+    if (email or "").strip():
+        customer["email"] = email.strip()
+    return customer
+
+
+def describe_fedapay_error(exc):
+    """
+    Résumé journalisable d'une erreur FedaPay : code HTTP et message de l'API (jamais la clé).
+    Ex. : « HTTP 401 : clé refusée (mode sandbox/live ou clé invalide) — {...} ».
+    """
+    response = getattr(exc, "response", None)
+    if response is None:
+        return f"{exc.__class__.__name__} : {exc}"
+    hints = {401: "clé refusée (clé invalide, ou clé live utilisée en mode sandbox et inversement)",
+             403: "accès refusé par FedaPay", 422: "données refusées par FedaPay"}
+    body = (response.text or "")[:400].replace("\n", " ")
+    return f"HTTP {response.status_code} : {hints.get(response.status_code, 'erreur FedaPay')} — {body}"

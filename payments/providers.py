@@ -13,7 +13,7 @@ import requests
 from django.conf import settings
 from django.urls import reverse
 
-from properties.fedapay import _get_fedapay_base_url, _get_fedapay_secret_key
+from properties.fedapay import _get_fedapay_base_url, _get_fedapay_secret_key, describe_fedapay_error, fedapay_customer
 
 from .models import PaymentAttempt
 
@@ -65,6 +65,7 @@ class FedaPayProvider:
     def _headers(self):
         secret = _get_fedapay_secret_key()
         if not secret:
+            logger.error("FedaPay : FEDAPAY_SECRET_KEY absente (variable d'environnement à définir sur le serveur)")
             raise ProviderError("FedaPay non configuré")
         return {"Authorization": f"Bearer {secret}", "Content-Type": "application/json"}
 
@@ -77,11 +78,7 @@ class FedaPayProvider:
             "amount": attempt.amount,
             "currency": {"iso": attempt.currency},
             "callback_url": callback_url,
-            "customer": {
-                "firstname": client.first_name or "Client",
-                "lastname": client.last_name or "",
-                "email": client.email or "",
-            },
+            "customer": fedapay_customer(client.first_name, client.last_name, client.email),
             "custom_metadata": {"reference": str(attempt.reference)},
         }
         base = _get_fedapay_base_url()
@@ -99,8 +96,10 @@ class FedaPayProvider:
             token_resp.raise_for_status()
             token_data = token_resp.json()
         except requests.Timeout as exc:
+            logger.error("FedaPay : délai dépassé à la création du paiement %s", attempt.reference)
             raise ProviderTimeout("Délai dépassé avec FedaPay") from exc
         except requests.RequestException as exc:
+            logger.error("FedaPay : création du paiement %s refusée — %s", attempt.reference, describe_fedapay_error(exc))
             raise ProviderError("Erreur de communication avec FedaPay") from exc
         url = token_data.get("url")
         if not url and token_data.get("token"):
