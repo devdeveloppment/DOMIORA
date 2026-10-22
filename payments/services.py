@@ -137,7 +137,11 @@ def apply_provider_status(attempt_id, provider_status, source, event_key, note="
     Retourne la tentative à jour.
     """
     with transaction.atomic():
-        attempt = PaymentAttempt.objects.select_for_update().select_related("client", "owner", "property").get(pk=attempt_id)
+        # of=("self",) : seule la tentative est verrouillée. PostgreSQL refuse FOR UPDATE sur le côté facultatif
+        # d'une jointure (bien supprimé = property NULL) ; SQLite ignore ce verrou, d'où une erreur visible
+        # uniquement en production.
+        attempt = (PaymentAttempt.objects.select_for_update(of=("self",))
+                   .select_related("client", "owner", "property").get(pk=attempt_id))
         event = _record_event(attempt, event_key, source, provider_status, note)
         if event is None or attempt.is_terminal:
             if event is not None:
