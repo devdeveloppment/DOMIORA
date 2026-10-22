@@ -1,0 +1,41 @@
+{% load static %}
+{# Administrateur principal de DOMIORA. Usage : include "partials/admin_principal.html" with variant="feature" | "compact" #}
+{% if variant == "compact" %}
+<div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-5 flex items-center gap-4">
+  <img src="{% static 'images/team/denis-admin-avatar.webp' %}" alt="M. DENIS, administrateur principal de DOMIORA"
+       width="80" height="80" loading="lazy"
+       class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover ring-4 ring-primary-50 shrink-0">
+  <div class="min-w-0">
+    <p class="text-[11px] font-bold uppercase tracking-widest text-accent-600">Administration principale</p>
+    <p class="font-display font-extrabold text-gray-900 text-lg leading-tight">M. DENIS</p>
+    <p class="text-sm text-gray-500">Administrateur principal de DOMIORA</p>
+    <p class="hidden sm:block text-xs text-gray-500 italic mt-1">« Je veille à la fiabilité de la plateforme, à la sécurité des utilisateurs et à la qualité des services proposés. »</p>
+  </div>
+</div>
+{% else %}
+<div class="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden flex flex-col md:flex-row">
+  <div class="relative bg-primary-50 h-80 sm:h-96 md:h-auto md:w-2/5 md:min-h-[26rem] shrink-0">
+    <img src="{% static 'images/team/denis-admin.webp' %}"
+         srcset="{% static 'images/team/denis-admin-sm.webp' %} 400w, {% static 'images/team/denis-admin.webp' %} 800w"
+         sizes="(min-width: 768px) 40vw, 100vw"
+         alt="M. DENIS, administrateur principal de DOMIORA" width="800" height="1000" loading="lazy"
+         class="absolute inset-0 w-full h-full object-cover object-[60%_20%]">
+  </div>
+  <div class="flex-1 min-w-0 p-6 sm:p-10 lg:p-12 flex flex-col justify-center text-center md:text-left">
+    <span class="inline-flex self-center md:self-start items-center gap-2 bg-primary-50 text-primary-700 text-[11px] font-bold px-3 py-1.5 rounded-full uppercase tracking-widest mb-4">
+      <i class="fa-solid fa-shield-halved" aria-hidden="true"></i> Supervision de la plateforme
+    </span>
+    <h3 class="font-display text-2xl sm:text-3xl font-extrabold text-gray-900">M. DENIS</h3>
+    <div class="text-primary-600 font-semibold mt-1">Administrateur principal de DOMIORA</div>
+    <div class="w-12 h-1 bg-accent-500 rounded-full my-5 self-center md:self-start"></div>
+    <blockquote class="admin-quote text-gray-600 text-base sm:text-lg leading-relaxed italic max-w-xl self-center md:self-start">
+      « Je veille à la fiabilité de la plateforme, à la sécurité des utilisateurs et à la qualité des services proposés. »
+    </blockquote>
+  </div>
+</div>
+<style>
+  /* Citation justifiée seulement quand la colonne est assez large (sinon espaces étirés) */
+  .admin-quote { text-align: center; hyphens: none; }
+  @media (min-width: 768px) { .admin-quote { text-align: justify; text-align-last: left; hyphens: auto; } }
+</style>
+{% endif %}

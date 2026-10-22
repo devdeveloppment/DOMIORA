@@ -39,7 +39,7 @@
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
 <script defer src="{% static 'js/form-guard.js' %}"></script>
 <script src="https://unpkg.com/htmx.org@1.9.10" integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC" crossorigin="anonymous"></script>
-<link rel="stylesheet" href="{% static 'css/design-system.css' %}">
+<link rel="stylesheet" href="{% static 'css/design-system.css' %}{% if asset_version %}?v={{ asset_version }}{% endif %}">
 <style>
   body { font-family: 'Inter', sans-serif; }
   h1, h2, h3, h4, h5, h6, .font-display { font-family: 'Montserrat', sans-serif; }

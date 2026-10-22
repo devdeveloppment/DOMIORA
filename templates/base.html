@@ -23,8 +23,8 @@
 <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
 <script defer src="{% static 'js/form-guard.js' %}"></script>
-<link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
-<link rel="stylesheet" href="{% static 'css/design-system.css' %}">
+<link rel="stylesheet" href="{% static 'css/tailwind.css' %}{% if asset_version %}?v={{ asset_version }}{% endif %}">
+<link rel="stylesheet" href="{% static 'css/design-system.css' %}{% if asset_version %}?v={{ asset_version }}{% endif %}">
 <style>
   body { font-family: 'Inter', sans-serif; }
   h1, h2, h3, h4, h5, h6, .font-display { text-wrap: balance; }

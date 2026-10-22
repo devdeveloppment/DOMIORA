@@ -18,7 +18,7 @@
       </a>
 
       <!-- Desktop Nav Links -->
-      <nav class="hidden lg:flex items-center gap-6 whitespace-nowrap">
+      <nav class="hidden xl:flex items-center gap-6 whitespace-nowrap">
         <a href="{% url 'core:home' %}" class="text-sm font-semibold text-gray-600 hover:text-primary-600 transition">Accueil</a>
         <a href="{% url 'properties:list' %}?transaction=vente" class="text-sm font-semibold text-gray-600 hover:text-primary-600 transition">Acheter</a>
         <a href="{% url 'properties:list' %}?transaction=location" class="text-sm font-semibold text-gray-600 hover:text-primary-600 transition">Louer</a>
@@ -29,7 +29,7 @@
       </nav>
 
       <!-- Right Actions (Desktop) -->
-      <div class="hidden md:flex items-center gap-3">
+      <div class="hidden md:flex items-center gap-3 whitespace-nowrap">
 
         <!-- Publier un bien (visible si non client connecté) -->
         {% if not request.user.is_authenticated or request.user.role != 'client' %}
@@ -60,7 +60,7 @@
       </div>
 
       <!-- Mobile menu button -->
-      <button class="flex items-center lg:hidden text-gray-700 p-2" @click="mobileOpen = !mobileOpen" aria-label="Menu">
+      <button class="flex items-center xl:hidden text-gray-700 p-2" @click="mobileOpen = !mobileOpen" aria-label="Menu">
         <svg x-show="!mobileOpen" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
         <svg x-show="mobileOpen" x-cloak class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
       </button>
@@ -68,7 +68,7 @@
   </div>
 
   <!-- Mobile menu -->
-  <div x-cloak x-show="mobileOpen" x-transition class="lg:hidden bg-white border-t border-gray-100 px-5 py-4 space-y-1 shadow-xl absolute w-full">
+  <div x-cloak x-show="mobileOpen" x-transition class="xl:hidden bg-white border-t border-gray-100 px-5 py-4 space-y-1 shadow-xl absolute w-full">
     <a href="{% url 'core:home' %}" class="block py-2.5 text-sm font-semibold text-gray-700 hover:text-primary-600 border-b border-gray-50">Accueil</a>
     <a href="{% url 'properties:list' %}?transaction=vente" class="block py-2.5 text-sm font-semibold text-gray-700 hover:text-primary-600 border-b border-gray-50">Acheter</a>
     <a href="{% url 'properties:list' %}?transaction=location" class="block py-2.5 text-sm font-semibold text-gray-700 hover:text-primary-600 border-b border-gray-50">Louer</a>

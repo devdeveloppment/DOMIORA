@@ -2,7 +2,10 @@
 export default {
   content: [
     "./templates/**/*.html",
-    "./static/js/**/*.js"
+    "./static/js/**/*.js",
+    // classes produites par du code Python (badges de statut, etc.)
+    "./[a-z]*/**/*.py",
+    "!./node_modules/**"
   ],
   darkMode: 'class',
   theme: {
