@@ -1,3 +1,4 @@
+import re
 import hmac
 import hashlib
 import requests
@@ -216,13 +217,43 @@ def verify_fedapay_webhook_signature(payload_raw, signature, secret_key=None):
     return hmac.compare_digest(expected, signature)
 
 
-def fedapay_customer(firstname="", lastname="", email=""):
+# Indicatifs des pays proposés par FedaPay ; le Togo est le pays par défaut de DOMIORA.
+FEDAPAY_DIAL_CODES = {"228": "tg", "229": "bj", "225": "ci", "221": "sn", "226": "bf", "227": "ne", "223": "ml", "224": "gn"}
+DEFAULT_PHONE_COUNTRY = ("228", "tg")
+
+
+def fedapay_phone(raw):
+    """
+    Numéro au format international pour FedaPay : {"number": "+22890000000", "country": "tg"}.
+    Sans indicatif, le numéro est considéré comme togolais. None si le numéro est inexploitable :
+    le client le saisit alors sur la page FedaPay.
+    """
+    text = str(raw or "").strip()
+    digits = re.sub(r"\D", "", text)
+    if text.startswith("00"):
+        digits, text = digits[2:], "+" + digits[2:]
+    if text.startswith("+") or (len(digits) > 8 and digits[:3] in FEDAPAY_DIAL_CODES):
+        code = digits[:3]
+        country = FEDAPAY_DIAL_CODES.get(code)
+        national = digits[3:]
+    else:
+        code, country = DEFAULT_PHONE_COUNTRY
+        national = digits
+    if not country or not 8 <= len(national) <= 10:
+        return None
+    return {"number": f"+{code}{national}", "country": country}
+
+
+def fedapay_customer(firstname="", lastname="", email="", phone=""):
     """Client FedaPay sans champ vide (une adresse e-mail vide est refusée par l'API)."""
     customer = {"firstname": (firstname or "Client").strip()[:100]}
     if (lastname or "").strip():
         customer["lastname"] = lastname.strip()[:100]
     if (email or "").strip():
         customer["email"] = email.strip()
+    phone_number = fedapay_phone(phone)
+    if phone_number:
+        customer["phone_number"] = phone_number
     return customer
 
 

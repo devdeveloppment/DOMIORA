@@ -31,7 +31,7 @@ class ErrorLoggingTests(SimpleTestCase):
         from payments.providers import FedaPayProvider, ProviderError
 
         attempt = mock.Mock(reference="ref-1", amount=500, currency="XOF")
-        attempt.client = mock.Mock(first_name="Ama", last_name="", email="")
+        attempt.client = mock.Mock(first_name="Ama", last_name="", email="", phone="", whatsapp_number="")
         request = mock.Mock(build_absolute_uri=lambda url: "https://x.tg" + url)
         error = self.http_error(422, '{"message":"email invalide"}')
         with mock.patch("payments.providers.requests.post", return_value=mock.Mock(raise_for_status=mock.Mock(side_effect=error))) as post, \
@@ -52,3 +52,24 @@ class ErrorLoggingTests(SimpleTestCase):
         with self.assertLogs("payments.providers", level="ERROR") as logs, self.assertRaises(ProviderError):
             FedaPayProvider()._headers()
         self.assertIn("FEDAPAY_SECRET_KEY absente", "\n".join(logs.output))
+
+
+class PhoneTests(SimpleTestCase):
+    def test_phone_formats(self):
+        from properties.fedapay import fedapay_phone
+
+        cases = {
+            "90 12 34 56": {"number": "+22890123456", "country": "tg"},      # sans indicatif : Togo
+            "+228 91 23 45 67": {"number": "+22891234567", "country": "tg"},
+            "00228 70 00 00 00": {"number": "+22870000000", "country": "tg"},
+            "22899000000": {"number": "+22899000000", "country": "tg"},
+            "+229 97 80 80 80": {"number": "+22997808080", "country": "bj"},  # autre pays conservé
+            "+33 6 12 34 56 78": None,   # pays non proposé par FedaPay : saisi sur la page de paiement
+            "12": None, "": None, None: None,
+        }
+        for raw, expected in cases.items():
+            self.assertEqual(fedapay_phone(raw), expected, raw)
+
+    def test_customer_includes_the_phone_only_when_usable(self):
+        self.assertEqual(fedapay_customer("Ama", "", "", "90123456")["phone_number"]["country"], "tg")
+        self.assertNotIn("phone_number", fedapay_customer("Ama", "", "", "abc"))

@@ -78,7 +78,8 @@ class FedaPayProvider:
             "amount": attempt.amount,
             "currency": {"iso": attempt.currency},
             "callback_url": callback_url,
-            "customer": fedapay_customer(client.first_name, client.last_name, client.email),
+            "customer": fedapay_customer(client.first_name, client.last_name, client.email,
+                                         client.phone or getattr(client, "whatsapp_number", "")),
             "custom_metadata": {"reference": str(attempt.reference)},
         }
         base = _get_fedapay_base_url()
