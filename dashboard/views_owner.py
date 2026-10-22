@@ -14,7 +14,7 @@ from .decorators import role_required
 from accounts.models import User
 from properties.models import Property, PropertyImage
 from properties.forms import MAX_IMAGES_PER_UPLOAD, PropertyForm, validate_property_images
-from properties.video.service import has_ready_video, in_progress, request_virtual_tour, status_payload
+from properties.video.service import has_ready_video, in_progress, is_stale, recover_stale, request_virtual_tour, status_payload
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET, require_POST
 from rental_requests.models import PropertyRequest
@@ -96,7 +96,8 @@ def owner_overview(request):
 @role_required(User.Role.OWNER)
 def owner_properties(request):
     """Affiche les biens du propriétaire avec pagination."""
-    properties = Property.objects.filter(owner=request.user).order_by("-created_at")
+    recover_stale(Property.objects.filter(owner=request.user))
+    properties = Property.objects.filter(owner=request.user).prefetch_related("images").order_by("-created_at")
     paginator = Paginator(properties, 10)
     page_obj = paginator.get_page(request.GET.get("page"))
     return render(request, "dashboard/owner/properties.html", {"page_obj": page_obj, "dash_role": "owner", "active": "properties"})
@@ -269,6 +270,10 @@ def owner_property_image_move(request, pk, image_id):
 def owner_property_video_generate(request, pk):
     """Demande la (re)génération de la visite virtuelle d'un bien du propriétaire connecté."""
     property = get_object_or_404(Property, pk=pk, owner=request.user)
+    if in_progress(property) and not is_stale(property):
+        # Anti doublon : une génération identique est déjà en file ou en cours.
+        messages.info(request, "La visite virtuelle est déjà en cours de génération.")
+        return redirect("dashboard:owner_property_edit", pk=property.pk)
     queued, video_message = request_virtual_tour(property)
     (messages.success if queued else messages.warning)(request, video_message)
     return redirect("dashboard:owner_property_edit", pk=property.pk)
@@ -279,7 +284,11 @@ def owner_property_video_generate(request, pk):
 def owner_property_video_status(request, pk):
     """État et progression de la visite virtuelle (JSON), pour le propriétaire du bien uniquement."""
     property = get_object_or_404(Property, pk=pk, owner=request.user)
-    return JsonResponse(status_payload(property))
+    if recover_stale(Property.objects.filter(pk=property.pk)):
+        property.refresh_from_db()
+    response = JsonResponse(status_payload(property))
+    response["Cache-Control"] = "no-store"  # statut privé et changeant : jamais mis en cache
+    return response
 
 
 # REMOVED: owner_requests and owner_request_update_status functions

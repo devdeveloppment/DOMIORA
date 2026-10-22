@@ -16,9 +16,21 @@ from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
-ASSEMBLY_CHUNK = 6          # nombre maximal de clips décodés simultanément pendant l'assemblage
 INTERMEDIATE_CRF = "18"     # clips intermédiaires de haute qualité
 FINAL_CRF = "23"
+
+
+def assembly_chunk():
+    """Nombre maximal de clips décodés simultanément pendant l'assemblage (mémoire bornée)."""
+    return max(2, int(getattr(settings, "VIRTUAL_TOUR_ASSEMBLY_CHUNK", 4)))
+
+
+def thread_args():
+    """Limite les fils de FFmpeg (décodage, filtres, x264) : mémoire et CPU prévisibles."""
+    threads = int(getattr(settings, "VIRTUAL_TOUR_FFMPEG_THREADS", 2))
+    if threads <= 0:
+        return []
+    return ["-threads", str(threads), "-filter_threads", str(threads), "-filter_complex_threads", str(threads)]
 
 
 class FFmpegUnavailable(Exception):
@@ -26,7 +38,11 @@ class FFmpegUnavailable(Exception):
 
 
 class FFmpegError(Exception):
-    pass
+    """Échec de FFmpeg. transient=True : processus tué ou délai dépassé (nouvelle tentative utile)."""
+
+    def __init__(self, message, transient=False):
+        super().__init__(message)
+        self.transient = transient
 
 
 class VideoValidationError(Exception):
@@ -66,12 +82,13 @@ def _run(args, timeout=600):
         try:
             completed = subprocess.run(args, stdout=subprocess.DEVNULL, stderr=err, timeout=timeout)
         except subprocess.TimeoutExpired as error:
-            raise FFmpegError("FFmpeg timeout") from error
+            raise FFmpegError("FFmpeg timeout", transient=True) from error
         err.seek(0)
         stderr = err.read().decode("utf-8", errors="replace")
     if completed.returncode != 0:
         logger.error("FFmpeg failed (code %s): %s", completed.returncode, stderr[-2000:])
-        raise FFmpegError(f"FFmpeg exited with code {completed.returncode}")
+        # Code négatif (POSIX) : tué par un signal, typiquement faute de mémoire.
+        raise FFmpegError(f"FFmpeg exited with code {completed.returncode}", transient=completed.returncode < 0)
     return stderr
 
 
@@ -82,7 +99,7 @@ def encode_frames(frames, output_size, fps, out_path):
         ffmpeg_binary(), "-y", "-loglevel", "error",
         "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{width}x{height}", "-r", str(fps), "-i", "-",
         "-an", "-c:v", "libx264", "-preset", "veryfast", "-crf", INTERMEDIATE_CRF, "-pix_fmt", "yuv420p",
-        out_path,
+        *thread_args(), out_path,
     ]
     with tempfile.TemporaryFile() as err:
         process = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=err)
@@ -96,17 +113,22 @@ def encode_frames(frames, output_size, fps, out_path):
                 process.stdin.close()
             except OSError:
                 pass
-            returncode = process.wait(timeout=600)
+            try:
+                returncode = process.wait(timeout=600)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait()
+                raise FFmpegError("FFmpeg scene encoding timeout", transient=True)
         if returncode != 0:
             err.seek(0)
             logger.error("FFmpeg scene encoding failed (code %s): %s", returncode, err.read().decode("utf-8", "replace")[-2000:])
-            raise FFmpegError(f"FFmpeg exited with code {returncode}")
+            raise FFmpegError(f"FFmpeg exited with code {returncode}", transient=returncode < 0)
     return out_path
 
 
 def _xfade(clips, transitions, transition_duration, fps, out_path, final):
     """Assemble ≤ ASSEMBLY_CHUNK clips avec des transitions xfade. clips = [(chemin, durée)]."""
-    args = [ffmpeg_binary(), "-y", "-loglevel", "error"]
+    args = [ffmpeg_binary(), "-y", "-loglevel", "error", *(["-threads", a[1]] if (a := thread_args()) else [])]
     for path, _ in clips:
         args += ["-i", path]
     if len(clips) == 1:
@@ -121,9 +143,10 @@ def _xfade(clips, transitions, transition_duration, fps, out_path, final):
             parts.append(f"{last}[s{i}]xfade=transition={transitions[i - 1]}:duration={transition_duration}:offset={offset:.3f}{out}")
             last, total = out, total + clips[i][1] - transition_duration
         filter_graph = ";".join(parts)
-    args += ["-filter_complex", filter_graph, "-map", last, "-an", "-c:v", "libx264", "-pix_fmt", "yuv420p"]
+    args += ["-filter_complex", filter_graph, "-map", last, "-an", "-c:v", "libx264", "-pix_fmt", "yuv420p", *thread_args()]
     if final:
-        args += ["-preset", "medium", "-crf", FINAL_CRF, "-movflags", "+faststart"]
+        preset = getattr(settings, "VIRTUAL_TOUR_FINAL_PRESET", "veryfast")
+        args += ["-preset", preset, "-crf", FINAL_CRF, "-movflags", "+faststart"]
     else:
         args += ["-preset", "veryfast", "-crf", INTERMEDIATE_CRF]
     args.append(out_path)
@@ -137,11 +160,11 @@ def assemble(clips, transitions, transition_duration, fps, workdir, out_path):
     est assemblé, puis les blocs sont assemblés entre eux avec la transition de jonction.
     transitions[i] = transition entre clips[i] et clips[i+1].
     """
-    level = 0
-    while len(clips) > ASSEMBLY_CHUNK:
+    level, chunk = 0, assembly_chunk()
+    while len(clips) > chunk:
         grouped, joins = [], []
-        for start in range(0, len(clips), ASSEMBLY_CHUNK):
-            group = clips[start:start + ASSEMBLY_CHUNK]
+        for start in range(0, len(clips), chunk):
+            group = clips[start:start + chunk]
             inner = transitions[start:start + len(group) - 1]
             path = os.path.join(workdir, f"chunk_{level}_{start}.mp4")
             duration = _xfade(group, inner, transition_duration, fps, path, final=False)
@@ -157,7 +180,7 @@ def add_music(video_path, music_path, duration, out_path):
     fade_start = max(0.0, duration - 2.0)
     _run([
         ffmpeg_binary(), "-y", "-loglevel", "error", "-i", video_path, "-stream_loop", "-1", "-i", music_path,
-        "-map", "0:v", "-map", "1:a", "-c:v", "copy", "-c:a", "aac", "-b:a", "128k",
+        "-map", "0:v", "-map", "1:a", "-c:v", "copy", "-c:a", "aac", "-b:a", "128k", *thread_args(),
         "-af", f"afade=t=out:st={fade_start:.2f}:d=2", "-shortest", "-movflags", "+faststart", out_path,
     ])
     return out_path
@@ -219,7 +242,8 @@ def validate(path, expected_duration, output_size, tolerance=1.5):
     if info["duration"] < 1 or abs(info["duration"] - expected_duration) > tolerance:
         raise VideoValidationError(f"Durée inattendue : {info['duration']:.2f}s (attendu {expected_duration:.2f}s)")
     # Décodage complet : détecte un fichier tronqué ou corrompu.
-    decode_errors = _run([ffmpeg_binary(), "-v", "error", "-i", path, "-f", "null", "-"], timeout=300)
+    decode_errors = _run([ffmpeg_binary(), "-v", "error", *(["-threads", a[1]] if (a := thread_args()) else []),
+                          "-i", path, "-f", "null", "-"], timeout=300)
     if decode_errors.strip():
         logger.error("Generated video has decoding errors: %s", decode_errors[-1000:])
         raise VideoValidationError("Erreurs de décodage")

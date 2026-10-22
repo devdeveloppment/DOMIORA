@@ -468,12 +468,25 @@ CELERY_BROKER_CONNECTION_TIMEOUT = 3
 # ----------------------------------------------------------------------------
 VIRTUAL_TOUR_MIN_PHOTOS = 3
 VIRTUAL_TOUR_MAX_PHOTOS = 20
-# 720p par défaut : rendu fluide et stable sur une petite instance de worker.
-VIRTUAL_TOUR_RESOLUTION = env("VIRTUAL_TOUR_RESOLUTION", default="1280x720")
-VIRTUAL_TOUR_FPS = env.int("VIRTUAL_TOUR_FPS", default=25)
+# Sur Render (offre gratuite : 512 Mo et CPU partagé, worker dans le même conteneur que le site),
+# profil léger par défaut : sans limite, FFmpeg crée autant de fils que de cœurs visibles sur l'hôte
+# et la mémoire déborde (processus tué : génération bloquée ou en erreur, site en 502).
+_LOW_RESOURCES = env.bool("VIRTUAL_TOUR_LOW_RESOURCES", default=bool(os.environ.get("RENDER")))
+VIRTUAL_TOUR_RESOLUTION = env("VIRTUAL_TOUR_RESOLUTION", default="960x540" if _LOW_RESOURCES else "1280x720")
+VIRTUAL_TOUR_FPS = env.int("VIRTUAL_TOUR_FPS", default=24 if _LOW_RESOURCES else 25)
+# Fils de calcul par processus FFmpeg (0 = automatique, déconseillé sur une petite instance).
+VIRTUAL_TOUR_FFMPEG_THREADS = env.int("VIRTUAL_TOUR_FFMPEG_THREADS", default=1 if _LOW_RESOURCES else 2)
+# Nombre maximal de clips décodés simultanément pendant l'assemblage.
+VIRTUAL_TOUR_ASSEMBLY_CHUNK = env.int("VIRTUAL_TOUR_ASSEMBLY_CHUNK", default=3 if _LOW_RESOURCES else 4)
+# Préréglage x264 de l'encodage final (« veryfast » : 3 à 4 fois plus rapide que « medium »).
+VIRTUAL_TOUR_FINAL_PRESET = env("VIRTUAL_TOUR_FINAL_PRESET", default="veryfast")
+# Tentatives automatiques après une erreur temporaire (processus interrompu, stockage indisponible).
+VIRTUAL_TOUR_MAX_ATTEMPTS = env.int("VIRTUAL_TOUR_MAX_ATTEMPTS", default=3)
+# Une génération « en cours » sans signe de vie depuis ce délai est considérée comme interrompue.
+VIRTUAL_TOUR_STALE_SECONDS = env.int("VIRTUAL_TOUR_STALE_SECONDS", default=900)
 # Binaire FFmpeg explicite (sinon : ffmpeg du PATH, puis binaire fourni par imageio-ffmpeg).
 FFMPEG_BINARY = env("FFMPEG_BINARY", default="")
-VIRTUAL_TOUR_SOFT_TIME_LIMIT = env.int("VIRTUAL_TOUR_SOFT_TIME_LIMIT", default=900)
+VIRTUAL_TOUR_SOFT_TIME_LIMIT = env.int("VIRTUAL_TOUR_SOFT_TIME_LIMIT", default=1800 if _LOW_RESOURCES else 900)
 # Musique de fond : désactivée (aucune piste fournie). Chemin local d'un fichier audio libre de droits.
 VIRTUAL_TOUR_MUSIC_PATH = env("VIRTUAL_TOUR_MUSIC_PATH", default="")
 

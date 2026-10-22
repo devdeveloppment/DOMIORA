@@ -129,6 +129,8 @@ class Property(models.Model):
     video_progress = models.PositiveSmallIntegerField(default=0, help_text="Progression de la génération (0-100)")
     video_error = models.CharField(max_length=255, blank=True, help_text="Message affiché au propriétaire en cas d'échec")
     video_job_id = models.CharField(max_length=36, blank=True, help_text="Génération en cours : une tâche plus ancienne ne peut pas écraser le résultat")
+    video_attempts = models.PositiveSmallIntegerField(default=0, help_text="Tentatives automatiques déjà utilisées pour la génération en cours")
+    video_heartbeat_at = models.DateTimeField(null=True, blank=True, help_text="Dernier signe de vie de la génération (détection des tâches interrompues)")
 
     virtual_tour_url = models.URLField(blank=True, help_text="Lien d'une visite virtuelle (Matterport, vidéo 360°, YouTube...)")  # Lien visite virtuelle externe
     uploaded_tour_video = models.FileField(max_length=255, upload_to="properties/uploaded_tours/", storage=video_storage, blank=True, null=True, verbose_name="Vidéo de visite filmée", help_text="Vidéo MP4 filmée par le propriétaire montrant la propriété")  # Vidéo uploadée
@@ -233,6 +235,13 @@ class Property(models.Model):
         """Retourne l'image principale de la propriété, ou une image par défaut si aucune n'existe."""
         gallery = self.gallery()
         return gallery[0] if gallery else "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=800"
+
+    @property
+    def video_label(self):
+        """État lisible de la visite virtuelle : Non générée, En attente, En cours, Terminé ou Erreur."""
+        from properties.video.service import status_label
+
+        return status_label(self)
 
     def gallery(self):
         """Retourne la liste des URLs d'images à afficher : uploads réels en priorité, sinon images de démonstration."""

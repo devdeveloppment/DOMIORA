@@ -107,7 +107,7 @@
                 {% endif %}
                 <form method="post" action="{% url 'dashboard:admin_property_video_generate' p.pk %}" class="inline">
                   {% csrf_token %}
-                  <button title="Visite virtuelle : {{ p.get_video_status_display }}{% if p.video_error %} — {{ p.video_error }}{% endif %}"
+                  <button title="Visite virtuelle : {{ p.video_label }}{% if p.video_error %} — {{ p.video_error }}{% endif %}"
                           class="text-xs font-semibold text-gray-600 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 px-2.5 py-1.5 rounded-lg transition">Vidéo{% if p.video_status == 'done' %} <i class="fa-solid fa-check" aria-hidden="true"></i>{% elif p.video_status == 'failed' %} !{% endif %}</button>
                 </form>
                 <a href="{% url 'dashboard:admin_property_edit' p.pk %}"

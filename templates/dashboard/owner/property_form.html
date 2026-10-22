@@ -196,7 +196,7 @@ function photoPicker() {
     {% csrf_token %}
     <button type="submit" :disabled="state.photo_count < state.min_photos"
             class="bg-primary-600 hover:bg-primary-700 disabled:bg-gray-300 transition text-white text-sm font-semibold rounded-full px-5 py-2.5"
-            x-text="state.in_progress ? 'Relancer la génération' : (state.status === 'done' ? 'Régénérer la visite virtuelle' : 'Générer la visite virtuelle')"></button>
+            x-show="!state.in_progress" x-text="state.status === 'failed' ? 'Relancer la génération' : (state.status === 'done' ? 'Régénérer la visite virtuelle' : 'Générer la visite virtuelle')"></button>
     <span x-show="state.photo_count < state.min_photos" x-cloak class="ml-2 text-xs text-gray-500" x-text="'Ajoutez au moins ' + state.min_photos + ' photos (actuellement : ' + state.photo_count + ').'"></span>
   </form>
 </div>

@@ -44,7 +44,7 @@
                   <a href="{{ p.get_absolute_url }}" target="_blank"
                      class="font-semibold text-gray-900 hover:text-primary-600 transition block truncate max-w-[220px]">{{ p.title }}</a>
                   <span class="text-xs text-gray-400">{{ p.city }}{% if p.neighborhood %}, {{ p.neighborhood }}{% endif %}</span>
-                  <a href="{% url 'dashboard:owner_property_edit' p.pk %}" class="block text-[11px] mt-0.5 {% if p.video_status == 'done' %}text-emerald-600{% elif p.video_status == 'failed' %}text-rose-600{% elif p.video_status == 'pending' %}text-gray-400{% else %}text-amber-600{% endif %}">Visite virtuelle : {{ p.get_video_status_display|lower }}{% if p.video_status in 'preparing generating assembling' %} ({{ p.video_progress }} %){% endif %}</a>
+                  <a href="{% url 'dashboard:owner_property_edit' p.pk %}" class="block text-[11px] mt-0.5 {% if p.video_status == 'done' %}text-emerald-600{% elif p.video_status == 'failed' or p.video_label == 'Erreur' %}text-rose-600{% elif p.video_status == 'pending' %}text-gray-400{% else %}text-amber-600{% endif %}">Visite virtuelle : {{ p.video_label|lower }}{% if p.video_status == 'preparing' or p.video_status == 'generating' or p.video_status == 'assembling' %} ({{ p.video_progress }} %){% endif %}</a>
                 </div>
               </div>
             </td>

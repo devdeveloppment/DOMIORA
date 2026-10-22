@@ -10,6 +10,11 @@ services:
     plan: free
     buildCommand: bash build.sh
     startCommand: bash start.sh
+    # L'application mobile (Flutter) est dans le même dépôt mais n'est jamais compilée ni déployée
+    # sur Render : un commit qui ne touche que mobile/ ne redéploie pas le site.
+    buildFilter:
+      ignoredPaths:
+        - mobile/**
     envVars:
       - key: PYTHON_VERSION
         value: 3.11

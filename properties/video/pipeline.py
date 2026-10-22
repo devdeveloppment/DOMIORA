@@ -42,9 +42,11 @@ class ObsoleteJob(Exception):
 
 
 class GenerationFailure(Exception):
-    def __init__(self, user_message):
+    def __init__(self, user_message, transient=False):
         super().__init__(user_message)
         self.user_message = user_message
+        self.transient = transient  # erreur temporaire : nouvelle tentative automatique utile
+
 
 
 def output_size():
@@ -61,8 +63,11 @@ class Job:
         self.job_id = job_id
 
     def update(self, **fields):
+        from django.utils import timezone
+
         from properties.models import Property
 
+        fields.setdefault("video_heartbeat_at", timezone.now())  # signe de vie : détection des tâches interrompues
         if not Property.objects.filter(pk=self.property_id, video_job_id=self.job_id).update(**fields):
             raise ObsoleteJob()
 
@@ -94,9 +99,13 @@ def run_generation(property_id, job_id):
     if prop.video_job_id != job_id:
         logger.info("Obsolete virtual tour job %s for property %s skipped", job_id, property_id)
         return "obsolete"
+    Status = Property.VideoStatus
+    if prop.video_status in (Status.DONE, Status.FAILED):
+        # Message livré deux fois (reprise après redémarrage) : la génération est déjà terminée.
+        logger.info("Virtual tour job %s for property %s already finished (%s)", job_id, property_id, prop.video_status)
+        return "duplicate"
 
     job = Job(property_id, job_id)
-    Status = Property.VideoStatus
     try:
         job.progress(Status.PREPARING, 2)
         minimum, maximum = settings.VIRTUAL_TOUR_MIN_PHOTOS, settings.VIRTUAL_TOUR_MAX_PHOTOS
@@ -106,9 +115,10 @@ def run_generation(property_id, job_id):
 
         size, fps = output_size(), settings.VIRTUAL_TOUR_FPS
         with tempfile.TemporaryDirectory(prefix="domiora_tour_") as workdir:
-            photos = []
+            photos, missing = [], 0
             for index, image in enumerate(images):
                 path = _download(image, workdir, index)
+                missing += path is None
                 if path:
                     try:
                         photos.append(analysis.read_photo_info(path))
@@ -116,7 +126,8 @@ def run_generation(property_id, job_id):
                         logger.warning("Unreadable photo %s for property %s: %s", image.pk, property_id, error)
                 job.progress(Status.PREPARING, 2 + 8 * (index + 1) / len(images))
             if len(photos) < minimum:
-                raise GenerationFailure(MSG_UNREADABLE.format(min=minimum))
+                # Photos introuvables sur le stockage (réseau, Cloudinary) : erreur temporaire.
+                raise GenerationFailure(MSG_UNREADABLE.format(min=minimum), transient=missing > 0)
 
             texts = cards.card_texts(prop)
             cover = analysis.load_rgb(photos[0].path)
@@ -152,17 +163,46 @@ def run_generation(property_id, job_id):
         return "obsolete"
     except GenerationFailure as error:
         logger.warning("Virtual tour not generated for property %s: %s", property_id, error.user_message)
+        if error.transient and _schedule_retry(prop, job):
+            return "retry"
         job.fail(error.user_message)
     except SoftTimeLimitExceeded:
         logger.error("Virtual tour generation timed out for property %s", property_id)
         job.fail(MSG_TIMEOUT)
-    except (ffmpeg.FFmpegUnavailable, ffmpeg.FFmpegError, ffmpeg.VideoValidationError):
+    except (ffmpeg.FFmpegError, MemoryError) as error:
+        logger.exception("Virtual tour rendering failed for property %s", property_id)
+        if (isinstance(error, MemoryError) or error.transient) and _schedule_retry(prop, job):
+            return "retry"
+        job.fail(MSG_RENDER)
+    except (ffmpeg.FFmpegUnavailable, ffmpeg.VideoValidationError):
         logger.exception("Virtual tour rendering failed for property %s", property_id)
         job.fail(MSG_RENDER)
     except Exception:
         logger.exception("Unexpected virtual tour failure for property %s", property_id)
         job.fail(MSG_GENERIC)
     return "failed"
+
+
+def _schedule_retry(prop, job):
+    """
+    Nouvelle tentative différée après une erreur temporaire, dans la limite de VIRTUAL_TOUR_MAX_ATTEMPTS
+    (aucune boucle infinie). Retourne False si la limite est atteinte : l'appelant marque l'échec.
+    """
+    from properties.models import Property
+
+    from .service import enqueue
+
+    attempts = Property.objects.filter(pk=prop.pk).values_list("video_attempts", flat=True).first() or 0
+    if attempts + 1 >= settings.VIRTUAL_TOUR_MAX_ATTEMPTS:
+        return False
+    try:
+        job.update(video_status=Property.VideoStatus.PENDING, video_progress=0, video_error="", video_attempts=attempts + 1)
+    except ObsoleteJob:
+        return True  # une génération plus récente a été demandée : rien à relancer
+    delay = 30 * (attempts + 1)
+    logger.info("Virtual tour of property %s: retry %s scheduled in %ss", prop.pk, attempts + 2, delay)
+    enqueue(prop.pk, job.job_id, countdown=delay)
+    return True
 
 
 def _download(image, workdir, index):
@@ -201,7 +241,7 @@ def _store(prop, job, output_path):
             saved_name = storage.save(name, File(handle, name=os.path.basename(name)))
     except Exception as error:
         logger.exception("Virtual tour storage failed for property %s", prop.pk)
-        raise GenerationFailure(MSG_STORAGE) from error
+        raise GenerationFailure(MSG_STORAGE, transient=True) from error
 
     previous = Property.objects.filter(pk=prop.pk).values_list("virtual_tour_video", flat=True).first()
     try:
